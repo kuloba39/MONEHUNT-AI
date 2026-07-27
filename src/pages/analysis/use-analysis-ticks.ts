@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import ApiHelpers from '@/external/bot-skeleton/services/api/api-helpers';
-
+import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 
 type TickData = {
     digit:number;
@@ -27,146 +27,137 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-        const start = ()=>{
+       const start = ()=>{
 
 
-            const api = ApiHelpers.instance;
+    const api = api_base;
 
 
+    if(!api){
 
-            if(!api){
+        console.log(
+            "D CIRCLES API BASE NOT READY"
+        );
 
-                console.log(
-                    "D CIRCLES API NOT READY"
-                );
+        return false;
 
-                return false;
-
-            }
-
-
-
-            const ws =
-                api.ws ||
-                api.api;
+    }
 
 
 
-            if(!ws){
-
-                console.log(
-                    "D CIRCLES SOCKET NOT READY",
-                    api
-                );
-
-                return false;
-
-            }
+    const ws = api.api;
 
 
+
+    if(!ws){
+
+        console.log(
+            "D CIRCLES MAIN SOCKET NOT READY",
+            api
+        );
+
+        return false;
+
+    }
+
+
+
+    console.log(
+        "D CIRCLES CONNECTED MAIN API SOCKET",
+        market
+    );
+
+
+
+    ws.send(JSON.stringify({
+
+        ticks: market,
+
+        subscribe: 1
+
+    }));
+
+
+
+
+    api.api.onMessage()
+    .subscribe(({data}:any)=>{
+
+
+        if(data.error){
 
             console.log(
-                "D CIRCLES CONNECTED MAIN SOCKET",
-                market
+                "D CIRCLES ERROR",
+                data.error.message
             );
 
+            return;
 
-
-            ws.send(JSON.stringify({
-
-                ticks:market,
-                subscribe:1
-
-            }));
+        }
 
 
 
-            ws.onMessage?.().subscribe(({data}:any)=>{
+        if(!data.tick){
 
+            return;
 
-                const response =
-                typeof data === "string"
-                ? JSON.parse(data)
-                : data;
-
-
-
-                if(response.error){
-
-                    console.log(
-                        "D CIRCLES ERROR",
-                        response.error.message
-                    );
-
-                    return;
-
-                }
+        }
 
 
 
-                if(!response.tick){
-
-                    return;
-
-                }
-
-
-
-                const quote =
-                Number(
-                    response.tick.quote
-                );
+        const quote =
+        Number(
+            data.tick.quote
+        );
 
 
 
-                const digit =
-                Number(
-                    quote
-                    .toFixed(2)
-                    .replace(".","")
-                    .slice(-1)
-                );
+        const digit =
+        Number(
+            quote
+            .toFixed(2)
+            .replace(".","")
+            .slice(-1)
+        );
 
 
 
-                setTicks(prev=>[
+        setTicks(prev=>[
 
-                    ...prev.slice(-99),
+            ...prev.slice(-99),
 
-                    {
+            {
 
-                        digit,
+                digit,
 
-                        quote,
+                quote,
 
-                        epoch:
-                        response.tick.epoch
+                epoch:data.tick.epoch
 
-                    }
+            }
 
-                ]);
-
-
-
-                console.log(
-                    "D CIRCLES TICK",
-                    {
-                        market,
-                        quote,
-                        digit
-                    }
-                );
-
-
-            });
+        ]);
 
 
 
-            return true;
+        console.log(
+            "D CIRCLES CLEAN TICK",
+            {
+                market,
+                quote,
+                digit
+            }
+        );
 
 
-        };
+    });
 
+
+
+    return true;
+
+
+};
 
 
 
