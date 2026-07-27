@@ -23,7 +23,7 @@ export const useAnalysisTicks = (market:string) => {
 
 
         let interval:any;
-        let subscriptionId:string | null = null;
+        const subscriptionMap = new Map<string,string>();
         let api:any = null;
 
 
@@ -156,8 +156,17 @@ if(subscription){
         );
        if(data.subscription){
 
-    subscriptionId =
-    data.subscription.id;
+subscriptionMap.set(
+    market,
+    data.subscription.id
+);
+
+
+console.log(
+    "D CIRCLES SUB ID",
+    market,
+    data.subscription.id
+);
 
 }
 
