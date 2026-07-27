@@ -1,16 +1,13 @@
 import { useEffect, useState } from 'react';
 
-
 type Market = {
-
     symbol:string;
-    name:string;
-
+    display_name:string;
 };
 
 
 
-export const useActiveMarkets = ()=>{
+export const useActiveMarkets = () => {
 
 
     const [markets,setMarkets] = useState<Market[]>([]);
@@ -20,63 +17,81 @@ export const useActiveMarkets = ()=>{
     useEffect(()=>{
 
 
-        const ws = new WebSocket(
-            'wss://ws.derivws.com/websockets/v3?app_id=1089'
-        );
+        const loadMarkets = async()=>{
+
+
+            try {
+
+
+                const api =
+                (window as any)
+                .ApiHelpers
+                ?.instance;
 
 
 
-        ws.onopen = ()=>{
-
-
-            ws.send(JSON.stringify({
-
-                active_symbols:"brief"
-
-            }));
-
-
-        };
+                const activeSymbols =
+                api?.active_symbols;
 
 
 
-        ws.onmessage = (msg)=>{
+                if(!activeSymbols){
+
+                    console.log(
+                        "D CIRCLES ACTIVE SYMBOL SERVICE NOT READY"
+                    );
+
+                    return;
+
+                }
 
 
-            const data = JSON.parse(
-                msg.data
-            );
 
+                const symbols =
+                await activeSymbols
+                .retrieveActiveSymbols(true);
 
-
-            if(data.active_symbols){
-
-
-                const list =
-                data.active_symbols
-                .filter(
-                    (item:any)=>
-                    item.exchange_is_open
-                )
-                .map(
-                    (item:any)=>({
-
-                        symbol:item.symbol,
-
-                        name:item.display_name
-
-                    })
-                );
 
 
 
                 console.log(
-                    "D CIRCLES MARKETS",
-                    list
+                    "D CIRCLES REAL SYMBOLS",
+                    symbols
                 );
 
 
-                setMarkets(list);
+
+
+                const clean =
+                symbols.map((item:any)=>({
+
+
+                    symbol:
+                    item.symbol,
+
+
+                    display_name:
+                    item.display_name ||
+                    item.symbol
+
+
+
+                }));
+
+
+
+
+                setMarkets(clean);
+
+
+
+            } catch(error){
+
+
+                console.log(
+                    "D CIRCLES MARKET ERROR",
+                    error
+                );
 
 
             }
@@ -86,14 +101,13 @@ export const useActiveMarkets = ()=>{
 
 
 
-        return ()=>{
 
-            ws.close();
+        loadMarkets();
 
-        };
 
 
     },[]);
+
 
 
 
