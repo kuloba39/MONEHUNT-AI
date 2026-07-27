@@ -23,7 +23,6 @@ export const useAnalysisTicks = (market:string) => {
         if(!market) return;
 
 
-
         let interval:any;
 
 
@@ -34,147 +33,145 @@ export const useAnalysisTicks = (market:string) => {
             const api = ApiHelpers.instance;
 
 
-if(!api){
 
-    console.log(
-        "D CIRCLES API NOT READY"
-    );
+            if(!api){
 
-    return false;
+                console.log(
+                    "D CIRCLES API NOT READY"
+                );
 
-}
+                return false;
 
-
-
-const ws =
-    api.ws ||
-    api.api ||
-    api.transport ||
-    api.connection;
+            }
 
 
 
-if(!ws){
-
-    console.log(
-        "D CIRCLES SOCKET NOT READY",
-        api
-    );
-
-    return false;
-
-}
+            const ws =
+                api.ws ||
+                api.api;
 
 
 
-console.log(
-    "D CIRCLES CONNECTED THROUGH MAIN SOCKET",
-    market
-);
+            if(!ws){
+
+                console.log(
+                    "D CIRCLES SOCKET NOT READY",
+                    api
+                );
+
+                return false;
+
+            }
 
 
 
-ws.send(JSON.stringify({
-
-    ticks: market,
-    subscribe: 1
-
-}));
+            console.log(
+                "D CIRCLES CONNECTED MAIN SOCKET",
+                market
+            );
 
 
 
+            ws.send(JSON.stringify({
+
+                ticks:market,
+                subscribe:1
+
+            }));
 
 
 
+            ws.onMessage?.().subscribe(({data}:any)=>{
 
-ws.onmessage = (event:any)=>{
 
-
-    const data =
-    typeof event.data === "string"
-    ?
-    JSON.parse(event.data)
-    :
-    event.data;
+                const response =
+                typeof data === "string"
+                ? JSON.parse(data)
+                : data;
 
 
 
-    if(data.error){
+                if(response.error){
 
-        console.log(
-            "D CIRCLES ERROR",
-            data.error.message
-        );
+                    console.log(
+                        "D CIRCLES ERROR",
+                        response.error.message
+                    );
 
-        return;
+                    return;
 
-    }
-
-
-
-    if(!data.tick){
-
-        return;
-
-    }
+                }
 
 
 
-    const quote =
-    Number(
-        data.tick.quote
-    );
+                if(!response.tick){
+
+                    return;
+
+                }
 
 
 
-    const digit =
-    Number(
-        quote
-        .toFixed(2)
-        .replace(".","")
-        .slice(-1)
-    );
+                const quote =
+                Number(
+                    response.tick.quote
+                );
 
 
 
-    setTicks(prev=>[
-
-        ...prev.slice(-99),
-
-        {
-
-            digit,
-
-            quote,
-
-            epoch:data.tick.epoch
-
-        }
-
-    ]);
+                const digit =
+                Number(
+                    quote
+                    .toFixed(2)
+                    .replace(".","")
+                    .slice(-1)
+                );
 
 
 
-    console.log(
-        "D CIRCLES TICK",
-        {
-            market,
-            quote,
-            digit
-        }
-    );
+                setTicks(prev=>[
+
+                    ...prev.slice(-99),
+
+                    {
+
+                        digit,
+
+                        quote,
+
+                        epoch:
+                        response.tick.epoch
+
+                    }
+
+                ]);
 
 
-};
+
+                console.log(
+                    "D CIRCLES TICK",
+                    {
+                        market,
+                        quote,
+                        digit
+                    }
+                );
+
+
+            });
 
 
 
             return true;
 
+
         };
 
 
-        interval = setInterval(()=>{
+
+
+        interval=setInterval(()=>{
+
 
             if(start()){
 
@@ -182,11 +179,14 @@ ws.onmessage = (event:any)=>{
 
             }
 
+
         },1000);
 
 
 
+
         return ()=>{
+
 
             if(interval){
 
@@ -194,10 +194,13 @@ ws.onmessage = (event:any)=>{
 
             }
 
+
         };
 
 
+
     },[market]);
+
 
 
 
