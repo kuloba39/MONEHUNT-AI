@@ -60,36 +60,68 @@ const FreeBots = observer(() => {
 
 
     return (
-        <div className="free-bots">
+    <div className="free-bots">
 
-            {
-                FREE_BOTS.map(bot=>(
+        <div className="free-bots-header">
+            <h2>
+                🚀 Premium Free Bots
+            </h2>
 
-                    <div
+            <p>
+                Select a ready-made strategy and customize it in Bot Builder
+            </p>
+        </div>
+
+
+        <div className="free-bots-grid">
+
+        {
+            FREE_BOTS.map(bot=>(
+
+                <div
                     key={bot.id}
                     className="free-bot-card"
-                    onClick={()=>loadFreeBot(bot)}
-                    >
+                >
 
-                        <h3>
-                            {bot.name}
-                        </h3>
+                    <div className="free-bot-top">
 
-                        <p>
-                            {bot.description}
-                        </p>
+                        <span className="bot-status">
+                            FREE
+                        </span>
 
-                        <button>
-                            Load Bot
-                        </button>
+                        <span className="bot-icon">
+                            🤖
+                        </span>
 
                     </div>
 
-                ))
-            }
+
+                    <h3>
+                        {bot.name}
+                    </h3>
+
+
+                    <p>
+                        {bot.description}
+                    </p>
+
+
+                    <button
+                        onClick={()=>loadFreeBot(bot)}
+                    >
+                        Load Strategy
+                    </button>
+
+
+                </div>
+
+            ))
+        }
 
         </div>
-    );
+
+    </div>
+);
 });
 
 

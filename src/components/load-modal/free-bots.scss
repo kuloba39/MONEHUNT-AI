@@ -1,25 +1,188 @@
-.free-bots{
+.free-bots {
+
+    padding:24px;
+
+}
+
+
+.free-bots-header {
+
+    margin-bottom:25px;
+
+}
+
+
+.free-bots-header h2 {
+
+    font-size:26px;
+    font-weight:800;
+    margin-bottom:8px;
+
+}
+
+
+.free-bots-header p {
+
+    color:var(--text-less-prominent);
+    font-size:14px;
+
+}
+
+
+
+.free-bots-grid {
+
     display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:16px;
-    padding:20px;
+
+    grid-template-columns:
+    repeat(auto-fit,minmax(240px,1fr));
+
+    gap:20px;
+
 }
 
 
-.free-bot-card{
-    border:1px solid var(--border-normal);
-    border-radius:12px;
-    padding:20px;
-    cursor:pointer;
-    background:var(--general-section-1);
 
-    &:hover{
-        transform:translateY(-3px);
-    }
+.free-bot-card {
+
+    position:relative;
+
+    padding:22px;
+
+    border-radius:18px;
+
+    background:
+    linear-gradient(
+        145deg,
+        rgba(255,255,255,.08),
+        rgba(255,255,255,.02)
+    );
+
+    border:1px solid rgba(255,255,255,.15);
+
+    backdrop-filter:blur(15px);
+
+    transition:.3s;
+
+    overflow:hidden;
+
 }
 
 
-.free-bot-card button{
-    margin-top:15px;
+
+.free-bot-card:hover {
+
+    transform:translateY(-6px);
+
+    border-color:#00e5ff;
+
+    box-shadow:
+    0 15px 40px rgba(0,229,255,.18);
+
+}
+
+
+
+.free-bot-top {
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+}
+
+
+
+.bot-status {
+
+    background:#00c853;
+
+    color:#000;
+
+    font-size:11px;
+
+    font-weight:900;
+
+    padding:5px 12px;
+
+    border-radius:20px;
+
+}
+
+
+
+.bot-icon {
+
+    font-size:35px;
+
+}
+
+
+
+.free-bot-card h3 {
+
+    margin-top:20px;
+
+    font-size:20px;
+
+    font-weight:800;
+
+}
+
+
+
+.free-bot-card p {
+
+    min-height:45px;
+
+    margin-top:10px;
+
+    color:var(--text-less-prominent);
+
+}
+
+
+
+.free-bot-card button {
+
+
     width:100%;
+
+    margin-top:20px;
+
+    padding:12px;
+
+    border-radius:12px;
+
+    border:none;
+
+    cursor:pointer;
+
+
+    font-weight:800;
+
+    background:
+
+    linear-gradient(
+        90deg,
+        #00e5ff,
+        #00c853
+    );
+
+
+    color:#000;
+
+
+    transition:.3s;
+
+}
+
+
+
+.free-bot-card button:hover {
+
+    transform:scale(1.03);
+
 }
