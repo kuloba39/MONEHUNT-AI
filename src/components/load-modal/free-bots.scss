@@ -1,0 +1,25 @@
+.free-bots{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    padding:20px;
+}
+
+
+.free-bot-card{
+    border:1px solid var(--border-normal);
+    border-radius:12px;
+    padding:20px;
+    cursor:pointer;
+    background:var(--general-section-1);
+
+    &:hover{
+        transform:translateY(-3px);
+    }
+}
+
+
+.free-bot-card button{
+    margin-top:15px;
+    width:100%;
+}

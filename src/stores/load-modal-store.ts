@@ -1,3 +1,5 @@
+import { FREE_BOTS } from '@/constants/free-bots';
+import { FREE_BOTS } from '@/constants/free-bots';
 // @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
 import React from 'react';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
@@ -86,13 +88,20 @@ export default class LoadModalStore {
             () => this.is_load_modal_open,
             async is_load_modal_open => {
                 if (is_load_modal_open) {
-                    const saved_workspaces = await getSavedWorkspaces();
-                    if (!saved_workspaces) return;
-                    this.setRecentStrategies(saved_workspaces);
-                    if (saved_workspaces.length > 0 && !this.selected_strategy_id) {
-                        this.setSelectedStrategyId(saved_workspaces[0].id);
-                    }
-                } else {
+    const saved_workspaces = await getSavedWorkspaces();
+
+    const all_strategies = [
+        ...FREE_BOTS,
+        ...(saved_workspaces || []),
+    ];
+
+    this.setRecentStrategies(all_strategies);
+
+    if (all_strategies.length > 0 && !this.selected_strategy_id) {
+        this.setSelectedStrategyId(all_strategies[0].id);
+    }
+}
+                else {
                     this.onLoadModalClose();
                 }
             }

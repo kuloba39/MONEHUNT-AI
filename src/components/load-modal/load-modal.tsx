@@ -5,6 +5,7 @@ import { tabs_title } from '@/constants/load-modal';
 import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
+import FreeBots from './free-bots';
 /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
 /* [/AI] */
 import MobileFullPageModal from '../shared_ui/mobile-full-page-modal';
@@ -57,6 +58,9 @@ const LoadModal: React.FC = observer(() => {
                     <div label={localize('Local')}>
                         <Local />
                     </div>
+                    <div label={localize('Free Bots')}>
+                         <FreeBots />
+                    </div>
                     {is_google_drive_configured && (
                         <div label='Google Drive'>
                             <GoogleDrive />
@@ -86,18 +90,26 @@ const LoadModal: React.FC = observer(() => {
         >
             <Modal.Body>
                 <Tabs active_index={active_index} onTabItemClick={handleTabItemClick} top header_fit_content>
-                    <div label={localize('Recent')}>
-                        <Recent />
-                    </div>
-                    <div label={localize('Local')}>
-                        <Local />
-                    </div>
-                    {is_google_drive_configured && (
-                        <div label='Google Drive'>
-                            <GoogleDrive />
-                        </div>
-                    )}
-                </Tabs>
+
+    <div label={localize('Recent')}>
+        <Recent />
+    </div>
+
+    <div label={localize('Free Bots')}>
+        <FreeBots />
+    </div>
+
+    <div label={localize('Local')}>
+        <Local />
+    </div>
+
+    {is_google_drive_configured && (
+        <div label='Google Drive'>
+            <GoogleDrive />
+        </div>
+    )}
+
+</Tabs>
             </Modal.Body>
             {has_recent_strategies && (
                 <Modal.Footer has_separator>
