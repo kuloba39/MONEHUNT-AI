@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 
+
 type TickData = {
+
     digit:number;
     quote:number;
     epoch:number;
+
 };
+
 
 
 export const useAnalysisTicks = (market:string) => {
@@ -13,84 +17,126 @@ export const useAnalysisTicks = (market:string) => {
     const [ticks,setTicks] = useState<TickData[]>([]);
 
 
+
     useEffect(()=>{
 
 
         let ws:WebSocket;
 
 
-        const connect = () => {
 
-            ws = new WebSocket(
-                'wss://ws.derivws.com/websockets/v3?app_id=1089'
+        ws = new WebSocket(
+            'wss://ws.derivws.com/websockets/v3?app_id=1089'
+        );
+
+
+
+        ws.onopen = ()=>{
+
+
+            console.log(
+                "D CIRCLES CONNECTED",
+                market
             );
 
 
-            ws.onopen = () => {
 
+            ws.send(JSON.stringify({
 
-                ws.send(JSON.stringify({
+                ticks:market,
+                subscribe:1
 
-                    ticks:market,
-                    subscribe:1
-
-                }));
-
-
-            };
-
-
-
-            ws.onmessage = (msg)=>{
-
-
-                const data = JSON.parse(msg.data);
-
-
-
-                if(data.tick){
-
-
-                    const quote =
-                    data.tick.quote;
-
-
-
-                    const digit =
-                    Number(
-                        String(quote)
-                        .slice(-1)
-                    );
-
-
-
-                    setTicks(prev=>[
-
-                        ...prev.slice(-99),
-
-                        {
-                            digit,
-                            quote,
-                            epoch:data.tick.epoch
-                        }
-
-                    ]);
-
-                }
-
-
-            };
+            }));
 
 
         };
 
 
 
-        connect();
+
+
+        ws.onmessage = (message)=>{
+
+
+            const data =
+            JSON.parse(
+                message.data
+            );
+
+
+
+            console.log(
+                "D CIRCLES DATA",
+                data
+            );
+
+
+
+            if(data.tick){
+
+
+                const quote =
+                Number(
+                    data.tick.quote
+                );
+
+
+
+                const digit =
+                Number(
+                    quote
+                    .toFixed(2)
+                    .replace('.','')
+                    .slice(-1)
+                );
+
+
+
+                setTicks(prev=>[
+
+
+                    ...prev.slice(-99),
+
+
+                    {
+
+                        digit,
+
+                        quote,
+
+                        epoch:
+                        data.tick.epoch
+
+                    }
+
+
+                ]);
+
+            }
+
+
+
+        };
+
+
+
+
+        ws.onerror=(error)=>{
+
+
+            console.log(
+                "D CIRCLES ERROR",
+                error
+            );
+
+
+        };
+
 
 
 
         return ()=>{
+
 
             if(ws){
 
@@ -98,7 +144,9 @@ export const useAnalysisTicks = (market:string) => {
 
             }
 
+
         };
+
 
 
     },[market]);
@@ -106,6 +154,7 @@ export const useAnalysisTicks = (market:string) => {
 
 
     return ticks;
+
 
 
 };
