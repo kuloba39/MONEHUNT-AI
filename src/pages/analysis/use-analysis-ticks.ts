@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+
 type TickData = {
     digit:number;
     quote:number;
@@ -22,33 +23,73 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-        let subscription:any;
+        let interval:any;
 
 
 
-        const connect = async()=>{
+        const start = ()=>{
 
 
-            try {
-
-
-                const api =
-                (window as any)
-                .ApiHelpers
-                ?.instance;
+            const api =
+            (window as any)
+            .ApiHelpers
+            ?.instance;
 
 
 
-                const ws =
-                api?.ws;
+            if(!api?.ws){
+
+
+                console.log(
+                    "D CIRCLES WAITING FOR API"
+                );
+
+
+                return false;
+
+            }
 
 
 
-                if(!ws){
 
+            const ws = api.ws;
+
+
+
+            console.log(
+                "D CIRCLES CONNECTED THROUGH MAIN SOCKET",
+                market
+            );
+
+
+
+            ws.send(JSON.stringify({
+
+                ticks:market,
+
+                subscribe:1
+
+            }));
+
+
+
+
+
+            ws.onmessage = (event:any)=>{
+
+
+                const data =
+                JSON.parse(
+                    event.data
+                );
+
+
+
+                if(data.error){
 
                     console.log(
-                        "D CIRCLES API NOT READY"
+                        "D CIRCLES ERROR",
+                        data.error.message
                     );
 
                     return;
@@ -58,140 +99,63 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-                console.log(
-                    "D CIRCLES USING APP SOCKET",
-                    market
+                if(!data.tick) return;
+
+
+
+
+                const quote =
+                Number(
+                    data.tick.quote
                 );
 
 
 
 
-                const request = {
-
-                    ticks: market,
-
-                    subscribe:1
-
-                };
-
-
-
-
-
-                ws.send(
-                    JSON.stringify(request)
+                const digit =
+                Number(
+                    String(quote)
+                    .replace('.','')
+                    .slice(-1)
                 );
 
 
 
 
+                setTicks(prev=>[
 
-                ws.onmessage = (event:any)=>{
+                    ...prev.slice(-99),
 
+                    {
 
-                    const data =
-                    JSON.parse(
-                        event.data
-                    );
+                        digit,
 
+                        quote,
 
-
-
-                    if(data.error){
-
-
-                        console.log(
-                            "D CIRCLES ERROR",
-                            data.error.message
-                        );
-
-                        return;
+                        epoch:data.tick.epoch
 
                     }
 
+                ]);
 
 
-
-                    if(!data.tick){
-
-                        return;
-
-                    }
-
-
-
-
-
-                    const quote =
-                    Number(
-                        data.tick.quote
-                    );
-
-
-
-
-                    const digit =
-                    Number(
-                        String(
-                            quote
-                        )
-                        .replace('.','')
-                        .slice(-1)
-                    );
-
-
-
-
-                    setTicks(prev=>[
-
-
-                        ...prev.slice(-99),
-
-
-                        {
-
-                            digit,
-
-                            quote,
-
-                            epoch:
-                            data.tick.epoch
-
-                        }
-
-
-                    ]);
-
-
-
-                    console.log(
-                        "D CIRCLES TICK",
-                        {
-                            market,
-                            quote,
-                            digit
-                        }
-                    );
-
-
-
-                };
-
-
-
-
-
-            } catch(error){
 
 
                 console.log(
-                    "D CIRCLES CONNECT ERROR",
-                    error
+                    "D CIRCLES TICK",
+                    {
+                        market,
+                        quote,
+                        digit
+                    }
                 );
 
 
-            }
+            };
 
+
+
+            return true;
 
 
         };
@@ -199,7 +163,21 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-        connect();
+
+        interval = setInterval(()=>{
+
+
+            if(start()){
+
+
+                clearInterval(interval);
+
+
+            }
+
+
+        },1000);
+
 
 
 
@@ -207,10 +185,9 @@ export const useAnalysisTicks = (market:string) => {
         return ()=>{
 
 
-            if(subscription){
+            if(interval){
 
-
-                subscription();
+                clearInterval(interval);
 
             }
 
@@ -219,9 +196,7 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-
     },[market]);
-
 
 
 
