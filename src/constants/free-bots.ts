@@ -1,23 +1,40 @@
 import freeEvenxml from './free-even.xml';
 
 
+// Replace these empty XML strings with your exported bot XML
+
 const oreshnicxml = `
 <xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true">
+
+PASTE ORESHNIC EXPORTED XML HERE
+
 </xml>
 `;
+
 
 const manager5xml = `
 <xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true">
+
+PASTE MANAGER 5 EXPORTED XML HERE
+
 </xml>
 `;
+
 
 const manager1xml = `
 <xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true">
+
+PASTE MANAGER 1 EXPORTED XML HERE
+
 </xml>
 `;
 
+
 const lastDefenderxml = `
 <xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true">
+
+PASTE LAST DEFENDER EXPORTED XML HERE
+
 </xml>
 `;
 
@@ -35,8 +52,6 @@ export const FREE_BOTS = [
         free: true,
     },
 
-
-    // NEW BOTS
 
     {
         id: 'oreshnic',
