@@ -1,12 +1,13 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { FREE_BOTS } from '@/constants/free-bots';
+import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
 import './free-bots.scss';
 
 const FreeBots = observer(() => {
 
-    const { load_modal, blockly_store } = useStore();
+    const { load_modal, blockly_store, dashboard } = useStore();
 
     const { setSelectedStrategyId } = load_modal;
 
@@ -32,6 +33,8 @@ const FreeBots = observer(() => {
                     xmlDom,
                     window.Blockly.derivWorkspace
                 );
+                // Open Bot Builder after loading free bot
+                   dashboard.setActiveTab(DBOT_TABS.BOT_BUILDER);
 
             } else {
 
