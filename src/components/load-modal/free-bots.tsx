@@ -79,9 +79,9 @@ const FreeBots = observer(() => {
             FREE_BOTS.map(bot=>(
 
                 <div
-                    key={bot.id}
-                    className="free-bot-card"
-                >
+                  key={bot.id}
+                  className={`free-bot-card ${bot.color}`}
+                > 
 
                     <div className="free-bot-top">
 
@@ -90,15 +90,15 @@ const FreeBots = observer(() => {
                         </span>
 
                         <span className="bot-icon">
-                            🤖
+                             {bot.icon}
                         </span>
 
                     </div>
 
 
-                    <h3>
-                        {bot.name}
-                    </h3>
+                    <span className="bot-tag">
+                       {bot.tag}
+                    </span>
 
 
                     <p>
