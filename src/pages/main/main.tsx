@@ -42,6 +42,7 @@ import RunPanel from '../../components/run-panel';
 import ChartModal from '../chart/chart-modal';
 import Dashboard from '../dashboard';
 import FreeBots from '../free-bots';
+import Analysis from '../analysis';
 import RunStrategy from '../dashboard/run-strategy';
 import './main.scss';
 
@@ -77,7 +78,12 @@ const AppWrapper = observer(() => {
         [key: string]: string;
     };
     const { clear } = summary_card;
-    const { DASHBOARD, BOT_BUILDER, FREE_BOTS } = DBOT_TABS;
+    const { 
+    DASHBOARD, 
+    BOT_BUILDER, 
+    FREE_BOTS,
+    ANALYSIS
+} = DBOT_TABS;
     const init_render = React.useRef(true);
     const hash = [
     'dashboard',
@@ -476,6 +482,20 @@ const AppWrapper = observer(() => {
 >
     <FreeBots />
 </div>
+
+
+{/* D CIRCLES ANALYSIS */}
+<div
+    label={
+        <>
+            📊 D Circles
+        </>
+    }
+    id='id-analysis'
+>
+    <Analysis />
+</div>
+
 
 </Tabs>
                         {!isDesktop && right_tab_shadow && <span className='tabs-shadow tabs-shadow--right' />}{' '}
