@@ -31,25 +31,31 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-        ws.onopen = ()=>{
+ws.onopen = ()=>{
 
 
-            console.log(
-                "D CIRCLES CONNECTED",
-                market
-            );
+    console.log(
+        "D CIRCLES ACTIVE MARKET:",
+        market
+    );
 
 
+    ws.send(JSON.stringify({
 
-            ws.send(JSON.stringify({
+        forget_all:"ticks"
 
-                ticks:market,
-                subscribe:1
-
-            }));
+    }));
 
 
-        };
+    ws.send(JSON.stringify({
+
+        ticks:market,
+        subscribe:1
+
+    }));
+
+
+};
 
 
 
@@ -73,6 +79,11 @@ export const useAnalysisTicks = (market:string) => {
 
 
             if(data.tick){
+console.log(
+"D CIRCLES TICK",
+market,
+data.tick.quote
+);
 
 
                 const quote =
