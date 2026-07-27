@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ApiHelpers from '@/external/bot-skeleton/services/api/api-helpers';
 
 
 type TickData = {
@@ -30,160 +31,162 @@ export const useAnalysisTicks = (market:string) => {
         const start = ()=>{
 
 
-            const api =
-            (window as any)
-            .ApiHelpers
-            ?.instance;
+            const api = ApiHelpers.instance;
+
+
+if(!api){
+
+    console.log(
+        "D CIRCLES API NOT READY"
+    );
+
+    return false;
+
+}
 
 
 
-            if(!api?.ws){
-
-
-                console.log(
-                    "D CIRCLES WAITING FOR API"
-                );
-
-
-                return false;
-
-            }
+const ws =
+    api.ws ||
+    api.api ||
+    api.transport ||
+    api.connection;
 
 
 
+if(!ws){
 
-            const ws = api.ws;
+    console.log(
+        "D CIRCLES SOCKET NOT READY",
+        api
+    );
 
+    return false;
 
-
-            console.log(
-                "D CIRCLES CONNECTED THROUGH MAIN SOCKET",
-                market
-            );
-
-
-
-            ws.send(JSON.stringify({
-
-                ticks:market,
-
-                subscribe:1
-
-            }));
+}
 
 
 
-
-
-            ws.onmessage = (event:any)=>{
-
-
-                const data =
-                JSON.parse(
-                    event.data
-                );
+console.log(
+    "D CIRCLES CONNECTED THROUGH MAIN SOCKET",
+    market
+);
 
 
 
-                if(data.error){
+ws.send(JSON.stringify({
 
-                    console.log(
-                        "D CIRCLES ERROR",
-                        data.error.message
-                    );
+    ticks: market,
+    subscribe: 1
 
-                    return;
-
-                }
+}));
 
 
 
 
-                if(!data.tick) return;
 
 
 
-
-                const quote =
-                Number(
-                    data.tick.quote
-                );
+ws.onmessage = (event:any)=>{
 
 
-
-
-                const digit =
-                Number(
-                    String(quote)
-                    .replace('.','')
-                    .slice(-1)
-                );
+    const data =
+    typeof event.data === "string"
+    ?
+    JSON.parse(event.data)
+    :
+    event.data;
 
 
 
+    if(data.error){
 
-                setTicks(prev=>[
+        console.log(
+            "D CIRCLES ERROR",
+            data.error.message
+        );
 
-                    ...prev.slice(-99),
+        return;
 
-                    {
-
-                        digit,
-
-                        quote,
-
-                        epoch:data.tick.epoch
-
-                    }
-
-                ]);
+    }
 
 
 
+    if(!data.tick){
 
-                console.log(
-                    "D CIRCLES TICK",
-                    {
-                        market,
-                        quote,
-                        digit
-                    }
-                );
+        return;
+
+    }
 
 
-            };
+
+    const quote =
+    Number(
+        data.tick.quote
+    );
+
+
+
+    const digit =
+    Number(
+        quote
+        .toFixed(2)
+        .replace(".","")
+        .slice(-1)
+    );
+
+
+
+    setTicks(prev=>[
+
+        ...prev.slice(-99),
+
+        {
+
+            digit,
+
+            quote,
+
+            epoch:data.tick.epoch
+
+        }
+
+    ]);
+
+
+
+    console.log(
+        "D CIRCLES TICK",
+        {
+            market,
+            quote,
+            digit
+        }
+    );
+
+
+};
 
 
 
             return true;
 
-
         };
-
-
-
 
 
         interval = setInterval(()=>{
 
-
             if(start()){
-
 
                 clearInterval(interval);
 
-
             }
-
 
         },1000);
 
 
 
-
-
         return ()=>{
-
 
             if(interval){
 
@@ -191,13 +194,10 @@ export const useAnalysisTicks = (market:string) => {
 
             }
 
-
         };
 
 
-
     },[market]);
-
 
 
 
