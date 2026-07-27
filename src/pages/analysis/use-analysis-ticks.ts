@@ -25,7 +25,7 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-        let ws: WebSocket | null = null;
+        let ws:WebSocket;
 
 
 
@@ -35,17 +35,21 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
+
         ws.onopen = ()=>{
 
 
             console.log(
-                "D CIRCLES REQUEST SYMBOLS"
+                "D CIRCLES CONNECTED",
+                market
             );
 
 
-            ws?.send(JSON.stringify({
 
-                active_symbols:"brief"
+            ws.send(JSON.stringify({
+
+                ticks: market,
+                subscribe:1
 
             }));
 
@@ -56,30 +60,28 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-        ws.onmessage = (message)=>{
+        ws.onmessage = (event)=>{
 
 
             const data = JSON.parse(
-                message.data
+                event.data
             );
 
 
 
-console.log(
-    "D CIRCLES FULL RESPONSE",
-    JSON.stringify(data, null, 2)
-);
+            console.log(
+                "D CIRCLES RAW",
+                data
+            );
 
 
 
-
-            // Handle Deriv errors
 
             if(data.error){
 
 
                 console.log(
-                    "D CIRCLES DERIV ERROR",
+                    "D CIRCLES ERROR",
                     data.error.message
                 );
 
@@ -91,97 +93,8 @@ console.log(
 
 
 
-
-
-
-            // Receive available symbols first
-
-            if(data.active_symbols){
-
-
-
-          const valid =
-          data.active_symbols.find(
-            (s:any)=>
-                s.symbol === market ||
-                s.display_name === market ||
-                s.symbol.includes(market)
-);
-          console.log(
-             "AVAILABLE MARKETS",
-              data.active_symbols.map(
-               (s:any)=>s.symbol
-               )
-);
-
-
-
-                console.log(
-                    "D CIRCLES SYMBOL CHECK",
-                    market,
-                    valid
-                );
-
-
-
-
-                if(valid){
-
-
-                    console.log(
-                        "D CIRCLES SYMBOL FOUND",
-                        valid
-                    );
-
-
-
-                    ws?.send(JSON.stringify({
-
-
-                        ticks:market,
-
-                        subscribe:1
-
-
-                    }));
-
-
-                }
-                else{
-
-
-                    console.log(
-                        "D CIRCLES SYMBOL NOT FOUND",
-                        market
-                    );
-
-
-                }
-
-
-
-                return;
-
-            }
-
-
-
-
-
-
-
-
-            // Ignore messages without ticks
-
             if(!data.tick){
 
-
-                console.log(
-                    "D CIRCLES NO TICK",
-                    data
-                );
-
-
                 return;
 
             }
@@ -190,22 +103,18 @@ console.log(
 
 
 
-
-
-            // Process live tick
-
-            const quote =
-            Number(
+            const quote = Number(
                 data.tick.quote
             );
 
 
 
-            const digit =
-            Number(
 
-                quote
-                .toFixed(2)
+            const digit = Number(
+
+                String(
+                    quote
+                )
                 .replace('.','')
                 .slice(-1)
 
@@ -215,24 +124,9 @@ console.log(
 
 
 
-            console.log(
-                "D CIRCLES TICK",
-                {
-                    quote,
-                    digit
-                }
-            );
-
-
-
-
-
-
             setTicks(prev=>[
 
-
                 ...prev.slice(-99),
-
 
                 {
 
@@ -244,9 +138,18 @@ console.log(
 
                 }
 
-
             ]);
 
+
+
+            console.log(
+                "D CIRCLES TICK",
+                {
+                    market,
+                    quote,
+                    digit
+                }
+            );
 
 
         };
@@ -255,9 +158,7 @@ console.log(
 
 
 
-
-
-        ws.onerror = (error)=>{
+        ws.onerror=(error)=>{
 
 
             console.log(
@@ -267,7 +168,6 @@ console.log(
 
 
         };
-
 
 
 
@@ -290,6 +190,7 @@ console.log(
 
 
         };
+
 
 
 
