@@ -69,19 +69,25 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-    ws.send(JSON.stringify({
+    ws.send({
 
-        ticks: market,
+    ticks: market,
 
-        subscribe: 1
+    subscribe:1
 
-    }));
-
-
+});
 
 
-    api.api.onMessage()
-    .subscribe(({data}:any)=>{
+
+
+    const subscription =
+api.api.onMessage()
+.subscribe(({data}:any)=>{
+if(subscription){
+
+    subscription.unsubscribe();
+
+}
 
 
         if(data.error){
