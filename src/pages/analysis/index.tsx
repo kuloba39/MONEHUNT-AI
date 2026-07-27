@@ -5,6 +5,8 @@ const Analysis = () => {
 
     const [digits,setDigits] = useState<number[]>([]);
 
+    const [market,setMarket] = useState('R_10');
+
 
     useEffect(()=>{
 
@@ -84,6 +86,9 @@ const Analysis = () => {
             <p>
                 Live digit probability intelligence
             </p>
+             <h3>
+               📈 Active Market: {market}
+              </h3>
 
 
 
@@ -126,6 +131,149 @@ const Analysis = () => {
 
                 ))
             }
+           <div className="market-box">
+
+<label>
+    Market
+</label>
+
+
+<select
+value={market}
+onChange={(e)=>setMarket(e.target.value)}
+>
+
+
+{/* VOLATILITY INDICES */}
+
+<option value="R_10">
+Volatility 10 Index
+</option>
+
+<option value="R_25">
+Volatility 25 Index
+</option>
+
+<option value="R_50">
+Volatility 50 Index
+</option>
+
+<option value="R_75">
+Volatility 75 Index
+</option>
+
+<option value="R_100">
+Volatility 100 Index
+</option>
+
+
+{/* VOLATILITY 1 SECOND */}
+
+<option value="1HZ10V">
+Volatility 10 (1s) Index
+</option>
+
+<option value="1HZ25V">
+Volatility 25 (1s) Index
+</option>
+
+<option value="1HZ50V">
+Volatility 50 (1s) Index
+</option>
+
+<option value="1HZ75V">
+Volatility 75 (1s) Index
+</option>
+
+<option value="1HZ100V">
+Volatility 100 (1s) Index
+</option>
+
+
+{/* JUMP INDICES */}
+
+<option value="JD10">
+Jump 10 Index
+</option>
+
+<option value="JD25">
+Jump 25 Index
+</option>
+
+<option value="JD50">
+Jump 50 Index
+</option>
+
+<option value="JD75">
+Jump 75 Index
+</option>
+
+<option value="JD100">
+Jump 100 Index
+</option>
+
+
+{/* BOOM CRASH */}
+
+<option value="BOOM300">
+Boom 300 Index
+</option>
+
+<option value="BOOM500">
+Boom 500 Index
+</option>
+
+<option value="BOOM1000">
+Boom 1000 Index
+</option>
+
+
+<option value="CRASH300">
+Crash 300 Index
+</option>
+
+<option value="CRASH500">
+Crash 500 Index
+</option>
+
+<option value="CRASH1000">
+Crash 1000 Index
+</option>
+
+
+{/* STEP INDEX */}
+
+<option value="STEPINDEX">
+Step Index
+</option>
+
+
+{/* RANGE BREAK */}
+
+<option value="RANGE100">
+Range Break 100 Index
+</option>
+
+<option value="RANGE200">
+Range Break 200 Index
+</option>
+
+
+{/* DRIFT SWITCHING */}
+
+<option value="DS10">
+Drift Switching 10 Index
+</option>
+
+<option value="DS20">
+Drift Switching 20 Index
+</option>
+
+
+</select>
+
+
+</div>
 
 
             </div>

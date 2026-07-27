@@ -115,3 +115,36 @@
     }
 
 }
+.market-box {
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    margin-bottom:20px;
+
+
+    label {
+
+        font-weight:800;
+
+    }
+
+
+    select {
+
+        padding:10px 15px;
+
+        border-radius:8px;
+
+        background:#151923;
+
+        color:white;
+
+        border:1px solid #444;
+
+        font-weight:700;
+
+    }
+
+}
