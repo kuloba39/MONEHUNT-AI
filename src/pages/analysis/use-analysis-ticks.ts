@@ -14,7 +14,36 @@ export const useAnalysisTicks = (
 ) => {
 
 
-    const [ticks,setTicks] = useState<TickData[]>([]);
+    const STORAGE_KEY = `d_circles_ticks_${market}`;
+
+
+const [ticks,setTicks] = useState<TickData[]>(()=>{
+
+    try{
+
+        const saved =
+        localStorage.getItem(STORAGE_KEY);
+
+
+        if(saved){
+
+            return JSON.parse(saved);
+
+        }
+
+    }catch(e){
+
+        console.log(
+            "D CIRCLES CACHE LOAD ERROR",
+            e
+        );
+
+    }
+
+
+    return [];
+
+});
     const tickLimit = Math.min(
     3000,
     Math.max(
@@ -133,19 +162,33 @@ let subscriptionId:string | null = null;
 
 
 
-setTicks(prev=>[
+setTicks(prev=>{
 
-    ...prev.slice(
-        -(tickLimit - 1)
-    ),
 
-    {
-        digit,
-        quote,
-        epoch:data.tick.epoch
-    }
+    const updated = [
 
-]);
+        ...prev.slice(-999),
+
+        {
+            digit,
+            quote,
+            epoch:data.tick.epoch
+        }
+
+    ];
+
+
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(updated)
+    );
+
+
+    return updated;
+
+
+});
 
 
 
