@@ -14,6 +14,7 @@ const Analysis = () => {
 
 
     const ticks = useAnalysisTicks(market, analysisTickCount);
+    const lastTick = ticks[ticks.length - 1];
 
 
     const digits = ticks.map(
@@ -100,6 +101,41 @@ return (
 <p>
 Live Deriv digit probability analyzer
 </p>
+<div className="last-tick-box">
+
+    <h3>
+        Last Tick
+    </h3>
+
+    {lastTick ? (
+
+        <>
+
+        <p>
+            Quote: {lastTick.quote}
+        </p>
+
+        <p>
+            Digit: {lastTick.digit}
+        </p>
+
+        <p>
+            Time: {new Date(
+                lastTick.epoch * 1000
+            ).toLocaleTimeString()}
+        </p>
+
+        </>
+
+    ) : (
+
+        <p>
+            Waiting for tick...
+        </p>
+
+    )}
+
+</div>
 
 
 
