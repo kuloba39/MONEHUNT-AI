@@ -210,36 +210,36 @@
 
 
 
-.circle{
-
-    width:86px;
-    height:86px;
-
-    border-radius:50%;
+.circles{
 
     display:flex;
-    flex-direction:column;
 
-    justify-content:center;
+    flex-direction:row;
+
+    flex-wrap:nowrap;
+
+    justify-content:flex-start;
+
     align-items:center;
 
+    gap:14px;
 
-    background:
-    linear-gradient(
-        145deg,
-        #1c2733,
-        #10161d
-    );
+    margin-top:25px;
+
+    width:100%;
+
+    overflow-x:auto;
+
+    padding:10px 5px;
+
+    scrollbar-width:none;
+
+}
 
 
-    border:1px solid rgba(255,255,255,.10);
+.circles::-webkit-scrollbar{
 
-
-    box-shadow:
-    0 10px 25px rgba(0,0,0,.35);
-
-
-    transition:.25s;
+    display:none;
 
 }
 
