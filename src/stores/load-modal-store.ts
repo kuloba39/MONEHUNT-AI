@@ -1,5 +1,4 @@
 import { FREE_BOTS } from '@/constants/free-bots';
-import { FREE_BOTS } from '@/constants/free-bots';
 // @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
 import React from 'react';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
@@ -183,7 +182,7 @@ get tab_name() {
         /* [/AI] */
 
         const { loadFile } = this.root_store.google_drive;
-        const load_file = await loadFile();
+        const load_file = (await loadFile()) as any;
         if (!load_file) return;
         const xml_doc = load_file?.xml_doc;
         const file_name = load_file?.file_name;
@@ -224,8 +223,8 @@ get tab_name() {
 
     onZoomInOutClick = (is_zoom_in: string): void => {
         if (this.preview_workspace) {
-            this.preview_workspace.zoomCenter(is_zoom_in ? 1 : -1);
-        }
+    (this.preview_workspace as any).zoomCenter(is_zoom_in ? 1 : -1);
+}
     };
 
     setActiveTabIndex = (index: number): void => {
@@ -254,7 +253,7 @@ get tab_name() {
 
     toggleLoadModal = (): void => {
         this.is_load_modal_open = !this.is_load_modal_open;
-        this.recent_workspace?.dispose();
+        (this.recent_workspace as any)?.dispose?.();
         this.recent_workspace = null;
         this.setLoadedLocalFile(null);
     };
@@ -287,13 +286,19 @@ get tab_name() {
     };
 
     resetBotBuilderStrategy = () => {
-        const workspace = window.Blockly.derivWorkspace;
-        if (workspace) {
-            window.Blockly.derivWorkspace.asyncClear();
-            window.Blockly.Xml.domToWorkspace(window.Blockly.utils.xml.textToDom(workspace.cached_xml.main), workspace);
-            window.Blockly.derivWorkspace.strategy_to_load = workspace.cached_xml.main;
-        }
-    };
+    const workspace = window.Blockly.derivWorkspace;
+
+    if (workspace) {
+        (workspace as any).asyncClear();
+
+        window.Blockly.Xml.domToWorkspace(
+            window.Blockly.utils.xml.textToDom(workspace.cached_xml.main),
+            workspace
+        );
+
+        window.Blockly.derivWorkspace.strategy_to_load = workspace.cached_xml.main;
+    }
+};
 
     loadStrategyToBuilder = async (strategy: TStrategy, is_show_notification: boolean = true) => {
         if (strategy?.id) {
@@ -330,14 +335,21 @@ get tab_name() {
     loadFileFromRecent = async () => {
         this.is_open_button_loading = true;
         if (!this.selected_strategy) {
-            window.Blockly.derivWorkspace.asyncClear();
-            window.Blockly.Xml.domToWorkspace(
-                window.Blockly.utils.xml.textToDom(window.Blockly.derivWorkspace.strategy_to_load),
-                window.Blockly.derivWorkspace
-            );
-            this.is_open_button_loading = false;
-            return;
-        }
+
+    const workspace = window.Blockly.derivWorkspace as any;
+
+    if (workspace?.asyncClear) {
+        workspace.asyncClear();
+    }
+
+    window.Blockly.Xml.domToWorkspace(
+        window.Blockly.utils.xml.textToDom(workspace.strategy_to_load),
+        workspace
+    );
+
+    this.is_open_button_loading = false;
+    return;
+}
 
         removeExistingWorkspace(this.selected_strategy.id);
         await load({
@@ -375,25 +387,28 @@ get tab_name() {
             setTimeout(() => {
                 // Dispose of recent workspace when switching away from Recent tab.
                 // Process in next cycle so user doesn't have to wait.
-                this.recent_workspace?.dispose();
+                (this.recent_workspace as any)?.dispose?.();
                 this.recent_workspace = null;
             });
         }
 
         if (this.tab_name === tabs_title.TAB_LOCAL) {
             if (!this.drop_zone) {
-                this.drop_zone = document.querySelector('load-strategy__local-dropzone-area');
+    this.drop_zone = document.querySelector('load-strategy__local-dropzone-area');
 
-                if (this.drop_zone) {
-                    this.drop_zone.addEventListener('drop', event => this.handleFileChange(event, false));
-                }
-            }
+    if (this.drop_zone) {
+        (this.drop_zone as HTMLElement).addEventListener(
+            'drop',
+            event => this.handleFileChange(event, false)
+        );
+    }
+}
         }
 
         // Dispose of local workspace when switching away from Local tab.
         else if (this.local_workspace) {
             setTimeout(() => {
-                this.local_workspace?.dispose();
+                (this.local_workspace as any)?.dispose?.();
                 this.local_workspace = null;
                 this.setLoadedLocalFile(null);
             }, 0);
@@ -401,40 +416,52 @@ get tab_name() {
 
         // Forget about drop zone when not on Local tab.
         if (this.tab_name !== tabs_title.TAB_LOCAL && this.drop_zone) {
-            this.drop_zone.removeEventListener('drop', event => this.handleFileChange(event, false));
+            (this.drop_zone as HTMLElement).removeEventListener('drop', event => this.handleFileChange(event, false));
         }
         this.setOpenButtonDisabled(false);
     };
 
-    handleFileChange = (
-        event: React.MouseEvent | React.FormEvent<HTMLFormElement> | DragEvent,
-        is_body = true
-    ): boolean => {
-        this.imported_strategy_type = 'pending';
-        this.upload_id = uuidv4();
-        let files;
-        if (event.type === 'drop') {
-            event.stopPropagation();
-            event.preventDefault();
-            ({ files } = event.dataTransfer as DragEvent);
+handleFileChange = (
+    event: React.MouseEvent | React.FormEvent<HTMLFormElement> | DragEvent,
+    is_body = true
+): boolean => {
+    this.imported_strategy_type = 'pending';
+    this.upload_id = uuidv4();
+
+    let files: FileList | null = null;
+
+    if (event.type === 'drop') {
+        event.stopPropagation();
+        event.preventDefault();
+
+        files = (event as DragEvent).dataTransfer?.files ?? null;
+    } else {
+        files = (event.target as HTMLInputElement)?.files ?? null;
+    }
+
+    if (!files || files.length === 0) {
+        return false;
+    }
+
+    const [file] = Array.from(files);
+
+    if (!is_body) {
+        if (file.name.includes('xml')) {
+            this.setLoadedLocalFile(file);
+            this.getDashboardStrategies();
         } else {
-            ({ files } = event.target);
+            return false;
         }
+    }
 
-        const [file] = files;
+    this.readFile(!is_body, event as DragEvent, file);
 
-        if (!is_body) {
-            if (file.name.includes('xml')) {
-                this.setLoadedLocalFile(file);
-                this.getDashboardStrategies();
-            } else {
-                return false;
-            }
-        }
-        this.readFile(!is_body, event as DragEvent, file);
+    if (event.target && 'value' in event.target) {
         (event.target as HTMLInputElement).value = '';
-        return true;
-    };
+    }
+
+    return true;
+};
 
     readFile = (is_preview: boolean, drop_event: DragEvent, file: File): void => {
         const reader = new FileReader();
@@ -451,9 +478,9 @@ get tab_name() {
                 showIncompatibleStrategyDialog: false,
             };
             if (this.local_workspace) {
-                this.local_workspace.dispose();
-                this.local_workspace = null;
-            }
+    (this.local_workspace as any)?.dispose?.();
+    this.local_workspace = null;
+}
             this.loadStrategyOnModalLocalPreview(load_options);
             this.setOpenButtonDisabled(false);
         });
@@ -464,7 +491,7 @@ get tab_name() {
     saveStrategyToLocalStorage = async () => {
         const { save_modal } = this.root_store;
         const { updateBotName } = save_modal;
-        const { convertedDom, from, file_name } = window.Blockly.xmlValues;
+        const { convertedDom, from, file_name } = (window.Blockly as any).xmlValues;
         updateBotName(file_name);
         await saveWorkspaceToRecent(convertedDom, from);
         const recent_files = await getSavedWorkspaces();
@@ -476,12 +503,12 @@ get tab_name() {
             strategy_id = window.Blockly.utils.idGenerator.genUid(),
             convertedDom,
             block_string,
-        } = window.Blockly.xmlValues;
+        } = (window.Blockly as any).xmlValues
         const derivWorkspace = window.Blockly.derivWorkspace;
 
         window.Blockly.Xml.clearWorkspaceAndLoadFromXml(convertedDom, derivWorkspace);
-        derivWorkspace.cleanUp();
-        derivWorkspace.clearUndo();
+        (derivWorkspace as any).cleanUp();
+        (derivWorkspace as any).clearUndo();
         derivWorkspace.current_strategy_id = strategy_id;
 
         /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
@@ -516,20 +543,36 @@ get tab_name() {
         await waitForDomElement('#load-strategy__blockly-container');
         const ref_preview = document.getElementById('load-strategy__blockly-container');
 
-        if (ref_preview) {
-            if (!this.recent_workspace) this.recent_workspace = window.Blockly.inject(ref_preview, inject_options);
-            (this.recent_workspace as any).RTL = isDbotRTL();
+if (ref_preview) {
 
-            const convertedDom = window.Blockly?.utils?.xml?.textToDom(this.selected_strategy?.xml);
-            const mainWorkspace = window.Blockly?.getMainWorkspace();
+    if (!this.recent_workspace) {
+        this.local_workspace = await (window.Blockly as any).inject(
+    ref_preview,
+    inject_options
+) as any;
+    }
 
-            window.Blockly?.Xml?.clearWorkspaceAndLoadFromXml(convertedDom, mainWorkspace);
-        }
-        setLoading(false);
-        this.setOpenButtonDisabled(false);
-    };
+    (this.recent_workspace as any).RTL = isDbotRTL();
 
-    loadStrategyOnModalLocalPreview = async load_options => {
+    const convertedDom = window.Blockly?.utils?.xml?.textToDom(
+        this.selected_strategy?.xml
+    );
+
+    const mainWorkspace = (window.Blockly as any)?.getMainWorkspace();
+
+    window.Blockly?.Xml?.clearWorkspaceAndLoadFromXml(
+        convertedDom,
+        mainWorkspace
+    );
+}
+
+
+setLoading(false);
+this.setOpenButtonDisabled(false);
+
+};
+
+loadStrategyOnModalLocalPreview = async load_options => {
     this.setOpenButtonDisabled(true);
 
     const inject_options = {
@@ -539,10 +582,15 @@ get tab_name() {
 
     await waitForDomElement('#load-strategy__blockly-container');
 
-    const ref_preview = document.getElementById('load-strategy__blockly-container');
+    const ref_preview = document.getElementById(
+        '#load-strategy__blockly-container'
+    );
 
     if (!this.local_workspace) {
-        this.local_workspace = await window.Blockly.inject(ref_preview, inject_options);
+        this.local_workspace = await (window.Blockly as any).inject(
+            ref_preview,
+            inject_options
+        ) as any;
     }
 
     load_options.workspace = this.local_workspace;
