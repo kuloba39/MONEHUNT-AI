@@ -65,11 +65,10 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-            console.log(
-                "D CIRCLES DATA",
-                data
-            );
-
+console.log(
+    "D CIRCLES FULL RESPONSE",
+    JSON.stringify(data, null, 2)
+);
 
 
 
@@ -101,11 +100,19 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-                const valid =
-                data.active_symbols.find(
-                    (s:any)=>
-                    s.symbol === market
-                );
+          const valid =
+          data.active_symbols.find(
+            (s:any)=>
+                s.symbol === market ||
+                s.display_name === market ||
+                s.symbol.includes(market)
+);
+          console.log(
+             "AVAILABLE MARKETS",
+              data.active_symbols.map(
+               (s:any)=>s.symbol
+               )
+);
 
 
 
