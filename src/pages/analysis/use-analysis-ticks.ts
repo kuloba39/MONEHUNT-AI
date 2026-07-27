@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import ApiHelpers from '@/external/bot-skeleton/services/api/api-helpers';
 import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 
 type TickData = {
@@ -32,7 +31,7 @@ export const useAnalysisTicks = (market:string) => {
        const start = ()=>{
 
 
-    const api = api_base;
+    api = api_base;
 
 
     if(!api){
