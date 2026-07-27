@@ -8,12 +8,10 @@ type TickData = {
 };
 
 
-
 export const useAnalysisTicks = (market:string) => {
 
 
     const [ticks,setTicks] = useState<TickData[]>([]);
-
 
 
     useEffect(()=>{
@@ -23,166 +21,154 @@ export const useAnalysisTicks = (market:string) => {
 
 
         let interval:any;
-        const subscriptionMap = new Map<string,string>();
         let api:any = null;
+        let subscription:any = null;
+        let subscriptionId:string | null = null;
 
 
 
-       const start = ()=>{
+        const start = ()=>{
 
 
-    api = api_base;
+            api = api_base;
 
 
-    if(!api){
+            if(!api){
 
-        console.log(
-            "D CIRCLES API BASE NOT READY"
-        );
+                console.log(
+                    "D CIRCLES API BASE NOT READY"
+                );
 
-        return false;
+                return false;
 
-    }
-
-
-
-    const ws = api.api;
+            }
 
 
 
-    if(!ws){
+            if(!api.api){
 
-        console.log(
-            "D CIRCLES MAIN SOCKET NOT READY",
-            api
-        );
+                console.log(
+                    "D CIRCLES MAIN SOCKET NOT READY",
+                    api
+                );
 
-        return false;
+                return false;
 
-    }
-
-
-
-    console.log(
-        "D CIRCLES CONNECTED MAIN API SOCKET",
-        market
-    );
+            }
 
 
-
-ws.send({
-
-    ticks: market,
-    subscribe:1
-
-});
-
-
-
-
-    const subscription =
-api.api.onMessage()
-.subscribe(({data}:any)=>{
-if(subscription){
-
-    subscription.unsubscribe();
-
-}
-
-
-        if(data.error){
 
             console.log(
-                "D CIRCLES ERROR",
-                data.error.message
+                "D CIRCLES CONNECTED MAIN API SOCKET",
+                market
             );
 
-            return;
-
-        }
 
 
-
-        if(!data.tick){
-
-            return;
-
-        }
+            subscription =
+            api.api.onMessage()
+            .subscribe(({data}:any)=>{
 
 
+                if(data.error){
 
-        const quote =
-        Number(
-            data.tick.quote
-        );
+                    console.log(
+                        "D CIRCLES ERROR",
+                        data.error.message
+                    );
 
+                    return;
 
-
-        const digit =
-        Number(
-            quote
-            .toFixed(2)
-            .replace(".","")
-            .slice(-1)
-        );
+                }
 
 
 
-        setTicks(prev=>[
+                if(data.subscription){
 
-            ...prev.slice(-99),
+                    subscriptionId =
+                    data.subscription.id;
 
-            {
 
-                digit,
+                    console.log(
+                        "D CIRCLES SUB ID",
+                        market,
+                        subscriptionId
+                    );
 
-                quote,
-
-                epoch:data.tick.epoch
-
-            }
-
-        ]);
+                }
 
 
 
-        console.log(
-            "D CIRCLES CLEAN TICK",
-            {
-                market,
-                quote,
-                digit
-            }
-        );
-       if(data.subscription){
+                if(!data.tick){
 
-subscriptionMap.set(
-    market,
-    data.subscription.id
-);
+                    return;
 
-
-console.log(
-    "D CIRCLES SUB ID",
-    market,
-    data.subscription.id
-);
-
-}
-
-
-    });
+                }
 
 
 
-    return true;
+                const quote =
+                Number(
+                    data.tick.quote
+                );
 
 
-};
+                const digit =
+                Number(
+                    quote
+                    .toFixed(2)
+                    .replace(".","")
+                    .slice(-1)
+                );
 
 
 
-        interval=setInterval(()=>{
+                setTicks(prev=>[
+
+                    ...prev.slice(-99),
+
+                    {
+                        digit,
+                        quote,
+                        epoch:data.tick.epoch
+                    }
+
+                ]);
+
+
+
+                console.log(
+                    "D CIRCLES CLEAN TICK",
+                    {
+                        market,
+                        quote,
+                        digit
+                    }
+                );
+
+
+            });
+
+
+
+            api.api.send({
+
+                ticks: market,
+                subscribe:1
+
+            });
+
+
+
+            return true;
+
+
+        };
+
+
+
+        interval =
+        setInterval(()=>{
 
 
             if(start()){
@@ -197,42 +183,51 @@ console.log(
 
 
 
-       return ()=>{
+
+        return ()=>{
 
 
-    if(
-        subscriptionId &&
-        api &&
-        api.api
-    ){
+            if(subscription){
 
-        api.api.send({
+                subscription.unsubscribe();
 
-            forget: subscriptionId
-
-        });
+            }
 
 
-        console.log(
-            "D CIRCLES FORGOT SUBSCRIPTION",
-            subscriptionId
-        );
 
-    }
+            if(
+                subscriptionId &&
+                api?.api
+            ){
 
+                api.api.send({
 
-    if(interval){
+                    forget: subscriptionId
 
-        clearInterval(interval);
-
-    }
+                });
 
 
-};
+                console.log(
+                    "D CIRCLES FORGOT SUBSCRIPTION",
+                    subscriptionId
+                );
+
+            }
+
+
+
+            if(interval){
+
+                clearInterval(interval);
+
+            }
+
+
+        };
+
 
 
     },[market]);
-
 
 
 
