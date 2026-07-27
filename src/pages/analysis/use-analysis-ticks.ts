@@ -30,10 +30,10 @@ export const useAnalysisTicks = (
         if(!market) return;
 
 
-        let interval:any;
-        let api:any = null;
-        let subscription:any = null;
-        let subscriptionId:string | null = null;
+let interval:any;
+let api:any = null;
+let subscription:any = null;
+let subscriptionId:string | null = null;
 
 
 

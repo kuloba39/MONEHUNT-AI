@@ -4,11 +4,11 @@ import {useAnalysisTicks} from './use-analysis-ticks';
 
 
 const Analysis = () => {
-    const [selectedTickCount,setSelectedTickCount] =
-    useState(500);
+    
 
 
-    const [analysisTickCount,setAnalysisTickCount] = useState(500);
+    const [analysisTickCount,setAnalysisTickCount] =
+     useState(500);
     
     const [market,setMarket] = useState('R_100');
 
