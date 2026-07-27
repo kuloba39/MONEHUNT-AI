@@ -20,10 +20,11 @@ export const useAnalysisTicks = (market:string) => {
 
     useEffect(()=>{
 
-    if(!market) return;
+
+        if(!market) return;
 
 
-        let ws:WebSocket;
+        let ws:WebSocket | null = null;
 
 
 
@@ -33,27 +34,24 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-ws.onopen = ()=>{
-
-    console.log(
-        "D CIRCLES ACTIVE MARKET:",
-        market
-    );
+        ws.onopen = ()=>{
 
 
-    ws.send(JSON.stringify({
-        forget_all:"ticks"
-    }));
+            console.log(
+                "D CIRCLES ACTIVE MARKET:",
+                market
+            );
 
 
-    ws.send(JSON.stringify({
+            ws?.send(JSON.stringify({
 
-        ticks: market,
-        subscribe: 1
+                ticks: market,
+                subscribe: 1
 
-    }));
+            }));
 
-};
+
+        };
 
 
 
@@ -62,114 +60,129 @@ ws.onopen = ()=>{
         ws.onmessage = (message)=>{
 
 
-            const data =
-            JSON.parse(
+            const data = JSON.parse(
                 message.data
             );
 
 
 
-            console.log(
-                "D CIRCLES DATA",
-                data
-            );
-
-
-
+            // Handle Deriv errors
             if(data.error){
 
-            console.log(
-            "D CIRCLES DERIV ERROR",
-                data.error.message
+                console.log(
+                    "D CIRCLES ERROR:",
+                    data.error.message
                 );
 
-    return;
+                return;
 
-};
-
-
-                const quote =
-                Number(
-                    data.tick.quote
-                );
+            }
 
 
 
-                const digit =
-                Number(
-                    quote
-                    .toFixed(2)
-                    .replace('.','')
-                    .slice(-1)
-                );
+
+            // Ignore non tick messages
+            if(!data.tick){
+
+                return;
+
+            }
 
 
 
-            if(data.tick){
 
-
-                const quote =
-                Number(
-                    data.tick.quote
-                );
-
-
-                const digit =
-                Number(
-                    quote
-                    .toFixed(2)
-                    .replace('.','')
-                    .slice(-1)
-                );
-
-
-                setTicks(prev=>[
-
-                    ...prev.slice(-99),
-
-                    {
-                        digit,
-
-                        quote,
-
-                        epoch:data.tick.epoch
-                    }
-
-                ]);
-
-            }   // closes if(data.tick)
-
-
-        };      // closes ws.onmessage
-
-
-
-        ws.onerror=(error)=>{
-
-            console.log(
-                "D CIRCLES ERROR",
-                error
+            const quote = Number(
+                data.tick.quote
             );
+
+
+
+            if(!quote){
+
+                return;
+
+            }
+
+
+
+
+            const digit = Number(
+
+                quote
+                .toFixed(2)
+                .replace('.','')
+                .slice(-1)
+
+            );
+
+
+
+
+
+            setTicks(prev=>[
+
+                ...prev.slice(-99),
+
+
+                {
+
+                    digit,
+
+                    quote,
+
+                    epoch:data.tick.epoch
+
+                }
+
+
+            ]);
+
+
 
         };
 
 
 
+
+
+
+        ws.onerror = ()=>{
+
+
+            console.log(
+                "D CIRCLES SOCKET ERROR"
+            );
+
+
+        };
+
+
+
+
+
+
         return ()=>{
 
+
             if(ws){
+
 
                 ws.close(
                     1000,
                     "Market changed"
                 );
 
+
             }
+
 
         };
 
 
+
     },[market]);
+
+
 
 
 
