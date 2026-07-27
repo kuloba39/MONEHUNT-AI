@@ -41,6 +41,7 @@ import { useDevice } from '@deriv-com/ui';
 import RunPanel from '../../components/run-panel';
 import ChartModal from '../chart/chart-modal';
 import Dashboard from '../dashboard';
+import FreeBots from '../free-bots';
 import RunStrategy from '../dashboard/run-strategy';
 import './main.scss';
 
@@ -76,9 +77,15 @@ const AppWrapper = observer(() => {
         [key: string]: string;
     };
     const { clear } = summary_card;
-    const { DASHBOARD, BOT_BUILDER } = DBOT_TABS;
+    const { DASHBOARD, BOT_BUILDER, FREE_BOTS } = DBOT_TABS;
     const init_render = React.useRef(true);
-    const hash = ['dashboard', 'bot_builder', 'chart', 'tutorial'];
+    const hash = [
+    'dashboard',
+    'bot_builder',
+    'chart',
+    'tutorial',
+    'free_bots'
+];
     const { isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
@@ -428,31 +435,49 @@ const AppWrapper = observer(() => {
                                     <ChartWrapper show_digits_stats={false} />
                                 </Suspense>
                             </div>
-                            <div
-                                label={
-                                    <>
-                                        <LegacyGuide1pxIcon
-                                            height='16px'
-                                            width='16px'
-                                            fill='var(--text-general)'
-                                            className='icon-general-fill-g-path'
-                                        />
-                                        <Localize i18n_default_text='Tutorials' />
-                                    </>
-                                }
-                                id='id-tutorials'
-                            >
-                                <div className='tutorials-wrapper'>
-                                    <Suspense
-                                        fallback={
-                                            <ChunkLoader message={localize('Please wait, loading tutorials...')} />
-                                        }
-                                    >
-                                        <Tutorial handleTabChange={handleTabChange} />
-                                    </Suspense>
-                                </div>
-                            </div>
-                        </Tabs>
+<div
+    label={
+        <>
+            <LegacyGuide1pxIcon
+                height='16px'
+                width='16px'
+                fill='var(--text-general)'
+                className='icon-general-fill-g-path'
+            />
+            <Localize i18n_default_text='Tutorials' />
+        </>
+    }
+    id='id-tutorials'
+>
+    <div className='tutorials-wrapper'>
+        <Suspense
+            fallback={
+                <ChunkLoader message={localize('Please wait, loading tutorials...')} />
+            }
+        >
+            <Tutorial handleTabChange={handleTabChange} />
+        </Suspense>
+    </div>
+</div>
+
+
+{/* FREE BOTS */}
+<div
+    label={
+        <>
+            <LabelPairedPuzzlePieceTwoCaptionBoldIcon
+                height='16px'
+                width='16px'
+            />
+            <Localize i18n_default_text='Free Bots' />
+        </>
+    }
+    id='id-free-bots'
+>
+    <FreeBots />
+</div>
+
+</Tabs>
                         {!isDesktop && right_tab_shadow && <span className='tabs-shadow tabs-shadow--right' />}{' '}
                     </div>
                 </div>
