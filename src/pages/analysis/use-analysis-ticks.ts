@@ -189,11 +189,14 @@ if(subscription){
 
 
 
-        return ()=>{
+       return ()=>{
 
 
-    if(subscriptionId){
-
+    if(
+        subscriptionId &&
+        api &&
+        api.api
+    ){
 
         api.api.send({
 
@@ -206,7 +209,6 @@ if(subscription){
             "D CIRCLES FORGOT SUBSCRIPTION",
             subscriptionId
         );
-
 
     }
 
