@@ -1,3 +1,5 @@
+import freeEvenxml from './free-even.xml';
+
 export const FREE_BOTS = [
     {
         id: 'free-over-3',
@@ -13,7 +15,7 @@ export const FREE_BOTS = [
         id: 'free-even',
         name: '🔵 Even Digit Bot',
         description: 'Digit Even strategy',
-        xml: '',
+        xml: freeEvenxml,
         timestamp: Date.now(),
         save_type: 'local',
         free: true,
