@@ -24,7 +24,8 @@ export const useAnalysisTicks = (market:string) => {
         if(!market) return;
 
 
-        let ws:WebSocket | null = null;
+
+        let ws: WebSocket | null = null;
 
 
 
@@ -38,15 +39,13 @@ export const useAnalysisTicks = (market:string) => {
 
 
             console.log(
-                "D CIRCLES ACTIVE MARKET:",
-                market
+                "D CIRCLES REQUEST SYMBOLS"
             );
 
 
             ws?.send(JSON.stringify({
 
-                ticks: market,
-                subscribe: 1
+                active_symbols:"brief"
 
             }));
 
@@ -66,14 +65,26 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
+            console.log(
+                "D CIRCLES DATA",
+                data
+            );
+
+
+
+
+
             // Handle Deriv errors
+
             if(data.error){
 
+
                 console.log(
-                    "D CIRCLES ERROR:",
+                    "D CIRCLES DERIV ERROR",
                     data.error.message
                 );
 
+
                 return;
 
             }
@@ -81,9 +92,89 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-            // Ignore non tick messages
+
+
+
+            // Receive available symbols first
+
+            if(data.active_symbols){
+
+
+
+                const valid =
+                data.active_symbols.find(
+                    (s:any)=>
+                    s.symbol === market
+                );
+
+
+
+                console.log(
+                    "D CIRCLES SYMBOL CHECK",
+                    market,
+                    valid
+                );
+
+
+
+
+                if(valid){
+
+
+                    console.log(
+                        "D CIRCLES SYMBOL FOUND",
+                        valid
+                    );
+
+
+
+                    ws?.send(JSON.stringify({
+
+
+                        ticks:market,
+
+                        subscribe:1
+
+
+                    }));
+
+
+                }
+                else{
+
+
+                    console.log(
+                        "D CIRCLES SYMBOL NOT FOUND",
+                        market
+                    );
+
+
+                }
+
+
+
+                return;
+
+            }
+
+
+
+
+
+
+
+
+            // Ignore messages without ticks
+
             if(!data.tick){
 
+
+                console.log(
+                    "D CIRCLES NO TICK",
+                    data
+                );
+
+
                 return;
 
             }
@@ -91,22 +182,20 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-            const quote = Number(
+
+
+
+            // Process live tick
+
+            const quote =
+            Number(
                 data.tick.quote
             );
 
 
 
-            if(!quote){
-
-                return;
-
-            }
-
-
-
-
-            const digit = Number(
+            const digit =
+            Number(
 
                 quote
                 .toFixed(2)
@@ -119,7 +208,21 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
+            console.log(
+                "D CIRCLES TICK",
+                {
+                    quote,
+                    digit
+                }
+            );
+
+
+
+
+
+
             setTicks(prev=>[
+
 
                 ...prev.slice(-99),
 
@@ -146,15 +249,18 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-        ws.onerror = ()=>{
+
+        ws.onerror = (error)=>{
 
 
             console.log(
-                "D CIRCLES SOCKET ERROR"
+                "D CIRCLES SOCKET ERROR",
+                error
             );
 
 
         };
+
 
 
 
