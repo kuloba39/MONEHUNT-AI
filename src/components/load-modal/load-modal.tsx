@@ -95,12 +95,12 @@ const LoadModal: React.FC = observer(() => {
         <Recent />
     </div>
 
-    <div label={localize('Free Bots')}>
-        <FreeBots />
-    </div>
-
     <div label={localize('Local')}>
         <Local />
+    </div>
+
+    <div label={localize('Free Bots')}>
+        <FreeBots />
     </div>
 
     {is_google_drive_configured && (
