@@ -24,6 +24,8 @@ export const useAnalysisTicks = (market:string) => {
 
 
         let interval:any;
+        let subscriptionId:string | null = null;
+        let api:any = null;
 
 
 
@@ -69,10 +71,9 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-    ws.send({
+ws.send({
 
     ticks: market,
-
     subscribe:1
 
 });
@@ -154,6 +155,12 @@ if(subscription){
                 digit
             }
         );
+       if(data.subscription){
+
+    subscriptionId =
+    data.subscription.id;
+
+}
 
 
     });
@@ -185,15 +192,33 @@ if(subscription){
         return ()=>{
 
 
-            if(interval){
-
-                clearInterval(interval);
-
-            }
+    if(subscriptionId){
 
 
-        };
+        api.api.send({
 
+            forget: subscriptionId
+
+        });
+
+
+        console.log(
+            "D CIRCLES FORGOT SUBSCRIPTION",
+            subscriptionId
+        );
+
+
+    }
+
+
+    if(interval){
+
+        clearInterval(interval);
+
+    }
+
+
+};
 
 
     },[market]);
