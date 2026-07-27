@@ -8,10 +8,20 @@ type TickData = {
 };
 
 
-export const useAnalysisTicks = (market:string) => {
+export const useAnalysisTicks = (
+    market:string,
+    analysisTicks:number = 100
+) => {
 
 
     const [ticks,setTicks] = useState<TickData[]>([]);
+    const tickLimit = Math.min(
+    3000,
+    Math.max(
+        100,
+        analysisTicks
+    )
+);
 
 
     useEffect(()=>{
@@ -123,17 +133,19 @@ export const useAnalysisTicks = (market:string) => {
 
 
 
-                setTicks(prev=>[
+setTicks(prev=>[
 
-                    ...prev.slice(-99),
+    ...prev.slice(
+        -(tickLimit - 1)
+    ),
 
-                    {
-                        digit,
-                        quote,
-                        epoch:data.tick.epoch
-                    }
+    {
+        digit,
+        quote,
+        epoch:data.tick.epoch
+    }
 
-                ]);
+]);
 
 
 

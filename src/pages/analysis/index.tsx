@@ -1,16 +1,19 @@
-import React, {useState} from 'react';
+import {useEffect, useState} from 'react';
 import './analysis.scss';
 import {useAnalysisTicks} from './use-analysis-ticks';
 
 
 const Analysis = () => {
+    const [selectedTickCount,setSelectedTickCount] =
+    useState(500);
 
 
+    const [analysisTickCount,setAnalysisTickCount] = useState(500);
+    
     const [market,setMarket] = useState('R_100');
 
 
-    const ticks = useAnalysisTicks(market);
-
+    const ticks = useAnalysisTicks(market, analysisTickCount);
 
 
     const digits = ticks.map(
@@ -57,6 +60,36 @@ const Analysis = () => {
 return (
 
 <div className="analysis-page">
+    <select
+    value={analysisTickCount}
+    onChange={(e)=>
+        setAnalysisTickCount(
+            Number(e.target.value)
+        )
+    }
+>
+
+<option value={100}>
+100 ticks
+</option>
+
+<option value={500}>
+500 ticks
+</option>
+
+<option value={1000}>
+1000 ticks
+</option>
+
+<option value={2000}>
+2000 ticks
+</option>
+
+<option value={3000}>
+3000 ticks
+</option>
+
+</select>
 
 
 <h1>
