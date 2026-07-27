@@ -20,6 +20,8 @@ export const useAnalysisTicks = (market:string) => {
 
     useEffect(()=>{
 
+    if(!market) return;
+
 
         let ws:WebSocket;
 
@@ -33,7 +35,6 @@ export const useAnalysisTicks = (market:string) => {
 
 ws.onopen = ()=>{
 
-
     console.log(
         "D CIRCLES ACTIVE MARKET:",
         market
@@ -41,19 +42,16 @@ ws.onopen = ()=>{
 
 
     ws.send(JSON.stringify({
-
         forget_all:"ticks"
-
     }));
 
 
     ws.send(JSON.stringify({
 
-        ticks:market,
-        subscribe:1
+        ticks: market,
+        subscribe: 1
 
     }));
-
 
 };
 
@@ -78,12 +76,16 @@ ws.onopen = ()=>{
 
 
 
-            if(data.tick){
-console.log(
-"D CIRCLES TICK",
-market,
-data.tick.quote
-);
+            if(data.error){
+
+            console.log(
+            "D CIRCLES DERIV ERROR",
+                data.error.message
+                );
+
+    return;
+
+};
 
 
                 const quote =
@@ -103,61 +105,68 @@ data.tick.quote
 
 
 
-                setTicks(prev=>[
+            if(data.tick){
 
+
+                const quote =
+                Number(
+                    data.tick.quote
+                );
+
+
+                const digit =
+                Number(
+                    quote
+                    .toFixed(2)
+                    .replace('.','')
+                    .slice(-1)
+                );
+
+
+                setTicks(prev=>[
 
                     ...prev.slice(-99),
 
-
                     {
-
                         digit,
 
                         quote,
 
-                        epoch:
-                        data.tick.epoch
-
+                        epoch:data.tick.epoch
                     }
-
 
                 ]);
 
-            }
+            }   // closes if(data.tick)
 
 
-
-        };
-
+        };      // closes ws.onmessage
 
 
 
         ws.onerror=(error)=>{
-
 
             console.log(
                 "D CIRCLES ERROR",
                 error
             );
 
-
         };
-
 
 
 
         return ()=>{
 
-
             if(ws){
 
-                ws.close();
+                ws.close(
+                    1000,
+                    "Market changed"
+                );
 
             }
 
-
         };
-
 
 
     },[market]);
@@ -165,7 +174,6 @@ data.tick.quote
 
 
     return ticks;
-
 
 
 };
