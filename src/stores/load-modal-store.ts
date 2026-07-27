@@ -140,16 +140,14 @@ export default class LoadModalStore {
         );
     }
 
-    get tab_name(): string {
-        if (this.core.ui.is_mobile) {
-            if (this.active_index === 0) return tabs_title.TAB_LOCAL;
-            if (this.active_index === 1) return tabs_title.TAB_GOOGLE;
-        }
-        if (this.active_index === 0) return tabs_title.TAB_RECENT;
-        if (this.active_index === 1) return tabs_title.TAB_LOCAL;
-        if (this.active_index === 2) return tabs_title.TAB_GOOGLE;
-        return '';
-    }
+get tab_name() {
+    if (this.active_index === 0) return tabs_title.TAB_RECENT;
+    if (this.active_index === 1) return tabs_title.TAB_LOCAL;
+    if (this.active_index === 2) return 'free_bots';
+    if (this.active_index === 3) return tabs_title.TAB_GOOGLE;
+
+    return '';
+}
 
     setOpenButtonDisabled = (is_open_button_disabled: boolean) => {
         this.is_open_button_disabled = is_open_button_disabled;
@@ -507,7 +505,10 @@ export default class LoadModalStore {
         const { blockly_store } = this.root_store;
         const { setLoading } = blockly_store;
 
-        const inject_options = { ...inject_workspace_options, theme: window?.Blockly?.Themes?.zelos_renderer };
+        const inject_options = {
+    ...inject_workspace_options,
+    theme: (window.Blockly as any)?.Themes?.zelos_renderer,
+};
 
         this.setLoadedLocalFile(null);
         this.setSelectedStrategyId(workspace_id);
@@ -529,24 +530,32 @@ export default class LoadModalStore {
     };
 
     loadStrategyOnModalLocalPreview = async load_options => {
-        this.setOpenButtonDisabled(true);
-        const injectWorkspace = { ...inject_workspace_options, theme: window?.Blockly?.Themes?.zelos_renderer };
+    this.setOpenButtonDisabled(true);
 
-        await waitForDomElement('#load-strategy__blockly-container');
-        const ref_preview = document.getElementById('load-strategy__blockly-container');
-        if (!this.local_workspace) this.local_workspace = await window.Blockly.inject(ref_preview, injectWorkspace);
-
-        load_options.workspace = this.local_workspace;
-
-        if (load_options.workspace) {
-            (load_options.workspace as any).RTL = isDbotRTL();
-        }
-
-        /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
-        /* [/AI] */
-
-        const result = await load({ ...load_options, show_snackbar: false });
-        /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
-        /* [/AI] */
+    const inject_options = {
+        ...inject_workspace_options,
+        theme: (window.Blockly as any)?.Themes?.zelos_renderer,
     };
+
+    await waitForDomElement('#load-strategy__blockly-container');
+
+    const ref_preview = document.getElementById('load-strategy__blockly-container');
+
+    if (!this.local_workspace) {
+        this.local_workspace = await window.Blockly.inject(ref_preview, inject_options);
+    }
+
+    load_options.workspace = this.local_workspace;
+
+    if (load_options.workspace) {
+        (load_options.workspace as any).RTL = isDbotRTL();
+    }
+
+    const result = await load({
+        ...load_options,
+        show_snackbar: false,
+    });
+
+    this.setOpenButtonDisabled(false);
+}; 
 }
