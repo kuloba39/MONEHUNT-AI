@@ -164,7 +164,6 @@ let subscriptionId:string | null = null;
 
 setTicks(prev=>{
 
-
     const updated = [
 
         ...prev.slice(-999),
@@ -178,10 +177,15 @@ setTicks(prev=>{
     ];
 
 
-
     localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify(updated)
+    );
+
+
+    console.log(
+        "D CIRCLES SAVED CACHE",
+        updated.length
     );
 
 
