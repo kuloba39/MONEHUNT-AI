@@ -504,13 +504,19 @@ Number(
 
 
 
+            const activeMarket =
+             market === 'GLOBAL'
+             ? 'R_100'
+             : market;
+
+
             api.api.send({
 
-                ticks:market,
+             ticks: activeMarket,
 
-                subscribe:1
+                subscribe: 1
 
-            });
+});
 
 
 
@@ -628,7 +634,13 @@ Number(
 
 
 
+    if (market === 'GLOBAL') {
     return ticks;
+}
+
+return ticks.filter(
+    tick => tick.market === market
+);
 
 
 

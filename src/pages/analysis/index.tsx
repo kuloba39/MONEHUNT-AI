@@ -16,7 +16,7 @@ const Analysis = () => {
 
     const ticks =
     useAnalysisTicks(
-        "R_100",
+        market,
         analysisTickCount
     );
 
