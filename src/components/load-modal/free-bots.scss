@@ -28,9 +28,7 @@
 
 }
 
-
-
-.free-bots-grid {
+.free-bots-grid{
 
     display:grid;
 
@@ -243,15 +241,20 @@
 
 @media (max-width: 768px) {
 
-    .free-bots-grid {
+.free-bots-grid {
 
-        display: grid;
+    display: grid;
 
-        grid-template-columns: 1fr;
+    grid-template-columns: repeat(
+        auto-fill,
+        minmax(280px, 1fr)
+    );
 
-        gap: 12px;
+    gap: 16px;
 
-    }
+    width: 100%;
+
+}
 
     .free-bot-card {
 
@@ -288,6 +291,37 @@
         padding: 14px;
 
         border-radius: 12px;
+
+    }
+
+}
+/* MOBILE */
+
+@media (max-width: 768px) {
+
+    .free-bots {
+
+        width: 100%;
+        padding: 12px;
+        overflow-x: hidden;
+
+    }
+
+    .free-bots-grid {
+
+        display: flex;
+        flex-direction: column;
+
+        gap: 12px;
+
+        width: 100%;
+
+    }
+
+    .free-bots-grid > * {
+
+        width: 100%;
+        min-width: 100%;
 
     }
 
