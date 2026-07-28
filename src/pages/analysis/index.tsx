@@ -1,9 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './analysis.scss';
 import { useAnalysisTicks } from './use-analysis-ticks';
 
 
 const Analysis = () => {
+const [localTime, setLocalTime] = useState(
+    new Date()
+);
+
+
+useEffect(()=>{
+
+    const timer = setInterval(()=>{
+
+        setLocalTime(new Date());
+
+    },1000);
+
+
+    return ()=>clearInterval(timer);
+
+},[]);
 
 
     const [analysisTickCount, setAnalysisTickCount] =
@@ -96,78 +113,52 @@ const recentDigits =
 
 
 
-    const leastDigits =
-        rankedDigits
-            .slice(0,2)
-            .map(
-                x=>x.digit
-            );
+    const leastDigit =
+    rankedDigits[0]?.digit;
 
 
-
-    const secondLeastDigits =
-        rankedDigits
-            .slice(2,4)
-            .map(
-                x=>x.digit
-            );
+const secondLeastDigit =
+    rankedDigits[1]?.digit;
 
 
-
-    const mostDigits =
-        rankedDigits
-            .slice(-2)
-            .map(
-                x=>x.digit
-            );
+const secondMostDigit =
+    rankedDigits[8]?.digit;
 
 
-
-    const secondMostDigits =
-        rankedDigits
-            .slice(-4,-2)
-            .map(
-                x=>x.digit
-            );
+const mostDigit =
+    rankedDigits[9]?.digit;
 
 
 
 
     const getDigitClass =
-        (digit:number)=>{
+    (digit:number)=>{
 
 
-            if(
-                leastDigits.includes(digit)
-            )
-                return "red";
-
-
-
-            if(
-                secondLeastDigits.includes(digit)
-            )
-                return "yellow";
+        if(digit === leastDigit)
+            return "red";
 
 
 
-            if(
-                mostDigits.includes(digit)
-            )
-                return "green";
+        if(digit === secondLeastDigit)
+            return "yellow";
 
 
 
-            if(
-                secondMostDigits.includes(digit)
-            )
-                return "blue";
+        if(digit === secondMostDigit)
+            return "blue";
 
 
 
-            return "";
+        if(digit === mostDigit)
+            return "green";
 
-        };
+
+
+        return "neutral";
+
+
+    };
 
 
 
@@ -179,59 +170,43 @@ return (
 
 
 <h1>
-⚡ D CIRCLES
+D CIRCLES
 </h1>
 
 
-<p>
-Live Deriv digit probability analyzer
-</p>
+<div className="top-info">
 
 
+<div>
+LOCAL TIME
 
+<br/>
 
-
-<select
-
-value={analysisTickCount}
-
-onChange={
-(e)=>
-setAnalysisTickCount(
-Number(e.target.value)
-)
+{
+localTime.toLocaleTimeString()
 }
 
->
-
-<option value={100}>
-100 ticks
-</option>
+</div>
 
 
-<option value={500}>
-500 ticks
-</option>
+
+<div>
+LAST TICK
+
+<br/>
+
+{
+lastTick
+?
+`${lastTick.quote.toFixed(2)}        ${lastTick.digit}`
+:
+"Waiting..."
+}
+
+</div>
 
 
-<option value={1000}>
-1000 ticks
-</option>
-
-
-<option value={2000}>
-2000 ticks
-</option>
-
-
-<option value={3000}>
-3000 ticks
-</option>
-
-
-</select>
-
-
+</div>
 
 
 
@@ -239,11 +214,9 @@ Number(e.target.value)
 
 <div className="market-box">
 
-
 <label>
 Market
 </label>
-
 
 
 <select
@@ -252,13 +225,10 @@ value={market}
 
 onChange={
 (e)=>
-setMarket(
-e.target.value
-)
+setMarket(e.target.value)
 }
 
 >
-
 
 <option value="R_10">
 Volatility 10 Index
@@ -329,10 +299,8 @@ Crash 500
 Crash 1000
 </option>
 
-
 </select>
 
-
 </div>
 
 
@@ -341,71 +309,35 @@ Crash 1000
 
 
 
-<div className="last-tick-box">
+<div className="d-hub">
 
 
-<h3>
-Last Tick
-</h3>
+<div className="hub-circle">
+
+<div className="hub-letter">
+D
+</div>
 
 
+<strong>
 {
-lastTick ? (
-
-<>
-
-<p>
-Quote:
-{lastTick.quote}
-</p>
-
-
-<p>
-Digit:
-{lastTick.digit}
-</p>
-
-
-<p>
-Time:
-{
-new Date(
-lastTick.epoch * 1000
-)
-.toLocaleTimeString()
+analysisDigits.length
 }
-</p>
+</strong>
 
 
-</>
+<small>
+TOTAL TICKS
+</small>
 
-)
 
-:
-
-(
-
-<p>
-Waiting for tick...
-</p>
-
-)
-
-}
+</div>
 
 
 </div>
 
 
 
-
-
-
-
-
-<h2>
-Digit Probability
-</h2>
 
 
 
@@ -415,10 +347,8 @@ Digit Probability
 
 
 {
-
 digitStats.map(
 (item)=>(
-
 
 <div
 
@@ -441,41 +371,30 @@ ${getDigitClass(item.digit)}
 </div>
 
 
+<div className="count">
+
+{item.count}
+
+</div>
+
 
 <div className="percent">
 
-{
-item.percent.toFixed(1)
-}%
-
-</div>
-
-
-
-<div className="count">
-
-{
-item.count
-}
-ticks
+{item.percent.toFixed(1)}%
 
 </div>
 
 
 </div>
-
 
 )
 
 )
 
-
 }
 
 
-
 </div>
-
 
 
 
@@ -485,10 +404,8 @@ ticks
 
 
 <h2>
-Last 100 Ticks
+RECENT DIGITS
 </h2>
-
-
 
 
 <div className="history">
@@ -497,7 +414,7 @@ Last 100 Ticks
 {
 
 recentDigits.map(
-    (digit,index)=>(
+(digit,index)=>(
 
 
 <span
@@ -523,8 +440,6 @@ getDigitClass(digit)
 
 
 </div>
-
-
 
 
 
