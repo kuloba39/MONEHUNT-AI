@@ -1,96 +1,176 @@
-import {useEffect, useState} from 'react';
+import { useState } from 'react';
 import './analysis.scss';
-import {useAnalysisTicks} from './use-analysis-ticks';
+import { useAnalysisTicks } from './use-analysis-ticks';
 
 
 const Analysis = () => {
-    
 
 
-    const [analysisTickCount,setAnalysisTickCount] =
-     useState(500);
-    
-    const [market,setMarket] = useState('R_100');
+    const [analysisTickCount, setAnalysisTickCount] =
+        useState(1000);
 
 
-    const ticks = useAnalysisTicks(market, analysisTickCount);
-    const lastTick = ticks[ticks.length - 1];
+    const [market, setMarket] =
+        useState('R_100');
 
 
-    const digits = ticks.map(
-        tick=>tick.digit
-    );
+    const ticks =
+        useAnalysisTicks(
+            market,
+            analysisTickCount
+        );
 
 
-
-    const digitStats = Array.from(
-        {length:10},
-        (_,digit)=>{
+    const lastTick =
+        ticks[ticks.length - 1];
 
 
-            const count =
-            digits.filter(
-                d=>d===digit
-            ).length;
+    const digits =
+        ticks.map(
+            tick => tick.digit
+        );
 
 
 
-            const percent =
-            digits.length
-            ?
-            ((count / digits.length)*100).toFixed(1)
-            :
-            '0';
+    /*
+        DIGIT STATISTICS
+    */
+
+    const digitStats =
+        Array.from(
+            { length: 10 },
+            (_, digit) => {
+
+
+                const count =
+                    digits.filter(
+                        d => d === digit
+                    ).length;
 
 
 
-            return {
+                const percent =
+                    digits.length
+                        ?
+                        ((count / digits.length) * 100)
+                        :
+                        0;
 
-                digit,
-                count,
-                percent
-
-            };
 
 
-        }
-    );
+                return {
+
+                    digit,
+                    count,
+                    percent
+
+                };
+
+            }
+        );
+
+
+
+
+    /*
+        DIGIT RANKING
+
+        RED    = least appearing
+        YELLOW = second least
+        BLUE   = second most
+        GREEN  = most appearing
+
+    */
+
+
+    const rankedDigits =
+        [...digitStats]
+            .sort(
+                (a,b)=>a.count-b.count
+            );
+
+
+
+    const leastDigits =
+        rankedDigits
+            .slice(0,2)
+            .map(
+                x=>x.digit
+            );
+
+
+
+    const secondLeastDigits =
+        rankedDigits
+            .slice(2,4)
+            .map(
+                x=>x.digit
+            );
+
+
+
+    const mostDigits =
+        rankedDigits
+            .slice(-2)
+            .map(
+                x=>x.digit
+            );
+
+
+
+    const secondMostDigits =
+        rankedDigits
+            .slice(-4,-2)
+            .map(
+                x=>x.digit
+            );
+
+
+
+
+    const getDigitClass =
+        (digit:number)=>{
+
+
+            if(
+                leastDigits.includes(digit)
+            )
+                return "red";
+
+
+
+            if(
+                secondLeastDigits.includes(digit)
+            )
+                return "yellow";
+
+
+
+            if(
+                mostDigits.includes(digit)
+            )
+                return "green";
+
+
+
+            if(
+                secondMostDigits.includes(digit)
+            )
+                return "blue";
+
+
+
+            return "";
+
+        };
+
+
 
 
 
 return (
 
 <div className="analysis-page">
-    <select
-    value={analysisTickCount}
-    onChange={(e)=>
-        setAnalysisTickCount(
-            Number(e.target.value)
-        )
-    }
->
-
-<option value={100}>
-100 ticks
-</option>
-
-<option value={500}>
-500 ticks
-</option>
-
-<option value={1000}>
-1000 ticks
-</option>
-
-<option value={2000}>
-2000 ticks
-</option>
-
-<option value={3000}>
-3000 ticks
-</option>
-
-</select>
 
 
 <h1>
@@ -101,49 +181,64 @@ return (
 <p>
 Live Deriv digit probability analyzer
 </p>
-<div className="last-tick-box">
 
-    <h3>
-        Last Tick
-    </h3>
 
-    {lastTick ? (
 
-        <>
 
-        <p>
-            Quote: {lastTick.quote}
-        </p>
 
-        <p>
-            Digit: {lastTick.digit}
-        </p>
+<select
 
-        <p>
-            Time: {new Date(
-                lastTick.epoch * 1000
-            ).toLocaleTimeString()}
-        </p>
+value={analysisTickCount}
 
-        </>
+onChange={
+(e)=>
+setAnalysisTickCount(
+Number(e.target.value)
+)
+}
 
-    ) : (
+>
 
-        <p>
-            Waiting for tick...
-        </p>
+<option value={100}>
+100 ticks
+</option>
 
-    )}
 
-</div>
+<option value={500}>
+500 ticks
+</option>
+
+
+<option value={1000}>
+1000 ticks
+</option>
+
+
+<option value={2000}>
+2000 ticks
+</option>
+
+
+<option value={3000}>
+3000 ticks
+</option>
+
+
+</select>
+
+
+
+
 
 
 
 <div className="market-box">
 
+
 <label>
 Market
 </label>
+
 
 
 <select
@@ -151,7 +246,10 @@ Market
 value={market}
 
 onChange={
-(e)=>setMarket(e.target.value)
+(e)=>
+setMarket(
+e.target.value
+)
 }
 
 >
@@ -227,31 +325,6 @@ Crash 1000
 </option>
 
 
-<option value="JD10">
-Jump 10
-</option>
-
-
-<option value="JD25">
-Jump 25
-</option>
-
-
-<option value="JD50">
-Jump 50
-</option>
-
-
-<option value="JD75">
-Jump 75
-</option>
-
-
-<option value="JD100">
-Jump 100
-</option>
-
-
 </select>
 
 
@@ -261,11 +334,85 @@ Jump 100
 
 
 
+
+
+<div className="last-tick-box">
+
+
+<h3>
+Last Tick
+</h3>
+
+
+{
+lastTick ? (
+
+<>
+
+<p>
+Quote:
+{lastTick.quote}
+</p>
+
+
+<p>
+Digit:
+{lastTick.digit}
+</p>
+
+
+<p>
+Time:
+{
+new Date(
+lastTick.epoch * 1000
+)
+.toLocaleTimeString()
+}
+</p>
+
+
+</>
+
+)
+
+:
+
+(
+
+<p>
+Waiting for tick...
+</p>
+
+)
+
+}
+
+
+</div>
+
+
+
+
+
+
+
+
+<h2>
+Digit Probability
+</h2>
+
+
+
+
+
 <div className="circles">
 
 
 {
-digitStats.map(item=>(
+
+digitStats.map(
+(item)=>(
 
 
 <div
@@ -275,9 +422,8 @@ key={item.digit}
 className={
 `
 circle
-${Number(item.percent)>=20?'hot':''}
+${getDigitClass(item.digit)}
 `
-
 }
 
 >
@@ -293,7 +439,9 @@ ${Number(item.percent)>=20?'hot':''}
 
 <div className="percent">
 
-{item.percent}%
+{
+item.percent.toFixed(1)
+}%
 
 </div>
 
@@ -301,7 +449,10 @@ ${Number(item.percent)>=20?'hot':''}
 
 <div className="count">
 
-{item.count} ticks
+{
+item.count
+}
+ticks
 
 </div>
 
@@ -309,7 +460,10 @@ ${Number(item.percent)>=20?'hot':''}
 </div>
 
 
-))
+)
+
+)
+
 
 }
 
@@ -321,9 +475,14 @@ ${Number(item.percent)>=20?'hot':''}
 
 
 
-<h3>
+
+
+
+
+<h2>
 Last 100 Ticks
-</h3>
+</h2>
+
 
 
 
@@ -331,21 +490,38 @@ Last 100 Ticks
 
 
 {
-digits.map((digit,index)=>(
 
-<span key={index}>
+digits
+.slice(-100)
+.map(
+(digit,index)=>(
+
+
+<span
+
+key={index}
+
+className={
+getDigitClass(digit)
+}
+
+>
 
 {digit}
 
 </span>
 
 
-))
+)
+
+)
 
 }
 
 
 </div>
+
+
 
 
 
