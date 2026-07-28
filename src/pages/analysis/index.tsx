@@ -196,10 +196,41 @@ LAST TICK
 <br/>
 
 {
-lastTick
-?
-`${lastTick.quote}        ${lastTick.digit}`
+lastTick ? (
+
+<div className="last-tick-content">
+
+    <div className="quote-box">
+
+        <span>
+            {lastTick.quote}
+        </span>
+
+        <small>
+            QUOTE
+        </small>
+
+    </div>
+
+
+    <div className="digit-box">
+
+        <span>
+            {lastTick.digit}
+        </span>
+
+        <small>
+            DIGIT
+        </small>
+
+    </div>
+
+</div>
+
+)
+
 :
+
 "Waiting..."
 }
 

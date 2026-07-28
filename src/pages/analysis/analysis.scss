@@ -562,3 +562,69 @@
 
 
 }
+.last-tick-content {
+
+    display:flex;
+    align-items:center;
+    gap:15px;
+
+}
+
+
+.quote-box,
+.digit-box {
+
+    background:#11161d;
+
+    border:1px solid #202832;
+
+    border-radius:14px;
+
+    padding:12px 18px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+}
+
+
+.quote-box span {
+
+    font-size:22px;
+
+    font-weight:700;
+
+}
+
+
+.quote-box small,
+.digit-box small {
+
+    color:#8b98a8;
+
+    font-size:11px;
+
+}
+
+
+.digit-box {
+
+    min-width:70px;
+
+    align-items:center;
+
+}
+
+
+.digit-box span {
+
+    font-size:34px;
+
+    font-weight:800;
+
+    color:#18c7a0;
+
+}
