@@ -335,11 +335,52 @@
     }
 
 
+
     .last-tick-box{
 
         flex-direction:column;
 
         align-items:flex-start;
+
+    }
+
+}
+/* PHONE OPTIMIZATION */
+
+@media (max-width: 768px) {
+
+    .circles {
+
+        display: grid;
+
+        grid-template-columns: repeat(5, 1fr);
+
+        gap: 8px;
+
+    }
+
+    .circle {
+
+        width: 60px;
+        height: 60px;
+
+    }
+
+    .digit {
+
+        font-size: 18px;
+
+    }
+
+    .percent {
+
+        font-size: 10px;
+
+    }
+
+    .count {
+
+        display: none;
 
     }
 

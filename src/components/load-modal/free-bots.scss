@@ -239,3 +239,56 @@
     background:rgba(255,255,255,.1);
 
 }
+/* MOBILE RESPONSIVE */
+
+@media (max-width: 768px) {
+
+    .free-bots-grid {
+
+        display: grid;
+
+        grid-template-columns: 1fr;
+
+        gap: 12px;
+
+    }
+
+    .free-bot-card {
+
+        width: 100%;
+
+        min-height: auto;
+
+    }
+
+    .free-bots-header h2 {
+
+        font-size: 22px;
+
+    }
+
+    .free-bots-header p {
+
+        font-size: 14px;
+
+    }
+
+}
+
+@media (max-width: 480px) {
+
+    .free-bots {
+
+        padding: 12px;
+
+    }
+
+    .free-bot-card {
+
+        padding: 14px;
+
+        border-radius: 12px;
+
+    }
+
+}
