@@ -571,8 +571,10 @@
 }
 
 
-.quote-box,
-.digit-box {
+.quote-box {
+
+    width:220px;
+    height:70px;
 
     background:#11161d;
 
@@ -597,24 +599,36 @@
 
     font-weight:700;
 
-}
+    white-space:nowrap;
 
+    overflow:hidden;
 
-.quote-box small,
-.digit-box small {
-
-    color:#8b98a8;
-
-    font-size:11px;
+    text-overflow:ellipsis;
 
 }
+
 
 
 .digit-box {
 
-    min-width:70px;
+    width:80px;
+    height:70px;
+
+    background:#11161d;
+
+    border:1px solid #202832;
+
+    border-radius:14px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
 
     align-items:center;
+
+    flex-shrink:0;
 
 }
 
