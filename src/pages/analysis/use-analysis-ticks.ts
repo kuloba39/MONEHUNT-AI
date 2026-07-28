@@ -1,56 +1,97 @@
 import { useEffect, useState } from 'react';
 import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 
+
 type TickData = {
+
     digit:number;
+
     quote:number;
+
     epoch:number;
+
+    market:string;
+
 };
 
 
+
 export const useAnalysisTicks = (
+
     market:string,
-    analysisTicks:number = 100
+
+    analysisTicks:number = 1000
+
 ) => {
 
 
-    const STORAGE_KEY = `d_circles_ticks_${market}`;
+
+    /*
+        GLOBAL D CIRCLES MEMORY
+
+        Same storage for all markets.
+    */
+
+    const STORAGE_KEY = 'd_circles_global_ticks';
 
 
-const [ticks,setTicks] = useState<TickData[]>(()=>{
 
-    try{
-
-        const saved =
-        localStorage.getItem(STORAGE_KEY);
+    const [ticks,setTicks] = useState<TickData[]>(()=>{
 
 
-        if(saved){
+        try {
 
-            return JSON.parse(saved);
+
+            const saved =
+
+            localStorage.getItem(
+                STORAGE_KEY
+            );
+
+
+            if(saved){
+
+                return JSON.parse(saved);
+
+            }
+
+
+        } catch(error){
+
+
+            console.log(
+                "D CIRCLES CACHE LOAD ERROR",
+                error
+            );
+
 
         }
 
-    }catch(e){
 
-        console.log(
-            "D CIRCLES CACHE LOAD ERROR",
-            e
-        );
+        return [];
 
-    }
+    });
 
 
-    return [];
 
-});
+
+
     const tickLimit = Math.min(
-    3000,
-    Math.max(
-        100,
-        analysisTicks
-    )
-);
+
+        1000,
+
+        Math.max(
+
+            100,
+
+            analysisTicks
+
+        )
+
+    );
+
+
+
 
 
     useEffect(()=>{
@@ -59,10 +100,16 @@ const [ticks,setTicks] = useState<TickData[]>(()=>{
         if(!market) return;
 
 
-let interval:any;
-let api:any = null;
-let subscription:any = null;
-let subscriptionId:string | null = null;
+
+        let interval:any;
+
+        let api:any = null;
+
+        let subscription:any = null;
+
+        let subscriptionId:string|null = null;
+
+
 
 
 
@@ -72,49 +119,60 @@ let subscriptionId:string | null = null;
             api = api_base;
 
 
-            if(!api){
+
+            if(!api?.api){
+
 
                 console.log(
-                    "D CIRCLES API BASE NOT READY"
+                    "D CIRCLES API NOT READY"
                 );
+
 
                 return false;
 
             }
 
 
-
-            if(!api.api){
-
-                console.log(
-                    "D CIRCLES MAIN SOCKET NOT READY",
-                    api
-                );
-
-                return false;
-
-            }
 
 
 
             console.log(
-                "D CIRCLES CONNECTED MAIN API SOCKET",
+
+                "D CIRCLES CONNECTED",
+
                 market
+
             );
 
 
 
+
+
+
+
             subscription =
-            api.api.onMessage()
+
+            api.api
+
+            .onMessage()
+
             .subscribe(({data}:any)=>{
+
+
+
 
 
                 if(data.error){
 
+
                     console.log(
+
                         "D CIRCLES ERROR",
+
                         data.error.message
+
                     );
+
 
                     return;
 
@@ -122,19 +180,22 @@ let subscriptionId:string | null = null;
 
 
 
+
+
+
                 if(data.subscription){
 
+
                     subscriptionId =
+
                     data.subscription.id;
 
 
-                    console.log(
-                        "D CIRCLES SUB ID",
-                        market,
-                        subscriptionId
-                    );
-
                 }
+
+
+
+
 
 
 
@@ -146,93 +207,332 @@ let subscriptionId:string | null = null;
 
 
 
+
+
+
+
                 const quote =
+
                 Number(
+
                     data.tick.quote
+
                 );
+
+
+
 
 
                 const digit =
+
                 Number(
+
                     quote
+
                     .toFixed(2)
+
                     .replace(".","")
+
                     .slice(-1)
+
                 );
 
 
 
-setTicks(prev=>{
-
-    const updated = [
-
-        ...prev.slice(-999),
-
-        {
-            digit,
-            quote,
-            epoch:data.tick.epoch
-        }
-
-    ];
 
 
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(updated)
-    );
 
 
-    console.log(
-        "D CIRCLES SAVED CACHE",
-        updated.length
-    );
+                setTicks(prev=>{
 
 
-    return updated;
 
 
-});
+
+                    const newTick:TickData = {
+
+
+                        digit,
+
+
+                        quote,
+
+
+                        epoch:
+
+                        data.tick.epoch,
+
+
+                        market
+
+
+                    };
+
+
+
+
+
+
+
+                    let updated = [
+
+                        ...prev,
+
+                        newTick
+
+                    ];
+
+
+
+
+
+
+
+
+
+                    /*
+                        BALANCE ALL MARKETS
+
+                        Keep maximum 100 ticks
+                        from each market.
+                    */
+
+
+
+                    const marketGroups:
+
+                    Record<string,TickData[]> = {};
+
+
+
+
+
+
+
+                    updated.forEach(tick=>{
+
+
+                        if(!marketGroups[tick.market]){
+
+
+                            marketGroups[tick.market]=[];
+
+
+                        }
+
+
+
+                        marketGroups[tick.market]
+
+                        .push(tick);
+
+
+
+                    });
+
+
+
+
+
+
+
+
+
+                    updated =
+
+                    Object.values(marketGroups)
+
+                    .flatMap(group=>{
+
+
+                        return group
+
+                        .sort(
+
+                            (a,b)=>
+
+                            a.epoch-b.epoch
+
+                        )
+
+                        .slice(-100);
+
+
+                    });
+
+
+
+
+
+
+
+
+
+                    /*
+                        GLOBAL MEMORY
+
+                        Keep latest 1000 ticks.
+                    */
+
+
+
+                    updated =
+
+                    updated
+
+                    .sort(
+
+                        (a,b)=>
+
+                        a.epoch-b.epoch
+
+                    )
+
+                    .slice(-tickLimit);
+
+
+
+
+
+
+
+
+
+                    localStorage.setItem(
+
+                        STORAGE_KEY,
+
+                        JSON.stringify(updated)
+
+                    );
+
+
+
+
+
+
+
+
+                    console.log(
+
+                        "D CIRCLES MEMORY",
+
+                        {
+
+                            total:
+
+                            updated.length,
+
+
+                            markets:
+
+                            [
+
+                                ...new Set(
+
+                                    updated.map(
+
+                                        x=>x.market
+
+                                    )
+
+                                )
+
+                            ]
+
+                        }
+
+                    );
+
+
+
+
+
+
+
+                    return updated;
+
+
+
+
+
+                });
+
+
+
+
+
 
 
 
                 console.log(
-                    "D CIRCLES CLEAN TICK",
+
+                    "D CIRCLES TICK",
+
                     {
+
                         market,
+
                         quote,
+
                         digit
+
                     }
+
                 );
+
+
 
 
             });
 
 
 
+
+
+
+
+
+
             api.api.send({
 
-                ticks: market,
+                ticks:market,
+
                 subscribe:1
 
             });
 
 
 
+
+
+
             return true;
+
 
 
         };
 
 
 
+
+
+
+
+
+
+
+
         interval =
+
         setInterval(()=>{
 
 
             if(start()){
 
+
                 clearInterval(interval);
+
 
             }
 
@@ -243,54 +543,83 @@ setTicks(prev=>{
 
 
 
+
+
+
+
         return ()=>{
+
 
 
             if(subscription){
 
+
                 subscription.unsubscribe();
 
+
             }
+
+
+
+
 
 
 
             if(
+
                 subscriptionId &&
+
                 api?.api
+
             ){
+
 
                 api.api.send({
 
-                    forget: subscriptionId
+
+                    forget:
+
+                    subscriptionId
+
 
                 });
 
 
-                console.log(
-                    "D CIRCLES FORGOT SUBSCRIPTION",
-                    subscriptionId
-                );
-
             }
+
+
+
+
 
 
 
             if(interval){
 
+
                 clearInterval(interval);
 
+
             }
+
 
 
         };
 
 
 
-    },[market]);
+
+
+    },[market,tickLimit]);
+
+
+
+
+
 
 
 
     return ticks;
+
 
 
 };
