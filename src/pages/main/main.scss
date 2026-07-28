@@ -29,6 +29,7 @@
 
 .main {
     display: flex;
+    min-height: 0;
     width: 100%;
     min-height: calc(100vh - 9rem);
     overflow-y: auto;
@@ -44,10 +45,15 @@
 
 
     &__container {
-        position: relative;
-        border: none;
-        max-width: 100%;
-        width: 100%;
+    position: relative;
+    border: none;
+    max-width: 100%;
+    width: 100%;
+    min-height: 0;
+    > div {
+    min-height: 0;
+    height: 100%;
+}
 
         &.no-scroll {
             overflow: hidden;
