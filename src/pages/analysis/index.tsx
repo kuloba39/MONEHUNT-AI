@@ -29,6 +29,15 @@ const Analysis = () => {
         ticks.map(
             tick => tick.digit
         );
+        const analysisDigits =
+    ticks
+        .slice(-analysisTickCount)
+        .map(tick => tick.digit);
+
+const recentDigits =
+    ticks
+        .slice(-100)
+        .map(tick => tick.digit);
 
 
 
@@ -43,18 +52,14 @@ const Analysis = () => {
 
 
                 const count =
-                    digits.filter(
-                        d => d === digit
-                    ).length;
+                    analysisDigits.filter(
+                    d => d === digit
+                  ).length;
 
-
-
-                const percent =
-                    digits.length
-                        ?
-                        ((count / digits.length) * 100)
-                        :
-                        0;
+                 const percent =
+                    analysisDigits.length
+                  ? ((count / analysisDigits.length) * 100)
+                     : 0;
 
 
 
@@ -491,10 +496,8 @@ Last 100 Ticks
 
 {
 
-digits
-.slice(-100)
-.map(
-(digit,index)=>(
+recentDigits.map(
+    (digit,index)=>(
 
 
 <span

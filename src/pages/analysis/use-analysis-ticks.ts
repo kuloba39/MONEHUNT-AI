@@ -77,18 +77,12 @@ export const useAnalysisTicks = (
 
 
     const tickLimit = Math.min(
-
-        1000,
-
-        Math.max(
-
-            100,
-
-            analysisTicks
-
-        )
-
-    );
+    5000,
+    Math.max(
+        100,
+        analysisTicks
+    )
+   );
 
 
 
@@ -150,9 +144,9 @@ api.api.send({
     ticks_history: activeMarket,
     count: tickLimit,
     end: "latest",
-    start: 1,
     style: "ticks"
-}).then((history:any) => {
+  })
+.then((history:any) => {
 
     if (!history?.history?.prices) return;
 
