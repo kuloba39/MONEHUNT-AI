@@ -3,10 +3,11 @@
 .dc-tabs {
     position: relative;
     display: grid;
+    min-height: 0;
 
     &--top {
-        grid-template-rows: auto 1fr;
-    }
+    grid-template-rows: auto minmax(0, 1fr);
+}
 
     &--100vw {
         width: 100vw;
@@ -167,4 +168,8 @@
             width: var(--tab-width);
         }
     }
+}
+.dc-tabs__content {
+    min-height: 0;
+    overflow-y: auto;
 }
