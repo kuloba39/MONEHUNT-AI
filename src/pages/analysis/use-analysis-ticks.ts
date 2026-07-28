@@ -505,21 +505,15 @@ Number(
 
 
 
-                console.log(
-
-                    "D CIRCLES TICK",
-
-                    {
-
-                        market,
-
-                        quote,
-
-                        digit
-
-                    }
-
-                );
+                if (digit === 0) {
+    console.log(
+        "ZERO DETECTED",
+        {
+            quote,
+            digit
+        }
+    );
+}
 
 
 
