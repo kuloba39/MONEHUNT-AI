@@ -113,9 +113,13 @@
             }
 
             &__content {
-                @include mobile-or-tablet-screen {
-                    width: 100%;
-                    overflow-x: auto;
+    min-height: 0;
+    overflow-y: auto;
+
+    @include mobile-or-tablet-screen {
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: auto;
 
                     &--no-result {
                         @include flex-center;
