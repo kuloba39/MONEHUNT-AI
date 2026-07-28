@@ -15,10 +15,10 @@ const Analysis = () => {
 
 
     const ticks =
-        useAnalysisTicks(
-            market,
-            analysisTickCount
-        );
+    useAnalysisTicks(
+        "GLOBAL",
+        analysisTickCount
+    );
 
 
     const lastTick =

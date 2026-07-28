@@ -243,7 +243,12 @@ export const useAnalysisTicks = (
 
 
 
-                setTicks(prev=>{
+                 console.log(
+                     "TICK PAYLOAD",
+                  data.tick
+                   );
+
+                setTicks(prev => {
 
 
 
