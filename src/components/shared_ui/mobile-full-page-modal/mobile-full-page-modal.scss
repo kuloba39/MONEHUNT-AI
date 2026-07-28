@@ -124,9 +124,18 @@
             }
 
             &__content {
-                height: calc(100% - 40px);
-                z-index: 5;
-            }
+             min-height: calc(100% - 40px);
+              height: auto;
+
+              overflow-y: auto;
+               overflow-x: hidden;
+ 
+              z-index: 5;
+             }
+                .dc-mobile-full-page-modal__body {
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+             } 
         }
     }
 }

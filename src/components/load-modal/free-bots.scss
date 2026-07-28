@@ -326,3 +326,28 @@
     }
 
 }
+.free-bots {
+
+    width: 100%;
+
+    @media (max-width: 768px) {
+
+        padding: 12px;
+
+        overflow-y: visible;
+
+    }
+
+}
+.free-bots-grid {
+
+    @media (max-width: 768px) {
+
+        display: flex;
+        flex-direction: column;
+
+        gap: 12px;
+
+    }
+
+}
