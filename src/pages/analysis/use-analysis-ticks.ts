@@ -395,7 +395,7 @@ Number(
 
                         )
 
-                        .slice(-100);
+                        .slice(-tickLimit);
 
 
                     });
