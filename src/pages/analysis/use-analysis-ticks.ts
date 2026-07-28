@@ -223,19 +223,24 @@ export const useAnalysisTicks = (
 
 
 
-                const digit =
+                const pipSize =
 
-                Number(
+data.tick.pip_size ?? 2;
 
-                    quote
 
-                    .toFixed(2)
+const digit =
 
-                    .replace(".","")
+Number(
 
-                    .slice(-1)
+    quote
 
-                );
+    .toFixed(pipSize)
+
+    .replace(".","")
+
+    .slice(-1)
+
+);
 
 
 
