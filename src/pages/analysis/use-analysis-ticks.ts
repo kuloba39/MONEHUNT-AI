@@ -6,7 +6,7 @@ type TickData = {
 
     digit:number;
 
-    quote:number;
+    quote:string;
 
     epoch:number;
 
@@ -174,11 +174,11 @@ console.log(
 );
 
             return {
-                digit,
-                quote: Number(price),
-                epoch: times[index],
-                market
-            };
+    digit,
+    quote: String(price),
+    epoch: times[index],
+    market
+};
         }
     );
 
@@ -254,26 +254,23 @@ console.log(
 
                 const quote =
 
-                Number(
-
-                    data.tick.quote
-
-                );
+String(
+    data.tick.quote
+);
 
 
+const pipSize =
+    data.tick.pip_size ?? 2;
 
 
-
-                const pipSize =
-
-data.tick.pip_size ?? 2;
+const numericQuote = Number(quote);
 
 
 const digit =
 
 Number(
 
-    quote
+    numericQuote
 
     .toFixed(pipSize)
 

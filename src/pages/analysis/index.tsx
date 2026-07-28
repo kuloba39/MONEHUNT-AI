@@ -198,7 +198,7 @@ LAST TICK
 {
 lastTick
 ?
-`${lastTick.quote.toFixed(2)}        ${lastTick.digit}`
+`${lastTick.quote}        ${lastTick.digit}`
 :
 "Waiting..."
 }
