@@ -156,11 +156,22 @@ api.api.send({
     const historicalTicks = prices.map(
         (price:number, index:number) => {
 
-            const digit = Number(
-                String(price)
-                    .replace(".", "")
-                    .slice(-1)
-            );
+            const formattedPrice = Number(price).toFixed(2);
+
+const pipSize = 2;
+
+const digit = Number(
+    Number(price)
+        .toFixed(pipSize)
+        .replace(".", "")
+        .slice(-1)
+);
+console.log(
+    "HISTORICAL DIGIT CHECK",
+    price,
+    Number(price).toFixed(2),
+    digit
+);
 
             return {
                 digit,
