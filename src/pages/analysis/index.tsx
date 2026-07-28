@@ -16,7 +16,7 @@ const Analysis = () => {
 
     const ticks =
     useAnalysisTicks(
-        "GLOBAL",
+        "R_100",
         analysisTickCount
     );
 
