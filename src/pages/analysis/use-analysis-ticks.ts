@@ -136,13 +136,49 @@ export const useAnalysisTicks = (
 
 
 
-            console.log(
+           console.log(
+    "D CIRCLES CONNECTED",
+    market
+);
 
-                "D CIRCLES CONNECTED",
+const activeMarket =
+    market === 'GLOBAL'
+        ? 'R_100'
+        : market;
 
-                market
+api.api.send({
+    ticks_history: activeMarket,
+    count: tickLimit,
+    end: "latest",
+    start: 1,
+    style: "ticks"
+}).then((history:any) => {
 
+    if (!history?.history?.prices) return;
+
+    const prices = history.history.prices;
+    const times = history.history.times;
+
+    const historicalTicks = prices.map(
+        (price:number, index:number) => {
+
+            const digit = Number(
+                String(price)
+                    .replace(".", "")
+                    .slice(-1)
             );
+
+            return {
+                digit,
+                quote: Number(price),
+                epoch: times[index],
+                market
+            };
+        }
+    );
+
+    setTicks(historicalTicks);
+});
 
 
 
@@ -504,17 +540,11 @@ Number(
 
 
 
-            const activeMarket =
-             market === 'GLOBAL'
-             ? 'R_100'
-             : market;
-
-
             api.api.send({
 
-             ticks: activeMarket,
+    ticks: activeMarket,
 
-                subscribe: 1
+    subscribe: 1
 
 });
 
