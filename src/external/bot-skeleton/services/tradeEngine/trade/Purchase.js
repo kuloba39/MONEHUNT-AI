@@ -4,6 +4,7 @@ import { contractStatus, info, log } from '../utils/broadcast';
 import { doUntilDone, getUUID, recoverFromError, tradeOptionToBuy } from '../utils/helpers';
 import { purchaseSuccessful } from './state/actions';
 import { BEFORE_PURCHASE } from './state/constants';
+import { copyEngine } from '@/services/copy-trading/copy-engine';
 
 let delayIndex = 0;
 let purchase_reference;
@@ -83,7 +84,26 @@ export default Engine =>
                 ).then(onSuccess);
             }
             const trade_option = tradeOptionToBuy(contract_type, this.tradeOptions);
-            const action = () => api_base.api.send(trade_option);
+
+
+// D CIRCLES COPY TRADING
+try {
+
+    copyEngine.copyTrade(
+        trade_option
+    );
+
+} catch(error){
+
+    console.log(
+        "COPY ENGINE ERROR",
+        error
+    );
+
+}
+
+
+const action = () => api_base.api.send(trade_option);
 
             this.isSold = false;
 
