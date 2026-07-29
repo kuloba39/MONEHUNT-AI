@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import React from 'react';
+import TraderProfilePage from '../pages/copy-trading/trader-profile-page';
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from 'react-router-dom';
 import { cleanupUrl, handleOAuthCallback } from '@/external/deriv-core';
 import ChunkLoader from '@/components/loader/chunk-loader';
@@ -13,7 +14,8 @@ import { localize, TranslationProvider } from '@deriv-com/translations';
 import CoreStoreProvider from './CoreStoreProvider';
 import i18nInstance from './i18n';
 import './app-root.scss';
-import CopyTradingPage from '../pages/copy-trading';    
+import CopyTradingPage from '../pages/copy-trading';
+import TraderDetails from '../pages/copy-trading/trader-details';    
 
 const Layout = lazy(() => import('../components/layout'));
 const AppRoot = lazy(() => import('./app-root'));
@@ -68,6 +70,10 @@ const router = createBrowserRouter(
             <Route
     path='copy-trading'
     element={<CopyTradingPage />}
+/>
+<Route
+    path='copy-trading/trader/:id'
+    element={<TraderProfilePage />}
 />
         </Route>
     ),

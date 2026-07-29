@@ -1,0 +1,130 @@
+.copy-settings {
+
+    background:#11161d;
+
+    border:1px solid #202832;
+
+    border-radius:16px;
+
+    padding:24px;
+
+    margin-top:25px;
+
+}
+
+
+
+.copy-settings h2 {
+
+    margin-bottom:15px;
+
+}
+
+
+
+.copy-settings__trader {
+
+    color:#8b98a8;
+
+    margin-bottom:20px;
+
+}
+
+
+
+.copy-settings__trader strong {
+
+    color:#e6edf3;
+
+    margin-left:5px;
+
+}
+
+
+
+.copy-settings__group {
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
+
+    margin-bottom:18px;
+
+}
+
+
+
+.copy-settings label {
+
+    color:#8b98a8;
+
+    font-size:14px;
+
+}
+
+
+
+.copy-settings input,
+.copy-settings select {
+
+
+    background:#080b10;
+
+    border:1px solid #202832;
+
+    color:white;
+
+    padding:12px;
+
+    border-radius:8px;
+
+
+}
+
+
+
+.copy-settings__toggle {
+
+    margin-bottom:20px;
+
+}
+
+
+
+.copy-settings__limits {
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:15px;
+
+}
+
+
+
+.copy-settings__button {
+
+
+    margin-top:25px;
+
+    width:100%;
+
+    padding:14px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#00c896;
+
+    color:#000;
+
+    font-weight:800;
+
+    cursor:pointer;
+
+
+}
