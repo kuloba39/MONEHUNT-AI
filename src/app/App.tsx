@@ -16,6 +16,7 @@ import './app-root.scss';
 
 const Layout = lazy(() => import('../components/layout'));
 const AppRoot = lazy(() => import('./app-root'));
+const CopyTrading = lazy(() => import('../pages/copy-trading'));
 
 /**
  * Component wrapper to handle language URL parameter
@@ -37,7 +38,9 @@ const router = createBrowserRouter(
             path='/'
             element={
                 <Suspense
-                    fallback={<ChunkLoader message={localize('Please wait while we connect to the server...')} />}
+                    fallback={
+                        <ChunkLoader message={localize('Please wait while we connect to the server...')} />
+                    }
                 >
                     <TranslationProvider defaultLang='EN' i18nInstance={i18nInstance}>
                         <LanguageHandler>
@@ -54,10 +57,25 @@ const router = createBrowserRouter(
                 </Suspense>
             }
         >
-            {/* All child routes will be passed as children to Layout */}
+            {/* Home */}
             <Route index element={<AppRoot />} />
-            {/* App Builder embeds the template at /preview — render the same app shell */}
+
+            {/* Preview */}
             <Route path='preview' element={<AppRoot />} />
+
+            {/* D Circles Copy Trading */}
+            <Route
+                path='copy-trading'
+                element={
+                    <Suspense
+                        fallback={
+                            <ChunkLoader message={localize('Loading Copy Trading...')} />
+                        }
+                    >
+                        <CopyTrading />
+                    </Suspense>
+                }
+            />
         </Route>
     ),
     { basename: routerBasename }
