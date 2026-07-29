@@ -1,0 +1,79 @@
+.masters-page {
+
+padding:30px;
+
+}
+
+
+
+.master-card {
+
+background:#111;
+
+border-radius:12px;
+
+padding:20px;
+
+margin-bottom:20px;
+
+}
+
+
+
+.master-card h2 {
+
+margin-bottom:15px;
+
+}
+
+
+
+.master-info {
+
+display:flex;
+
+gap:30px;
+
+margin-top:20px;
+
+}
+
+
+
+.master-info div {
+
+display:flex;
+
+flex-direction:column;
+
+}
+
+
+
+.master-info strong {
+
+font-size:20px;
+
+}
+
+
+
+button {
+
+margin-top:20px;
+
+padding:12px 25px;
+
+cursor:pointer;
+
+}
+
+
+
+.empty {
+
+padding:40px;
+
+text-align:center;
+
+}
