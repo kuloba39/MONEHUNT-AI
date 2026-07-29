@@ -43,6 +43,7 @@ import ChartModal from '../chart/chart-modal';
 import Dashboard from '../dashboard';
 import FreeBots from '../free-bots';
 import Analysis from '../analysis';
+import CopyTrading from '../copy-trading';
 import RunStrategy from '../dashboard/run-strategy';
 import './main.scss';
 
@@ -483,7 +484,6 @@ const AppWrapper = observer(() => {
     <FreeBots />
 </div>
 
-
 {/* D CIRCLES ANALYSIS */}
 <div
     label={
@@ -494,6 +494,19 @@ const AppWrapper = observer(() => {
     id='id-analysis'
 >
     <Analysis />
+</div>
+
+
+{/* D CIRCLES COPY TRADING */}
+<div
+    label={
+        <>
+            👥 Copy Trading
+        </>
+    }
+    id='id-copy-trading'
+>
+    <CopyTrading />
 </div>
 
 

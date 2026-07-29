@@ -31,6 +31,8 @@ const demoTraders = [
 
 const CopyTrading = () => {
 
+    console.log("COPY TRADING COMPONENT LOADED");
+
     return (
         <div className="copy-trading">
 
