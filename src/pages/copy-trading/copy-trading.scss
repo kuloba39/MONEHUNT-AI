@@ -1,0 +1,81 @@
+.copy-trading-page {
+
+padding:20px;
+
+}
+
+
+
+.copy-card {
+
+max-width:500px;
+
+background:#111;
+
+border:1px solid #333;
+
+border-radius:16px;
+
+padding:20px;
+
+}
+
+
+
+.copy-status {
+
+margin:10px 0;
+
+font-weight:900;
+
+}
+
+
+
+.copy-info {
+
+display:grid;
+
+grid-template-columns:repeat(3,1fr);
+
+gap:15px;
+
+margin:20px 0;
+
+
+div {
+
+background:#1b1b1b;
+
+padding:15px;
+
+border-radius:10px;
+
+}
+
+
+strong {
+
+display:block;
+
+margin-top:8px;
+
+}
+
+}
+
+
+
+button {
+
+width:100%;
+
+padding:14px;
+
+border-radius:10px;
+
+font-weight:900;
+
+cursor:pointer;
+
+}
