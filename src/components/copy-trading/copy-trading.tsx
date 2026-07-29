@@ -1,4 +1,4 @@
-import React from 'react';
+import './copy-trading.scss';
 import TraderCard from './trader-card';
 
 const demoTraders = [

@@ -13,10 +13,11 @@ import { localize, TranslationProvider } from '@deriv-com/translations';
 import CoreStoreProvider from './CoreStoreProvider';
 import i18nInstance from './i18n';
 import './app-root.scss';
+import CopyTradingPage from '../pages/copy-trading';    
 
 const Layout = lazy(() => import('../components/layout'));
 const AppRoot = lazy(() => import('./app-root'));
-const CopyTrading = lazy(() => import('../pages/copy-trading'));
+
 
 /**
  * Component wrapper to handle language URL parameter
@@ -65,17 +66,9 @@ const router = createBrowserRouter(
 
             {/* D Circles Copy Trading */}
             <Route
-                path='copy-trading'
-                element={
-                    <Suspense
-                        fallback={
-                            <ChunkLoader message={localize('Loading Copy Trading...')} />
-                        }
-                    >
-                        <CopyTrading />
-                    </Suspense>
-                }
-            />
+    path='copy-trading'
+    element={<CopyTradingPage />}
+/>
         </Route>
     ),
     { basename: routerBasename }

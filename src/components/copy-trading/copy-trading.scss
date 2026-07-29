@@ -1,0 +1,179 @@
+.copy-trading-page {
+
+    min-height:100vh;
+
+    background:#080b10;
+
+}
+
+.copy-trading {
+
+    min-height:100vh;
+
+    padding:30px;
+
+    background:#080b10;
+
+    color:#e6edf3;
+
+    font-family:
+    Inter,
+    Roboto,
+    Arial,
+    sans-serif;
+
+}
+
+
+
+.copy-trading__header {
+
+    background:#11161d;
+
+    border:1px solid #202832;
+
+    border-radius:14px;
+
+    padding:20px;
+
+    margin-bottom:25px;
+
+}
+
+
+
+.copy-trading__header h1 {
+
+    font-size:32px;
+
+    font-weight:800;
+
+    margin-bottom:10px;
+
+}
+
+
+
+.copy-trading__header p {
+
+    color:#8b98a8;
+
+}
+
+
+
+.copy-trading__marketplace h2,
+.copy-trading__my-copy h2 {
+
+    font-size:20px;
+
+    margin-bottom:20px;
+
+}
+
+
+
+.copy-trading__grid {
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(auto-fit,minmax(260px,1fr));
+
+    gap:20px;
+
+}
+
+
+
+.trader-card {
+
+    background:#11161d;
+
+    border:1px solid #202832;
+
+    border-radius:14px;
+
+    padding:20px;
+
+}
+
+
+
+.trader-card__avatar {
+
+    font-size:40px;
+
+    margin-bottom:10px;
+
+}
+
+
+
+.trader-card__stats {
+
+    display:grid;
+
+    gap:12px;
+
+    margin:20px 0;
+
+}
+
+
+
+.trader-card__stats div {
+
+    display:flex;
+
+    justify-content:space-between;
+
+    color:#8b98a8;
+
+}
+
+
+
+.trader-card strong {
+
+    color:#e6edf3;
+
+}
+
+
+
+.trader-card button {
+
+    width:100%;
+
+    padding:12px;
+
+    border-radius:8px;
+
+    border:none;
+
+    background:#00c896;
+
+    color:#000;
+
+    font-weight:800;
+
+}
+
+
+
+.copy-empty {
+
+    margin-top:20px;
+
+    padding:20px;
+
+    background:#11161d;
+
+    border-radius:14px;
+
+    border:1px solid #202832;
+
+    color:#8b98a8;
+
+}

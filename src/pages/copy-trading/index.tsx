@@ -1,10 +1,20 @@
-import React from "react";
 import CopyTrading from "../../components/copy-trading/copy-trading";
+import "./copy-trading.scss";
+
 
 const CopyTradingPage = () => {
+
     return (
-        <CopyTrading />
+
+        <div className="copy-trading-page">
+
+            <CopyTrading />
+
+        </div>
+
     );
+
 };
+
 
 export default CopyTradingPage;

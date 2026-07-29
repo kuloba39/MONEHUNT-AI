@@ -1,6 +1,3 @@
-import React from 'react';
-
-
 interface Trader {
     name:string;
     profit:string;
