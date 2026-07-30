@@ -14,7 +14,8 @@ import { localize, TranslationProvider } from '@deriv-com/translations';
 import CoreStoreProvider from './CoreStoreProvider';
 import i18nInstance from './i18n';
 import './app-root.scss';
-import CopyTradingPage from '../pages/copy-trading';  
+import CopyTradingPage from '../pages/copy-trading'; 
+import MasterRegisterPage from '../pages/copy-trading/master-register-page'; 
 
 const Layout = lazy(() => import('../components/layout'));
 const AppRoot = lazy(() => import('./app-root'));
@@ -69,6 +70,10 @@ const router = createBrowserRouter(
             <Route
     path='copy-trading'
     element={<CopyTradingPage />}
+/>
+<Route
+ path='copy-trading/register'
+ element={<MasterRegisterPage />}
 />
 <Route
     path='copy-trading/trader/:id'

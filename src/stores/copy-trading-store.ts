@@ -95,6 +95,62 @@ return this.masters;
 }
 
 
+registerMaster(data:any){
+
+const trader:MasterTrader = {
+
+
+id:
+Date.now(),
+
+
+name:
+data.name,
+
+
+roi:
+"0%",
+
+
+followers:
+0,
+
+
+balance:
+0,
+
+
+status:
+"active",
+
+
+deriv_token:"",
+
+
+profitHistory:
+[],
+
+
+tradeHistory:[]
+
+
+};
+
+
+this.masters.push(trader);
+
+
+console.log(
+"NEW MASTER REGISTERED",
+trader
+);
+
+
+}
+
+
+
+
 copiedTraders:MasterTrader[] = [];
 
 
@@ -492,6 +548,48 @@ console.log(
 buy
 );
 
+
+}
+masterApplications:any[] = [];
+
+
+registerMasterTrader(data:any){
+
+const master:MasterTrader = {
+
+id:Date.now(),
+
+name:data.name,
+
+roi:"+0%",
+
+followers:0,
+
+balance:0,
+
+status:"active",
+
+deriv_token:data.deriv_token,
+
+profitHistory:[],
+
+tradeHistory:[]
+
+};
+
+
+this.masters.push(
+master
+);
+
+
+console.log(
+"NEW MASTER TRADER REGISTERED",
+master
+);
+
+
+return master;
 
 }
 
