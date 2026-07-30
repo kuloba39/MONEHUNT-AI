@@ -146,20 +146,32 @@ export default class AppStore {
                 const contracts_for = ApiHelpers?.instance?.contracts_for;
 
                 if (ApiHelpers?.instance && active_symbols && contracts_for) {
-                    if (window.Blockly?.derivWorkspace) {
-                        active_symbols?.retrieveActiveSymbols(true).then(() => {
-                            contracts_for.disposeCache();
-                            window.Blockly?.derivWorkspace
-                                .getAllBlocks()
-                                .filter(block => block.type === 'trade_definition_market')
-                                .forEach(block => {
-                                    runIrreversibleEvents(() => {
-                                        const fake_create_event = new window.Blockly.Events.BlockCreate(block);
-                                        window.Blockly.Events.fire(fake_create_event);
-                                    });
-                                });
-                        });
-                    }
+                    active_symbols?.retrieveActiveSymbols(true).then(() => {
+
+    contracts_for.disposeCache();
+
+    if (window.Blockly?.derivWorkspace) {
+
+        window.Blockly?.derivWorkspace
+            .getAllBlocks()
+            .filter(block => block.type === 'trade_definition_market')
+            .forEach(block => {
+
+                runIrreversibleEvents(() => {
+
+                    const fake_create_event =
+                    new window.Blockly.Events.BlockCreate(block);
+
+                    window.Blockly.Events.fire(fake_create_event);
+
+                });
+
+            });
+
+    }
+
+});
+                                
                     DBot.initializeInterpreter();
                 }
             }

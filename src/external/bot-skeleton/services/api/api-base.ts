@@ -405,6 +405,10 @@ class APIBase {
             const activeSymbolsPromise = doUntilDone(() => this.api?.send({ active_symbols: 'brief' }), [], this);
 
             const apiResult = await Promise.race([activeSymbolsPromise, timeout]);
+            console.log(
+    "🔥 ACTIVE SYMBOLS RAW RESPONSE:",
+    JSON.stringify(apiResult, null, 2)
+);
 
             const { active_symbols = [], error = {} } = apiResult as any;
 
