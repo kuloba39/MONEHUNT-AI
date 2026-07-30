@@ -1,10 +1,13 @@
-import type { MasterTrader } from '@/stores/copy-trading-store';
 import { useNavigate } from 'react-router-dom';
 
 interface Props {
-    trader: MasterTrader;
+
+    trader:any;
+
     onCopy: () => void;
-    isFollowing: boolean;
+
+    isFollowing:boolean;
+
 }
 
 

@@ -49,6 +49,14 @@ const CopyTrading = observer(() => {
                 <p>
                     Follow top user traders and automatically copy their strategies.
                 </p>
+                <button
+                    className="copy-trading__register-btn"
+                    onClick={() =>
+                        window.location.href = "/copy-trading/register"
+    }
+>
+    Become a Master Trader
+</button>
 
             </div>
 
