@@ -1,16 +1,11 @@
-import type { Trader } from '@/stores/copy-trading-store';
+import type { MasterTrader } from '@/stores/copy-trading-store';
 import { useNavigate } from 'react-router-dom';
 
 interface Props {
-
-    trader: Trader;
-
+    trader: MasterTrader;
     onCopy: () => void;
-
     isFollowing: boolean;
-
 }
-
 
 
 const TraderCard = ({
@@ -18,7 +13,8 @@ const TraderCard = ({
     onCopy,
     isFollowing
 }: Props) => {
-const navigate = useNavigate();
+
+    const navigate = useNavigate();
 
 
     return (
@@ -31,7 +27,7 @@ const navigate = useNavigate();
 
                 <div className="trader-card__avatar">
 
-                    {trader.avatar}
+                    👤
 
                 </div>
 
@@ -39,17 +35,19 @@ const navigate = useNavigate();
                 <div>
 
                     <h3
-    style={{ cursor: 'pointer' }}
-    onClick={() =>
-        navigate(`/copy-trading/trader/${trader.id}`)
-    }
->
-    {trader.name}
-</h3>
+                        style={{ cursor: "pointer" }}
+                        onClick={() =>
+                            navigate(
+                                `/copy-trading/trader/${trader.id}`
+                            )
+                        }
+                    >
+                        {trader.name}
+                    </h3>
 
 
                     <p>
-                        {trader.country}
+                        {trader.account_id || "Deriv Trader"}
                     </p>
 
 
@@ -60,20 +58,18 @@ const navigate = useNavigate();
 
 
 
-
-
             <div className="trader-card__strategy">
 
                 <span>
-                    Strategy
+                    Account Status
                 </span>
 
+
                 <strong>
-                    {trader.strategy}
+                    {trader.status}
                 </strong>
 
             </div>
-
 
 
 
@@ -84,11 +80,11 @@ const navigate = useNavigate();
                 <div>
 
                     <span>
-                        Profit
+                        ROI
                     </span>
 
                     <strong>
-                        {trader.profit}
+                        {trader.roi}
                     </strong>
 
                 </div>
@@ -98,11 +94,11 @@ const navigate = useNavigate();
                 <div>
 
                     <span>
-                        Win Rate
+                        Balance
                     </span>
 
                     <strong>
-                        {trader.winRate}
+                        ${trader.balance}
                     </strong>
 
                 </div>
@@ -113,56 +109,7 @@ const navigate = useNavigate();
 
 
 
-
             <div className="trader-card__stats">
-
-
-                <div>
-
-                    Trades
-
-                    <strong>
-                        {trader.totalTrades}
-                    </strong>
-
-                </div>
-
-
-
-                <div>
-
-                    Wins
-
-                    <strong>
-                        {trader.wins}
-                    </strong>
-
-                </div>
-
-
-
-                <div>
-
-                    Losses
-
-                    <strong>
-                        {trader.losses}
-                    </strong>
-
-                </div>
-
-
-
-                <div>
-
-                    Drawdown
-
-                    <strong>
-                        {trader.drawdown}
-                    </strong>
-
-                </div>
-
 
 
                 <div>
@@ -176,18 +123,43 @@ const navigate = useNavigate();
                 </div>
 
 
-            </div>
 
+                <div>
+
+                    Verified
+
+                    <strong>
+                        {trader.verified ? "YES" : "NO"}
+                    </strong>
+
+                </div>
+
+
+
+                <div>
+
+                    Created
+
+                    <strong>
+                        {new Date(
+                            trader.createdAt
+                        ).toLocaleDateString()}
+                    </strong>
+
+                </div>
+
+
+            </div>
 
 
 
 
             <div className="trader-risk">
 
-                Risk:
+                Status:
 
                 <strong>
-                    {trader.risk}
+                    {trader.status}
                 </strong>
 
             </div>
@@ -204,6 +176,7 @@ const navigate = useNavigate();
                     : "trader-card__button"
                 }
 
+
                 onClick={onCopy}
 
             >
@@ -218,12 +191,12 @@ const navigate = useNavigate();
             </button>
 
 
+
         </div>
 
     );
 
 };
-
 
 
 export default TraderCard;

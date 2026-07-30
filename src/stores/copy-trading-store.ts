@@ -1,24 +1,8 @@
 import { makeAutoObservable } from "mobx";
-import { api_base } from "@/external/bot-skeleton/services/api/api-base";
-import { followerTradeExecutor } 
-from '@/services/follower-trade-executor.service';
-import { followerDerivConnection }
-from '@/services/follower-deriv-connection.service';
+import { followerDerivConnection } from "@/services/follower-deriv-connection.service";
+import { followerTradeExecutor } from "@/services/follower-trade-executor.service";
 
 
-export interface TradeHistoryItem {
-
-    contract: string;
-
-    stake: string;
-
-    profit: string;
-
-    result: 'WIN' | 'LOSS';
-
-    time: string;
-
-}
 
 export interface MasterTrader {
 
@@ -26,22 +10,63 @@ export interface MasterTrader {
 
     name:string;
 
+    avatar:string;
+
+    country:string;
+
+    strategy:string;
+
+    profit:string;
+
+    monthlyProfit:string;
+
     roi:string;
+
+    winRate:string;
+
+    totalTrades:number;
+
+    wins:number;
+
+    losses:number;
+
+    drawdown:string;
+
+    risk:string;
 
     followers:number;
 
     balance:number;
 
-    status:"active" | "offline";
+    account_id:string;
 
+    experience:string;
+
+    markets:string[];
+
+    contracts:string[];
+
+    status:
+    "active" |
+    "offline";
+
+    verified:boolean;
+
+    createdAt:number;
 
     profitHistory:number[];
 
-    tradeHistory:TradeHistoryItem[];
+    tradeHistory:any[];
+
+    copySettings:any;
 
 }
 
+
+
+
 export interface Follower {
+
 
     id:number;
 
@@ -55,32 +80,49 @@ export interface Follower {
 
     max_stake:number;
 
-    status:"active" | "paused";
+    status:
+    "active" |
+    "paused";
 
 }
 
 
+
+
 export interface CopiedTrade {
+
 
     trade_id:string;
 
     master_id:number;
 
+
     symbol:string;
+
 
     contract_type:string;
 
-    stake:number;
+
+    amount:number;
+
 
     duration:number;
 
+
+    duration_unit:string;
+
+
     barrier?:string;
 
-    time:string;
 
     currency:string;
 
+
     basis:string;
+
+
+    timestamp:number;
+
 
 }
 
@@ -89,574 +131,428 @@ export interface CopiedTrade {
 
 class CopyTradingStore {
 
-activeCopies:any[] = [];
 
+    masters:MasterTrader[]=[];
 
-get traders(){
 
-return this.masters;
+    followers:Follower[]=[];
 
-}
 
+    activeCopies:any[]=[];
 
-registerMaster(data:any){
 
-const trader:MasterTrader = {
+    trades:CopiedTrade[]=[];
 
 
-id:
-Date.now(),
 
+    constructor(){
 
-name:
-data.name,
+        makeAutoObservable(this);
 
-
-roi:
-"0%",
-
-
-followers:
-0,
-
-
-balance:
-0,
-
-
-status:
-"active",
-
-
-deriv_token:"",
-
-
-profitHistory:
-[],
-
-
-tradeHistory:[]
-
-
-};
-
-
-this.masters.push(trader);
-
-
-console.log(
-"NEW MASTER REGISTERED",
-trader
-);
-
-
-}
-
-
-
-
-copiedTraders:MasterTrader[] = [];
-
-
-masters:MasterTrader[]=[
-
-
-{
-id:1,
-name:"John Forex",
-roi:"+45%",
-followers:132,
-balance:1000,
-status:"active",
-deriv_token:"",
-
-profitHistory:[
-10,
-25,
-40,
-55,
-70
-],
-
-tradeHistory:[
-{
-contract:"DIGITOVER",
-stake:"10",
-profit:"8.5",
-result:"WIN",
-time:"10:30"
-}
-]
-
-},
-
-
-{
-id:2,
-name:"AI Alpha Trader",
-roi:"+35%",
-followers:84,
-balance:2500,
-status:"active",
-deriv_token:"",
-
-profitHistory:[
-5,
-20,
-35,
-60,
-90
-],
-
-tradeHistory:[
-{
-contract:"DIGITUNDER",
-stake:"15",
-profit:"12",
-result:"WIN",
-time:"11:00"
-}
-]
-
-}
-
-
-];
-
-
-
-followers:Follower[]=[];
-
-
-trades:CopiedTrade[]=[];
-
-
-
-
-constructor(){
-
-makeAutoObservable(this);
-
-}
-
-
-
-
-
-async addFollower(
-follower:Follower
-){
-
-this.followers.push(
-follower
-);
-
-
-const api =
-await followerDerivConnection.connect(
-    follower.id,
-    follower.deriv_token
-);
-
-
-if(!api){
-
-console.log(
-"FOLLOWER CONNECTION FAILED",
-follower.id
-);
-
-return;
-
-}
-
-
-
-console.log(
-"FOLLOWER READY FOR COPYING",
-follower.id
-);
-
-
-}
-
-
-
-
-
-removeFollower(id:number){
-
-this.followers =
-this.followers.filter(
-item=>item.id!==id
-);
-
-}
-
-
-
-
-
-getMaster(id:number){
-
-return this.masters.find(
-item=>item.id===id
-);
-
-}
-  getTraderById(id:number){
-
-  return this.traders.find(
-  trader=>trader.id===id
-  );
-
-  }
-
-
-  getTrader(id:number){
-
-  return this.traders.find(
-  trader=>trader.id===id
-  );
-
-  }
-isFollowing(
-id:number
-){
-
-return this.copiedTraders.some(
-item=>item.id===id
-);
-
-}
-
-
-
-
-
-followTrader(
-masterId:number
-){
-
-const master =
-this.getMaster(masterId);
-
-
-if(master){
-
-master.followers++;
-
-}
-
-
-}
-copyTrader(
-trader:MasterTrader
-){
-
-if(
-this.isFollowing(trader.id)
-){
-
-return;
-
-}
-
-
-this.copiedTraders.push(
-trader
-);
-
-
-this.activeCopies.push({
-
-traderId:trader.id,
-
-amount:10,
-
-enabled:true
-
-});
-
-
-
-followerDerivConnection.connect(
-
-    trader.id,
-
-    trader.deriv_token
-
-);
-
-
-
-console.log(
-"TRADER COPIED",
-trader
-);
-
-
-}
-
-
-
-
-
-calculateStake(
-
-masterStake:number,
-
-masterBalance:number,
-
-followerBalance:number
-
-){
-
-return Number(
-(
-masterStake *
-followerBalance /
-masterBalance
-).toFixed(2)
-);
-
-
-}
-
-
-
-
-
-receiveMasterTrade(
-trade:CopiedTrade
-){
-
-this.trades.push(
-trade
-);
-
-console.log(
-"MASTER TRADE RECEIVED",
-trade
-);
-
-this.activeCopies.forEach(
-copy => {
-
-if(copy.enabled){
-
-this.executeCopiedTrade(
-copy.followerId,
-trade
-);
-
-}
-
-}
-);
-
-}
-
-
-
-
-
-getFollowers(masterId:number){
-
-return this.followers.filter(
-
-item=>
-item.master_id===masterId &&
-item.status==="active"
-
-);
-
-
-}
-async executeCopiedTrade(
-    followerId:number,
-    trade:CopiedTrade
-)
-{
-
-const copy =
-this.activeCopies.find(
-item =>
-item.followerId === traderId ||
-item.traderId === traderId
-);
-
-if(!copy){
-
-console.log(
-"NO ACTIVE COPY FOR FOLLOWER",
-{
-traderId,
-activeCopies:this.activeCopies
-}
-);
-
-return;
-
-}
-
-console.log(
-"COPY FOUND",
-copy
-);const follower =
-this.followers.find(
-item=>item.followerId===followerId
-);
-
-if(!follower){
-
-console.log(
-"FOLLOWER PROFILE NOT FOUND"
-);
-
-return;
-
-}
-
-if(
-follower.status !== "active"
-){
-
-console.log(
-"FOLLOWER PAUSED",
-follower.id
-);
-
-return;
-
-}
-
-if(!api_base.api){
-
-console.log(
-"API NOT CONNECTED"
-);
-
-return;
-
-}
-
-
-let followerStake =
-trade.stake *
-(follower.copy_percentage / 100);
-
-
-
-if(
-followerStake > follower.max_stake
-){
-
-followerStake =
-follower.max_stake;
-
-}
-
-
-const proposalRequest = {
-
-proposal:1,
-
-amount:
-Number(
-followerStake.toFixed(2)
-),
-
-basis:"stake",
-
-contract_type:
-trade.contract_type,
-
-currency:"USD",
-
-duration:
-trade.duration ?? 1,
-
-duration_unit:"t",
-
-symbol:
-trade.symbol,
-
-barrier:
-trade.barrier
-
-};
-
-
-
-console.log(
-"COPY PROPOSAL REQUEST",
-proposalRequest
-);
-
-
-
-await followerTradeExecutor.execute(
-    traderId,
-    {
-        amount: copy.amount,
-        basis:"stake",
-        contract_type: trade.contract_type,
-        currency:"USD",
-        duration: trade.duration ?? 1,
-        duration_unit:"t",
-        symbol: trade.symbol,
-        barrier: trade.barrier
     }
-);
-
-console.log(
-    "COPY TRADE EXECUTION COMPLETE",
-    traderId
-);
 
 
-}
-masterApplications:any[] = [];
 
 
-registerMasterTrader(data:any){
 
-const master:MasterTrader = {
+    /*
+        MASTER REGISTRATION
 
-id:Date.now(),
+        Any verified Deriv real account
+        can become a marketplace master.
 
-name:data.name,
+        No API token stored.
+    */
 
-roi:"+0%",
+    registerMaster(data:any){
 
-followers:0,
 
-balance:0,
+        const master:MasterTrader = {
 
-status:"active",
+    id:
+    Date.now(),
 
-deriv_token:data.deriv_token,
 
-profitHistory:[],
+    name:
+    data.name ||
+    "Anonymous Trader",
 
-tradeHistory:[]
+
+    avatar:
+    data.avatar ||
+    "👤",
+
+
+    country:
+    data.country ||
+    "Unknown",
+
+
+    strategy:
+    data.strategy ||
+    "Deriv Trading Strategy",
+
+
+    profit:
+    "0%",
+
+
+    monthlyProfit:
+    "0%",
+
+
+    roi:
+    "0%",
+
+
+    winRate:
+    "0%",
+
+
+    totalTrades:
+    0,
+
+
+    wins:
+    0,
+
+
+    losses:
+    0,
+
+
+    drawdown:
+    "0%",
+
+
+    risk:
+    data.risk ||
+    "Medium",
+
+
+    followers:
+    0,
+
+
+    balance:
+    data.balance ||
+    0,
+
+
+    account_id:
+    data.account_id ||
+    "",
+
+
+    experience:
+    data.experience ||
+    "",
+
+
+    markets:
+    data.markets ||
+    [],
+
+
+    contracts:
+    data.contracts ||
+    [],
+
+
+    status:
+    "active",
+
+
+    verified:
+    true,
+
+
+    createdAt:
+    Date.now(),
+
+
+    profitHistory:
+    [],
+
+
+    tradeHistory:
+    [],
+
+
+    copySettings:
+    {}
 
 };
 
 
-this.masters.push(
-master
-);
+
+        this.masters.push(
+            master
+        );
 
 
-console.log(
-"NEW MASTER TRADER REGISTERED",
-master
-);
+
+        console.log(
+            "MASTER TRADER REGISTERED",
+            master
+        );
 
 
-return master;
+
+        return master;
+
+    }
+
+
+
+
+
+    /*
+        FOLLOWER CONNECTS USING
+        THEIR OWN DERIV TOKEN
+    */
+
+
+    async addFollower(
+        follower:Follower
+    ){
+
+
+        this.followers.push(
+            follower
+        );
+
+
+
+        const connection =
+        await followerDerivConnection.connect(
+            follower.id,
+            follower.deriv_token
+        );
+
+
+
+        if(!connection){
+
+
+            console.log(
+                "FOLLOWER CONNECTION FAILED",
+                follower.id
+            );
+
+
+            return false;
+
+        }
+
+
+
+
+        console.log(
+            "FOLLOWER READY",
+            follower.id
+        );
+
+
+
+        return true;
+
+
+    }
+
+
+
+
+
+
+
+    /*
+        FOLLOW MASTER
+    */
+
+
+    followMaster(
+        masterId:number,
+        followerId:number
+    ){
+
+
+        const master =
+        this.getMaster(masterId);
+
+
+
+        if(!master){
+
+            console.log(
+                "MASTER NOT FOUND"
+            );
+
+            return;
+
+        }
+
+
+
+        master.followers++;
+
+
+
+        this.activeCopies.push({
+
+            masterId,
+
+            followerId,
+
+            enabled:true
+
+        });
+
+
+
+        console.log(
+            "FOLLOW SUBSCRIBED",
+            {
+                masterId,
+                followerId
+            }
+        );
+
+
+    }
+
+
+
+
+
+
+
+    /*
+        MASTER SENDS TRADE
+    */
+
+
+    receiveMasterTrade(
+        trade:CopiedTrade
+    ){
+
+
+        this.trades.push(
+            trade
+        );
+
+
+
+        console.log(
+            "MASTER TRADE RECEIVED",
+            trade
+        );
+
+
+
+
+        const copies =
+        this.activeCopies.filter(
+            c =>
+            c.masterId === trade.master_id &&
+            c.enabled
+        );
+
+
+
+        copies.forEach(
+            copy => {
+
+
+                this.executeCopiedTrade(
+                    copy.followerId,
+                    trade
+                );
+
+
+            }
+        );
+
+
+    }
+
+
+
+
+
+
+
+
+    /*
+        EXECUTE TRADE ON FOLLOWER ACCOUNT
+    */
+
+
+    async executeCopiedTrade(
+        followerId:number,
+        trade:CopiedTrade
+    ){
+
+
+
+        const follower =
+        this.followers.find(
+            f =>
+            f.id === followerId
+        );
+
+
+
+        if(!follower){
+
+
+            console.log(
+                "FOLLOWER NOT FOUND"
+            );
+
+
+            return;
+
+        }
+
+
+
+
+        if(
+            follower.status !== "active"
+        ){
+
+            console.log(
+                "FOLLOWER PAUSED"
+            );
+
+
+            return;
+
+        }
+
+
+
+
+
+
+        let amount =
+    trade.amount *
+    (
+        follower.copy_percentage / 100
+    );
+
+
+
+
+
+        if(
+    amount >
+    follower.max_stake
+){
+
+    amount =
+    follower.max_stake;
 
 }
 
@@ -664,12 +560,191 @@ return master;
 
 
 
+        const request = {
+
+    amount:
+        Number(amount.toFixed(2)),
+
+    basis:
+        "stake",
+
+
+            contract_type:
+            trade.contract_type,
+
+
+            currency:
+            trade.currency,
+
+
+            duration:
+            trade.duration,
+
+
+            duration_unit:
+    trade.duration_unit,
+
+
+            symbol:
+            trade.symbol,
+
+
+            barrier:
+            trade.barrier
+
+
+        };
+
+
+
+
+
+        console.log(
+            "COPY TRADE REQUEST",
+            request
+        );
+
+
+
+
+
+        await followerTradeExecutor.execute(
+
+            follower.id,
+
+            request
+
+        );
+
+
+
+
+
+        console.log(
+            "COPIED TRADE EXECUTED",
+            follower.id
+        );
+
+
+
+    }
+
+
+
+
+
+
+
+
+    getMaster(
+        id:number
+    ){
+
+
+        return this.masters.find(
+            m =>
+            m.id===id
+        );
+
+
+    }
+
+
+
+
+
+
+    getFollowers(
+        masterId:number
+    ){
+
+
+        return this.followers.filter(
+
+            f =>
+            f.master_id===masterId &&
+            f.status==="active"
+
+        );
+
+
+    }
+
+
+
+
+
+        getMarketplaceMasters(){
+
+        return this.masters.filter(
+            m =>
+            m.status==="active"
+        );
+
+    }
+
+
+    getMasterById(id:number){
+
+        return this.masters.find(
+            m => m.id === id
+        );
+
+    }
+getMarketplaceTraders(){
+
+    return this.masters.map(master => ({
+
+        id: master.id,
+
+        name: master.name,
+
+        avatar:"👤",
+
+        country:"Global",
+
+        strategy:"Deriv Strategy",
+
+        profit:master.roi,
+
+        monthlyProfit:"0%",
+
+        winRate:"0%",
+
+        totalTrades:master.profitHistory.length,
+
+        wins:0,
+
+        losses:0,
+
+        drawdown:"0%",
+
+        followers:master.followers,
+
+        risk:"Medium",
+
+        status:master.status,
+
+        profitHistory:master.profitHistory,
+
+        tradeHistory:[],
+
+        copySettings:{}
+
+    }));
+
 }
+
+
+}
+
+
 
 
 
 export const copyTradingStore =
 new CopyTradingStore();
+
 
 
 (globalThis as any).copyTradingStore =

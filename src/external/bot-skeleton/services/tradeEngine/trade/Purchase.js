@@ -11,15 +11,19 @@ let purchase_reference;
 
 export default Engine =>
     class Purchase extends Engine {
+
         purchase(contract_type) {
-            // Prevent calling purchase twice
+
+            // Prevent duplicate purchase
             if (this.store.getState().scope !== BEFORE_PURCHASE) {
                 return Promise.resolve();
             }
 
+
             const onSuccess = response => {
-                // Don't unnecessarily send a forget request for a purchased contract.
+
                 const { buy } = response;
+
 
                 contractStatus({
                     id: 'contract.purchase_received',
@@ -27,143 +31,445 @@ export default Engine =>
                     buy,
                 });
 
+
                 this.contractId = buy.contract_id;
-                this.store.dispatch(purchaseSuccessful());
-try {
-
-    copyTradingStore.receiveMasterTrade({
-
-        trade_id: String(buy.transaction_id),
-
-        master_id: 1,
-
-        symbol:
-            this.tradeOptions.symbol,
-
-        contract_type,
-
-        stake:
-            buy.buy_price,
-
-        duration:
-            this.tradeOptions.duration ?? 1,
-
-        barrier:
-            this.tradeOptions.barrier,
-
-        currency:"USD",
-
-        basis:"stake",
-
-        time:
-            new Date().toISOString(),
-
-});
 
 
-    console.log(
-        "MASTER TRADE SENT TO COPY ENGINE",
-        buy
-    );
+                this.store.dispatch(
+                    purchaseSuccessful()
+                );
 
 
-}
-catch(error){
 
-    console.log(
-        "COPY ENGINE ERROR",
-        error
-    );
+                /*
+                    MASTER COPY TRADING BROADCAST
 
-}
+                    Every successful bot trade
+                    becomes available for followers.
+                */
 
-                if (this.is_proposal_subscription_required) {
-                    this.renewProposalsOnPurchase();
+                try {
+
+
+                    const copiedTrade = {
+
+                        trade_id:
+                            String(
+                                buy.transaction_id
+                            ),
+
+
+                        master_id:
+                            this.master_id ||
+                            1,
+
+
+                        symbol:
+                            this.tradeOptions.symbol ||
+                            this.tradeOptions.underlying_symbol ||
+                            "",
+
+
+                        contract_type,
+
+
+                        amount:
+                            Number(
+                                buy.buy_price ||
+                                this.tradeOptions.amount ||
+                                0
+                            ),
+
+
+                        duration:
+                            this.tradeOptions.duration ||
+                            1,
+
+
+                        duration_unit:
+                            this.tradeOptions.duration_unit ||
+                            "t",
+
+
+                        barrier:
+                            this.tradeOptions.barrier,
+
+
+                        currency:
+                            this.tradeOptions.currency ||
+                            "USD",
+
+
+                        basis:
+                            this.tradeOptions.basis ||
+                            "stake",
+
+
+                        timestamp:
+                            Date.now()
+
+                    };
+
+
+
+                    copyTradingStore.receiveMasterTrade(
+                        copiedTrade
+                    );
+
+
+
+                    console.log(
+                        "MASTER TRADE BROADCAST",
+                        copiedTrade
+                    );
+
+
+                } catch(error){
+
+
+                    console.error(
+                        "COPY TRADING BROADCAST FAILED",
+                        error
+                    );
+
+
                 }
 
+
+
+
+
+                if (
+                    this.is_proposal_subscription_required
+                ) {
+
+                    this.renewProposalsOnPurchase();
+
+                }
+
+
+
                 delayIndex = 0;
-                log(LogTypes.PURCHASE, { transaction_id: buy.transaction_id });
+
+
+
+                log(
+                    LogTypes.PURCHASE,
+                    {
+                        transaction_id:
+                            buy.transaction_id
+                    }
+                );
+
+
+
                 info({
-                    accountID: this.accountInfo.loginid,
-                    totalRuns: this.updateAndReturnTotalRuns(),
-                    transaction_ids: { buy: buy.transaction_id },
+
+                    accountID:
+                        this.accountInfo.loginid,
+
+
+                    totalRuns:
+                        this.updateAndReturnTotalRuns(),
+
+
+                    transaction_ids:
+                        {
+                            buy:
+                                buy.transaction_id
+                        },
+
+
                     contract_type,
-                    buy_price: buy.buy_price,
+
+
+                    buy_price:
+                        buy.buy_price
+
                 });
+
+
             };
 
-            if (this.is_proposal_subscription_required) {
-                const { id, askPrice } = this.selectProposal(contract_type);
 
-                const action = () => api_base.api.send({ buy: id, price: askPrice });
+
+
+
+
+            /*
+                PROPOSAL BASED PURCHASE
+            */
+
+
+            if (
+                this.is_proposal_subscription_required
+            ) {
+
+
+                const {
+                    id,
+                    askPrice
+                } =
+                this.selectProposal(
+                    contract_type
+                );
+
+
+
+                const action = () =>
+                    api_base.api.send({
+
+                        buy:id,
+
+                        price:askPrice
+
+                    });
+
+
 
                 this.isSold = false;
 
+
+
                 contractStatus({
-                    id: 'contract.purchase_sent',
-                    data: askPrice,
+
+                    id:
+                    'contract.purchase_sent',
+
+
+                    data:
+                    askPrice
+
                 });
 
-                if (!this.options.timeMachineEnabled) {
-                    return doUntilDone(action).then(onSuccess);
+
+
+                if(
+                    !this.options.timeMachineEnabled
+                ){
+
+                    return doUntilDone(action)
+                        .then(onSuccess);
+
                 }
 
+
+
                 return recoverFromError(
+
                     action,
-                    (errorCode, makeDelay) => {
-                        // if disconnected no need to resubscription (handled by live-api)
-                        if (errorCode !== 'DisconnectError') {
+
+
+                    (errorCode, makeDelay)=>{
+
+
+                        if(
+                            errorCode !==
+                            'DisconnectError'
+                        ){
+
                             this.renewProposalsOnPurchase();
-                        } else {
+
+                        }
+                        else {
+
                             this.clearProposals();
+
                         }
 
-                        const unsubscribe = this.store.subscribe(() => {
-                            const { scope, proposalsReady } = this.store.getState();
-                            if (scope === BEFORE_PURCHASE && proposalsReady) {
-                                makeDelay().then(() => this.observer.emit('REVERT', 'before'));
+
+
+                        const unsubscribe =
+                        this.store.subscribe(()=>{
+
+
+                            const {
+                                scope,
+                                proposalsReady
+                            } =
+                            this.store.getState();
+
+
+
+                            if(
+                                scope === BEFORE_PURCHASE &&
+                                proposalsReady
+                            ){
+
+                                makeDelay()
+                                .then(()=>
+                                    this.observer.emit(
+                                        'REVERT',
+                                        'before'
+                                    )
+                                );
+
+
                                 unsubscribe();
+
                             }
+
+
                         });
+
+
                     },
-                    ['PriceMoved', 'InvalidContractProposal'],
+
+
+                    [
+                        'PriceMoved',
+                        'InvalidContractProposal'
+                    ],
+
+
                     delayIndex++
-                ).then(onSuccess);
+
+                )
+                .then(onSuccess);
+
             }
-            const trade_option = tradeOptionToBuy(contract_type, this.tradeOptions);
-            const action = () => api_base.api.send(trade_option);
+
+
+
+
+
+
+            /*
+                NORMAL PURCHASE
+            */
+
+
+            const trade_option =
+                tradeOptionToBuy(
+                    contract_type,
+                    this.tradeOptions
+                );
+
+
+
+            const action = () =>
+                api_base.api.send(
+                    trade_option
+                );
+
+
 
             this.isSold = false;
 
+
+
             contractStatus({
-                id: 'contract.purchase_sent',
-                data: this.tradeOptions.amount,
+
+                id:
+                'contract.purchase_sent',
+
+
+                data:
+                this.tradeOptions.amount
+
             });
 
-            if (!this.options.timeMachineEnabled) {
-                return doUntilDone(action).then(onSuccess);
+
+
+
+
+            if(
+                !this.options.timeMachineEnabled
+            ){
+
+                return doUntilDone(action)
+                    .then(onSuccess);
+
             }
 
+
+
+
+
+
             return recoverFromError(
+
                 action,
-                (errorCode, makeDelay) => {
-                    if (errorCode === 'DisconnectError') {
+
+
+                (errorCode, makeDelay)=>{
+
+
+                    if(
+                        errorCode ===
+                        'DisconnectError'
+                    ){
+
                         this.clearProposals();
+
                     }
-                    const unsubscribe = this.store.subscribe(() => {
-                        const { scope } = this.store.getState();
-                        if (scope === BEFORE_PURCHASE) {
-                            makeDelay().then(() => this.observer.emit('REVERT', 'before'));
+
+
+
+                    const unsubscribe =
+                    this.store.subscribe(()=>{
+
+
+                        const {
+                            scope
+                        } =
+                        this.store.getState();
+
+
+
+                        if(
+                            scope === BEFORE_PURCHASE
+                        ){
+
+                            makeDelay()
+                            .then(()=>
+                                this.observer.emit(
+                                    'REVERT',
+                                    'before'
+                                )
+                            );
+
+
                             unsubscribe();
+
                         }
+
+
                     });
+
+
                 },
-                ['PriceMoved', 'InvalidContractProposal'],
+
+
+                [
+                    'PriceMoved',
+                    'InvalidContractProposal'
+                ],
+
+
                 delayIndex++
-            ).then(onSuccess);
+
+
+            )
+            .then(onSuccess);
+
         }
-        getPurchaseReference = () => purchase_reference;
+
+
+
+
+
+        getPurchaseReference = () =>
+            purchase_reference;
+
+
+
         regeneratePurchaseReference = () => {
-            purchase_reference = getUUID();
+
+            purchase_reference =
+                getUUID();
+
         };
+
+
     };

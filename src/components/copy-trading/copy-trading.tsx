@@ -9,95 +9,240 @@ const CopyTrading = observer(() => {
 
     console.log("COPY TRADING COMPONENT LOADED");
 
+
+    const traders =
+        copyTradingStore.getMarketplaceTraders();
+
+
+    const activeCopies =
+        copyTradingStore.activeCopies;
+
+
+    const followTrader = (trader:any) => {
+
+        copyTradingStore.followMaster(
+            trader.id,
+            1
+        );
+
+        console.log(
+            "FOLLOWING MASTER",
+            trader
+        );
+
+    };
+
+
+
     return (
+
         <div className="copy-trading">
 
+
             <div className="copy-trading__header">
-                <h1>Copy Trading</h1>
+
+                <h1>
+                    Copy Trading
+                </h1>
+
 
                 <p>
                     Follow top user traders and automatically copy their strategies.
                 </p>
+
             </div>
+
+
+
 
 
             <section className="copy-trading__marketplace">
 
-                <h2>Top User Traders</h2>
+
+                <h2>
+                    Top User Traders
+                </h2>
+
+
 
                 <div className="copy-trading__grid">
 
-                    {copyTradingStore.traders.map((trader) => (
-                        <TraderCard
 
-key={trader.id}
+                    {
+                        traders.length === 0 ? (
 
-trader={trader}
+                            <div className="copy-empty">
 
-isFollowing={
-    copyTradingStore.isFollowing(trader.id)
-}
+                                No traders available yet.
 
-onCopy={() =>
-    copyTradingStore.copyTrader(trader)
-}
+                            </div>
 
-/>
-                    ))}
+
+                        ) : (
+
+
+                            traders.map((trader:any)=>(
+
+
+                                <TraderCard
+
+                                    key={trader.id}
+
+                                    trader={trader}
+
+
+                                    isFollowing={
+                                        activeCopies.some(
+                                            copy =>
+                                            copy.masterId === trader.id
+                                        )
+                                    }
+
+
+                                    onCopy={() =>
+                                        followTrader(trader)
+                                    }
+
+                                />
+
+
+                            ))
+
+
+                        )
+
+                    }
+
 
                 </div>
 
+
             </section>
-            <TraderProfile
-    trader={copyTradingStore.traders[0]}
-/>
+
+
+
+
+
+            {
+                traders.length > 0 && (
+
+                    <TraderProfile
+
+                        trader={traders[0]}
+
+                    />
+
+                )
+            }
+
+
+
+
 
 
             <section className="copy-trading__my-copy">
 
-                <h2>My Copy Trading</h2>
+
+                <h2>
+                    My Copy Trading
+                </h2>
+
 
 
                 {
-                    copyTradingStore.copiedTraders.length === 0 ? (
+                    activeCopies.length === 0 ? (
+
 
                         <div className="copy-empty">
+
                             You are not copying any traders yet.
+
                         </div>
+
+
 
                     ) : (
 
+
                         <div className="copy-trading__grid">
 
-                            {copyTradingStore.copiedTraders.map((trader) => (
 
-    <TraderCard
+                            {
+                                activeCopies.map(
+                                    (copy:any)=>{
 
-        key={trader.id}
 
-        trader={trader}
+                                        const trader =
+                                        traders.find(
+                                            (t:any)=>
+                                            t.id === copy.masterId
+                                        );
 
-        isFollowing={true}
 
-        onCopy={() =>
-            copyTradingStore.removeTrader(trader.id)
-        }
 
-    />
+                                        if(!trader)
+                                            return null;
 
-))}
+
+
+                                        return (
+
+
+                                            <TraderCard
+
+                                                key={
+                                                    trader.id
+                                                }
+
+
+                                                trader={
+                                                    trader
+                                                }
+
+
+                                                isFollowing={
+                                                    true
+                                                }
+
+
+                                                onCopy={()=>
+                                                    console.log(
+                                                        "REMOVE COPY TODO",
+                                                        trader.id
+                                                    )
+                                                }
+
+
+                                            />
+
+                                        );
+
+
+                                    }
+                                )
+                            }
+
 
                         </div>
 
+
                     )
+
                 }
+
 
 
             </section>
 
+
+
+
         </div>
+
     );
+
 });
+
 
 
 export default CopyTrading;

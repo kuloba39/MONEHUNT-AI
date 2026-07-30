@@ -14,9 +14,11 @@ const RoutePromptDialog = observer(() => {
     };
     const { show_prompt } = ui;
 
-    const blocker = useBlocker(
-        ({ currentLocation, nextLocation }) => show_prompt && currentLocation.pathname !== nextLocation.pathname
-    );
+    const blocker = {
+    state: 'unblocked',
+    proceed: () => {},
+    reset: () => {},
+};
 
     React.useEffect(() => {
         const handleBeforeUnload = (event: BeforeUnloadEvent) => {

@@ -11,10 +11,12 @@ export default class ActiveSymbols {
         this.disabled_symbols = config().DISABLED_SYMBOLS;
         this.disabled_submarkets = config().DISABLED_SUBMARKETS;
         this.init_promise = new PendingPromise();
+        this.is_loading = false;
         this.is_initialised = false;
         this.has_initialization_error = false;
         this.processed_symbols = {};
         this.trading_times = trading_times;
+        this.is_loading = false;
     }
 
     clearCache() {
@@ -44,6 +46,13 @@ export default class ActiveSymbols {
      */
     async retrieveActiveSymbols(is_forced_update = false) {
         await this.trading_times.initialise();
+        if (this.is_loading) {
+    console.log("ACTIVE SYMBOL FETCH ALREADY RUNNING");
+    await this.init_promise;
+    return this.active_symbols;
+}
+
+this.is_loading = true;
 
         if (!is_forced_update && this.is_initialised) {
             await this.init_promise;
@@ -114,7 +123,9 @@ console.log(
         };
 
         this.init_promise.resolve();
-        return this.active_symbols;
+this.is_loading = false;
+
+return this.active_symbols;
     }
 
     processActiveSymbols() {
