@@ -3,15 +3,10 @@ import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 
 
 type TickData = {
-
     digit:number;
-
     quote:string;
-
     epoch:number;
-
     market:string;
-
 };
 
 
@@ -26,169 +21,99 @@ export const useAnalysisTicks = (
 
 
 
-    /*
-        GLOBAL D CIRCLES MEMORY
-
-        Same storage for all markets.
-    */
-
-    const STORAGE_KEY = `d_circles_ticks_${market}`;
+const STORAGE_KEY = `d_circles_ticks_${market}`;
 
 
 
-    const [ticks,setTicks] = useState<TickData[]>(()=>{
+const [ticks,setTicks] = useState<TickData[]>(()=>{
 
 
-        try {
+    try {
 
 
-            const saved =
-
-            localStorage.getItem(
-                STORAGE_KEY
-            );
+        const saved =
+        localStorage.getItem(STORAGE_KEY);
 
 
-            if(saved){
+        if(saved){
 
-                return JSON.parse(saved);
-
-            }
-
-
-        } catch(error){
-
-
-            console.log(
-                "D CIRCLES CACHE LOAD ERROR",
-                error
-            );
-
+            return JSON.parse(saved);
 
         }
 
 
-        return [];
+    } catch(error){
 
-    });
+        console.log(
+            "D CIRCLES CACHE ERROR",
+            error
+        );
+
+    }
+
+
+    return [];
+
+});
 
 
 
 
-
-    const tickLimit = Math.min(
+const tickLimit = Math.min(
     5000,
     Math.max(
         100,
         analysisTicks
     )
-   );
-
-
-
-
-
-    useEffect(()=>{
-
-
-    if(!market) return;
-
-
-    setTicks([]);
-
-
-
-        let interval:any;
-
-        let api:any = null;
-
-        let subscription:any = null;
-
-        let subscriptionId:string|null = null;
-
-
-
-
-
-        const start = ()=>{
-
-
-            api = api_base;
-
-
-
-            if(!api?.api){
-
-
-                console.log(
-                    "D CIRCLES API NOT READY"
-                );
-
-
-                return false;
-
-            }
-
-
-
-
-
-           console.log(
-    "D CIRCLES CONNECTED",
-    market
 );
 
-const activeMarket =
-    market === 'GLOBAL'
-        ? 'R_100'
-        : market;
-
-api.api.send({
-    ticks_history: activeMarket,
-    count: tickLimit,
-    end: "latest",
-    style: "ticks"
-  })
-.then((history:any) => {
-
-    if (!history?.history?.prices) return;
-
-    const prices = history.history.prices;
-    const times = history.history.times;
-
-    const historicalTicks = prices.map(
-        (price:number, index:number) => {
-
-            const formattedPrice = Number(price).toFixed(2);
-
-const decimals =
-    String(price).split('.')[1]?.length ?? 0;
 
 
-const digit = Number(
-    Number(price)
-        .toFixed(decimals)
-        .replace(".", "")
-        .slice(-1)
-);
-console.log(
-    "HISTORICAL DIGIT CHECK",
-    price,
-    Number(price).toFixed(2),
-    digit
-);
 
-            return {
-    digit,
-    quote: String(price),
-    epoch: times[index],
-    market
-};
-        }
+
+/*
+    UNIVERSAL DERIV DIGIT EXTRACTION
+
+    Keeps trailing zeros.
+
+    Example:
+
+    123.230
+    pip_size 3
+
+    becomes
+
+    123.230
+
+    last digit = 0
+*/
+
+const extractDigit = (
+    quote:any,
+    pipSize:number
+)=>{
+
+
+    const formatted =
+
+    Number(quote)
+
+    .toFixed(pipSize);
+
+
+
+    const clean =
+
+    formatted.replace(".","");
+
+
+
+    return Number(
+        clean.slice(-1)
     );
 
-    setTicks(historicalTicks);
-});
+
+};
 
 
 
@@ -196,356 +121,174 @@ console.log(
 
 
 
-            subscription =
+useEffect(()=>{
 
-            api.api
 
-            .onMessage()
-
-            .subscribe(({data}:any)=>{
+if(!market) return;
 
 
 
+let api:any = null;
 
+let subscription:any = null;
 
-                if(data.error){
+let subscriptionId:string|null = null;
 
-
-                    console.log(
-
-                        "D CIRCLES ERROR",
-
-                        data.error.message
-
-                    );
-
-
-                    return;
-
-                }
+let interval:any;
 
 
 
+const start = ()=>{
+
+
+api = api_base;
 
 
 
-                if(data.subscription){
+if(!api?.api){
 
-
-                    subscriptionId =
-
-                    data.subscription.id;
-
-
-                }
-
-
-
-
-
-
-
-                if(!data.tick){
-
-                    return;
-
-                }
-
-
-
-
-
-
-
-                const quote =
-
-String(
-    data.tick.quote
+console.log(
+"D CIRCLES API NOT READY"
 );
+
+return false;
+
+}
+
+
+
+
+const activeMarket =
+
+market === "GLOBAL"
+
+?
+
+"R_100"
+
+:
+
+market;
+
+
+
+console.log(
+"D CIRCLES CONNECTED",
+activeMarket
+);
+
+
+
+
+
+/*
+    LOAD HISTORY
+*/
+
+
+api.api.send({
+
+ticks_history:
+activeMarket,
+
+count:
+tickLimit,
+
+end:
+"latest",
+
+style:
+"ticks"
+
+})
+.then((history:any)=>{
+
+
+if(!history?.history?.prices)
+return;
+
+
+
+const prices =
+history.history.prices;
+
+
+const times =
+history.history.times;
+
+
+
+const historicalTicks =
+
+prices.map(
+(price:any,index:number)=>{
 
 
 const pipSize =
-    data.tick.pip_size ?? 2;
 
+history.pip_size ??
+2;
 
-const numericQuote = Number(quote);
 
 
 const digit =
 
-Number(
+extractDigit(
+price,
+pipSize
+);
 
-    numericQuote
 
-    .toFixed(pipSize)
 
-    .replace(".","")
+return {
 
-    .slice(-1)
+digit,
+
+quote:
+
+String(price),
+
+epoch:
+
+times[index],
+
+market
+
+};
+
+
+
+});
+
+
+
+setTicks(
+historicalTicks
+);
+
+
+
+localStorage.setItem(
+
+STORAGE_KEY,
+
+JSON.stringify(
+historicalTicks
+)
 
 );
 
 
 
+console.log(
 
+"D CIRCLES HISTORY LOADED",
 
+historicalTicks.length
 
+);
 
-                 console.log(
-                     "TICK PAYLOAD",
-                  data.tick
-                   );
 
-                setTicks(prev => {
-
-
-
-
-
-                    const newTick:TickData = {
-
-
-                        digit,
-
-
-                        quote,
-
-
-                        epoch:
-
-                        data.tick.epoch,
-
-
-                        market
-
-
-                    };
-
-
-
-
-
-
-
-                    let updated = [
-
-                        ...prev,
-
-                        newTick
-
-                    ];
-
-
-
-
-
-
-
-
-
-                    /*
-                        BALANCE ALL MARKETS
-
-                        Keep maximum 100 ticks
-                        from each market.
-                    */
-
-
-
-                    const marketGroups:
-
-                    Record<string,TickData[]> = {};
-
-
-
-
-
-
-
-                    updated.forEach(tick=>{
-
-
-                        if(!marketGroups[tick.market]){
-
-
-                            marketGroups[tick.market]=[];
-
-
-                        }
-
-
-
-                        marketGroups[tick.market]
-
-                        .push(tick);
-
-
-
-                    });
-
-
-
-
-
-
-
-
-
-                    updated =
-
-                    Object.values(marketGroups)
-
-                    .flatMap(group=>{
-
-
-                        return group
-
-                        .sort(
-
-                            (a,b)=>
-
-                            a.epoch-b.epoch
-
-                        )
-
-                        .slice(-tickLimit);
-
-
-                    });
-
-
-
-
-
-
-
-
-
-                    /*
-                        GLOBAL MEMORY
-
-                        Keep latest 1000 ticks.
-                    */
-
-
-
-                    updated =
-
-                    updated
-
-                    .sort(
-
-                        (a,b)=>
-
-                        a.epoch-b.epoch
-
-                    )
-
-                    .slice(-tickLimit);
-
-
-
-
-
-
-
-
-
-                    localStorage.setItem(
-
-                        STORAGE_KEY,
-
-                        JSON.stringify(updated)
-
-                    );
-
-
-
-
-
-
-
-
-                    console.log(
-
-                        "D CIRCLES MEMORY",
-
-                        {
-
-                            total:
-
-                            updated.length,
-
-
-                            markets:
-
-                            [
-
-                                ...new Set(
-
-                                    updated.map(
-
-                                        x=>x.market
-
-                                    )
-
-                                )
-
-                            ]
-
-                        }
-
-                    );
-
-
-
-
-
-
-
-                    return updated;
-
-
-
-
-
-                });
-
-
-
-
-
-
-
-
-                if (digit === 0) {
-    console.log(
-        "ZERO DETECTED",
-        {
-            quote,
-            digit
-        }
-    );
-}
-
-
-
-
-            });
-
-
-
-
-
-
-
-
-
-            api.api.send({
-
-    ticks: activeMarket,
-
-    subscribe: 1
 
 });
 
@@ -554,123 +297,293 @@ Number(
 
 
 
-            return true;
 
 
+/*
+    LIVE TICKS
+*/
 
-        };
 
+subscription =
 
+api.api
 
+.onMessage()
 
+.subscribe(({data}:any)=>{
 
 
 
+if(data.error){
 
+console.log(
+"D CIRCLES ERROR",
+data.error
+);
 
+return;
 
-
-        interval =
-
-        setInterval(()=>{
-
-
-            if(start()){
-
-
-                clearInterval(interval);
-
-
-            }
-
-
-        },1000);
-
-
-
-
-
-
-
-
-
-        return ()=>{
-
-
-
-            if(subscription){
-
-
-                subscription.unsubscribe();
-
-
-            }
-
-
-
-
-
-
-
-            if(
-
-                subscriptionId &&
-
-                api?.api
-
-            ){
-
-
-                api.api.send({
-
-
-                    forget:
-
-                    subscriptionId
-
-
-                });
-
-
-            }
-
-
-
-
-
-
-
-            if(interval){
-
-
-                clearInterval(interval);
-
-
-            }
-
-
-
-        };
-
-
-
-
-
-    },[market,tickLimit]);
-
-
-
-
-
-
-
-
-    if (market === 'GLOBAL') {
-    return ticks;
 }
 
+
+
+if(data.subscription){
+
+subscriptionId =
+data.subscription.id;
+
+}
+
+
+
+
+if(!data.tick)
+return;
+
+
+
+
+
+const rawQuote =
+
+String(
+data.tick.quote
+);
+
+
+
+const pipSize =
+
+data.tick.pip_size ?? 2;
+
+
+
+
+const digit =
+
+extractDigit(
+rawQuote,
+pipSize
+);
+
+
+
+console.log(
+
+"LIVE DIGIT",
+
+{
+
+quote:rawQuote,
+
+pipSize,
+
+digit
+
+}
+
+);
+
+
+
+
+
+
+const newTick:TickData = {
+
+
+digit,
+
+quote:
+
+rawQuote,
+
+epoch:
+
+data.tick.epoch,
+
+market
+
+
+};
+
+
+
+
+
+setTicks(prev=>{
+
+
+
+let updated = [
+
+...prev,
+
+newTick
+
+];
+
+
+
+/*
+    Keep newest 5000
+*/
+
+updated =
+
+updated
+
+.sort(
+(a,b)=>
+a.epoch-b.epoch
+)
+
+.slice(-5000);
+
+
+
+
+
+localStorage.setItem(
+
+STORAGE_KEY,
+
+JSON.stringify(updated)
+
+);
+
+
+
+return updated;
+
+
+});
+
+
+
+
+});
+
+
+
+
+
+
+
+api.api.send({
+
+ticks:
+
+activeMarket,
+
+subscribe:
+
+1
+
+});
+
+
+
+
+return true;
+
+
+};
+
+
+
+
+
+interval =
+
+setInterval(()=>{
+
+
+if(start()){
+
+clearInterval(interval);
+
+}
+
+
+},1000);
+
+
+
+
+
+
+return ()=>{
+
+
+if(subscription){
+
+subscription.unsubscribe();
+
+}
+
+
+
+if(
+
+subscriptionId &&
+api?.api
+
+){
+
+api.api.send({
+
+forget:
+
+subscriptionId
+
+});
+
+}
+
+
+
+if(interval){
+
+clearInterval(interval);
+
+}
+
+
+
+};
+
+
+
+},[market,tickLimit]);
+
+
+
+
+
+
+
+
+/*
+    GLOBAL VIEW
+*/
+
+
+if(market==="GLOBAL"){
+
+return ticks;
+
+}
+
+
+
+
 return ticks.filter(
-    tick => tick.market === market
+
+tick=>
+
+tick.market===market
+
 );
 
 
