@@ -51,12 +51,14 @@ try {
         barrier:
             this.tradeOptions.barrier,
 
+        currency:"USD",
+
+        basis:"stake",
+
         time:
             new Date().toISOString(),
 
-        status:"OPEN"
-
-    });
+});
 
 
     console.log(

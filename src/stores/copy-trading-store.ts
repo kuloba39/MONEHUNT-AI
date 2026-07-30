@@ -1,5 +1,9 @@
 import { makeAutoObservable } from "mobx";
 import { api_base } from "@/external/bot-skeleton/services/api/api-base";
+import { followerTradeExecutor } 
+from '@/services/follower-trade-executor.service';
+import { followerDerivConnection }
+from '@/services/follower-deriv-connection.service';
 
 
 export interface TradeHistoryItem {
@@ -29,8 +33,6 @@ export interface MasterTrader {
     balance:number;
 
     status:"active" | "offline";
-
-    deriv_token:string;
 
 
     profitHistory:number[];
@@ -76,7 +78,9 @@ export interface CopiedTrade {
 
     time:string;
 
-    status:"OPEN" | "WIN" | "LOSS";
+    currency:string;
+
+    basis:string;
 
 }
 
@@ -239,13 +243,40 @@ makeAutoObservable(this);
 
 
 
-addFollower(
+async addFollower(
 follower:Follower
 ){
 
 this.followers.push(
 follower
 );
+
+
+const api =
+await followerDerivConnection.connect(
+    follower.id,
+    follower.deriv_token
+);
+
+
+if(!api){
+
+console.log(
+"FOLLOWER CONNECTION FAILED",
+follower.id
+);
+
+return;
+
+}
+
+
+
+console.log(
+"FOLLOWER READY FOR COPYING",
+follower.id
+);
+
 
 }
 
@@ -348,6 +379,17 @@ enabled:true
 });
 
 
+
+followerDerivConnection.connect(
+
+    trader.id,
+
+    trader.deriv_token
+
+);
+
+
+
 console.log(
 "TRADER COPIED",
 trader
@@ -404,7 +446,7 @@ copy => {
 if(copy.enabled){
 
 this.executeCopiedTrade(
-copy.traderId,
+copy.followerId,
 trade
 );
 
@@ -432,27 +474,62 @@ item.status==="active"
 
 }
 async executeCopiedTrade(
-    traderId:number,
+    followerId:number,
     trade:CopiedTrade
-){
+)
+{
 
 const copy =
 this.activeCopies.find(
-item=>item.traderId===traderId
+item =>
+item.followerId === traderId ||
+item.traderId === traderId
 );
-
 
 if(!copy){
 
 console.log(
-"NO ACTIVE COPY",
-traderId
+"NO ACTIVE COPY FOR FOLLOWER",
+{
+traderId,
+activeCopies:this.activeCopies
+}
 );
 
 return;
 
 }
 
+console.log(
+"COPY FOUND",
+copy
+);const follower =
+this.followers.find(
+item=>item.followerId===followerId
+);
+
+if(!follower){
+
+console.log(
+"FOLLOWER PROFILE NOT FOUND"
+);
+
+return;
+
+}
+
+if(
+follower.status !== "active"
+){
+
+console.log(
+"FOLLOWER PAUSED",
+follower.id
+);
+
+return;
+
+}
 
 if(!api_base.api){
 
@@ -465,13 +542,30 @@ return;
 }
 
 
+let followerStake =
+trade.stake *
+(follower.copy_percentage / 100);
+
+
+
+if(
+followerStake > follower.max_stake
+){
+
+followerStake =
+follower.max_stake;
+
+}
+
 
 const proposalRequest = {
 
 proposal:1,
 
 amount:
-copy.amount,
+Number(
+followerStake.toFixed(2)
+),
 
 basis:"stake",
 
@@ -502,50 +596,23 @@ proposalRequest
 
 
 
-const proposal:any =
-await api_base.api.send(
-proposalRequest
+await followerTradeExecutor.execute(
+    traderId,
+    {
+        amount: copy.amount,
+        basis:"stake",
+        contract_type: trade.contract_type,
+        currency:"USD",
+        duration: trade.duration ?? 1,
+        duration_unit:"t",
+        symbol: trade.symbol,
+        barrier: trade.barrier
+    }
 );
 
-
-
 console.log(
-"COPY PROPOSAL RESPONSE",
-proposal
-);
-
-
-
-if(
-!proposal?.proposal?.id
-){
-
-console.log(
-"NO PROPOSAL ID"
-);
-
-return;
-
-}
-
-
-
-const buy:any =
-await api_base.api.send({
-
-buy:
-proposal.proposal.id,
-
-price:
-copy.amount
-
-});
-
-
-
-console.log(
-"COPIED TRADE BOUGHT",
-buy
+    "COPY TRADE EXECUTION COMPLETE",
+    traderId
 );
 
 
