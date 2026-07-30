@@ -14,8 +14,7 @@ import { localize, TranslationProvider } from '@deriv-com/translations';
 import CoreStoreProvider from './CoreStoreProvider';
 import i18nInstance from './i18n';
 import './app-root.scss';
-import CopyTradingPage from '../pages/copy-trading';
-import TraderDetails from '../pages/copy-trading/trader-details';    
+import CopyTradingPage from '../pages/copy-trading';  
 
 const Layout = lazy(() => import('../components/layout'));
 const AppRoot = lazy(() => import('./app-root'));

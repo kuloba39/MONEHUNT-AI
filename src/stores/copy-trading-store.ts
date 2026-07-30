@@ -1,19 +1,5 @@
-import { makeAutoObservable } from 'mobx';
-import { api_base } from '@/external/bot-skeleton/services/api/api-base';
-
-export interface CopySettings {
-
-    amount: number;
-
-    risk: 'Low' | 'Medium' | 'High';
-
-    autoCopy: boolean;
-
-    stopLoss: number;
-
-    takeProfit: number;
-
-}
+import { makeAutoObservable } from "mobx";
+import { api_base } from "@/external/bot-skeleton/services/api/api-base";
 
 
 export interface TradeHistoryItem {
@@ -29,524 +15,286 @@ export interface TradeHistoryItem {
     time: string;
 
 }
-export interface CopySettings {
 
-    amount: number;
+export interface MasterTrader {
 
-    risk: 'Low' | 'Medium' | 'High';
+    id:number;
 
-    autoCopy: boolean;
+    name:string;
 
-    stopLoss: number;
+    roi:string;
 
-    takeProfit: number;
+    followers:number;
+
+    balance:number;
+
+    status:"active" | "offline";
+
+    deriv_token:string;
+
+
+    profitHistory:number[];
+
+    tradeHistory:TradeHistoryItem[];
+
+}
+
+export interface Follower {
+
+    id:number;
+
+    user_id:number;
+
+    master_id:number;
+
+    deriv_token:string;
+
+    copy_percentage:number;
+
+    max_stake:number;
+
+    status:"active" | "paused";
 
 }
 
 
-export interface Trader {
+export interface CopiedTrade {
 
-    id: number;
+    trade_id:string;
 
-    name: string;
+    master_id:number;
 
-    profit: string;
+    symbol:string;
 
-    winRate: string;
+    contract_type:string;
 
-    followers: number;
+    stake:number;
 
-    risk: string;
+    duration:number;
 
-    status?: 'active' | 'offline';
+    barrier?:string;
 
-    copiedAmount?: number;
+    time:string;
 
-    avatar: string;
-
-    country: string;
-
-    strategy: string;
-
-    totalTrades: number;
-
-    wins: number;
-
-    losses: number;
-
-    drawdown: string;
-
-    monthlyProfit: string;
-
-profitHistory: number[];
-
-tradeHistory: TradeHistoryItem[];
-copySettings?: CopySettings;
+    status:"OPEN" | "WIN" | "LOSS";
 
 }
+
 
 
 
 class CopyTradingStore {
-    activeCopies: {
-    traderId:number;
-    enabled:boolean;
-    amount:number;
-    risk:string;
-    stopLoss:number;
-    takeProfit:number;
-}[] = [];
 
-    traders: Trader[] = [
+activeCopies:any[] = [];
 
 
-        {
-    id: 1,
-    name: 'AI Alpha Trader',
-    profit: '+$1,245',
-    winRate: '82%',
-    followers: 324,
-    risk: 'LOW',
-    status: 'active',
+get traders(){
 
-    avatar: '🤖',
+return this.masters;
 
-    country: 'Kenya',
+}
 
-    strategy: 'Digit Over/Under',
 
-    totalTrades: 1543,
+copiedTraders:MasterTrader[] = [];
 
-    wins: 1265,
 
-    losses: 278,
+masters:MasterTrader[]=[
 
-    drawdown: '8%',
 
-    monthlyProfit: '+$624',
-    copySettings: {
+{
+id:1,
+name:"John Forex",
+roi:"+45%",
+followers:132,
+balance:1000,
+status:"active",
+deriv_token:"",
 
-    amount: 10,
-
-    risk: 'Low',
-
-    autoCopy: true,
-
-    stopLoss: 50,
-
-    takeProfit: 100,
-
-},
-    tradeHistory: [
-
-    {
-        contract: 'Digit Over 5',
-        stake: '$10',
-        profit: '+$8.20',
-        result: 'WIN',
-        time: '09:15'
-    },
-
-    {
-        contract: 'Digit Under 4',
-        stake: '$10',
-        profit: '+$8.50',
-        result: 'WIN',
-        time: '09:22'
-    },
-
-    {
-        contract: 'Even',
-        stake: '$10',
-        profit: '-$10',
-        result: 'LOSS',
-        time: '09:31'
-    }
-
+profitHistory:[
+10,
+25,
+40,
+55,
+70
 ],
-    profitHistory: [
-    120,
-    240,
-    310,
-    450,
-    520,
-    610,
-    740,
-    830,
-    910,
-    1040,
-    1170,
-    1245
-],
+
+tradeHistory:[
+{
+contract:"DIGITOVER",
+stake:"10",
+profit:"8.5",
+result:"WIN",
+time:"10:30"
+}
+]
+
 },
 
 
+{
+id:2,
+name:"AI Alpha Trader",
+roi:"+35%",
+followers:84,
+balance:2500,
+status:"active",
+deriv_token:"",
 
-        {
-    id: 2,
-    name: 'Smart Digit Hunter',
-    profit: '+$860',
-    winRate: '76%',
-    followers: 189,
-    risk: 'MEDIUM',
-    status: 'active',
-
-    avatar: '📈',
-
-    country: 'South Africa',
-
-    strategy: 'Even/Odd Strategy',
-
-    totalTrades: 987,
-
-    wins: 750,
-
-    losses: 237,
-
-    drawdown: '12%',
-
-    monthlyProfit: '+$418',
-    copySettings: {
-
-    amount: 10,
-
-    risk: 'Low',
-
-    autoCopy: true,
-
-    stopLoss: 50,
-
-    takeProfit: 100,
-
-},
-    tradeHistory: [
-
-    {
-        contract: 'Digit Over 5',
-        stake: '$10',
-        profit: '+$8.20',
-        result: 'WIN',
-        time: '09:15'
-    },
-
-    {
-        contract: 'Digit Under 4',
-        stake: '$10',
-        profit: '+$8.50',
-        result: 'WIN',
-        time: '09:22'
-    },
-
-    {
-        contract: 'Even',
-        stake: '$10',
-        profit: '-$10',
-        result: 'LOSS',
-        time: '09:31'
-    }
-
+profitHistory:[
+5,
+20,
+35,
+60,
+90
 ],
-    profitHistory: [
-    80,
-    120,
-    170,
-    250,
-    330,
-    390,
-    470,
-    560,
-    640,
-    710,
-    790,
-    860
-],
-},
+
+tradeHistory:[
+{
+contract:"DIGITUNDER",
+stake:"15",
+profit:"12",
+result:"WIN",
+time:"11:00"
+}
+]
+
+}
+
+
+];
 
 
 
-        {
-    id: 3,
-    name: 'Quantum Signals',
-    profit: '+$2,430',
-    winRate: '88%',
-    followers: 512,
-    risk: 'LOW',
-    status: 'active',
-
-    avatar: '🚀',
-
-    country: 'Nigeria',
-
-    strategy: 'AI Pattern Detection',
-
-    totalTrades: 2231,
-
-    wins: 1963,
-
-    losses: 268,
-
-    drawdown: '6%',
-
-    monthlyProfit: '+$1,103',
-
-copySettings: {
-
-    amount: 20,
-
-    risk: 'Low',
-
-    autoCopy: true,
-
-    stopLoss: 100,
-
-    takeProfit: 200,
-
-},
-    tradeHistory: [
-
-    {
-        contract: 'Digit Over 5',
-        stake: '$10',
-        profit: '+$8.20',
-        result: 'WIN',
-        time: '09:15'
-    },
-
-    {
-        contract: 'Digit Under 4',
-        stake: '$10',
-        profit: '+$8.50',
-        result: 'WIN',
-        time: '09:22'
-    },
-
-    {
-        contract: 'Even',
-        stake: '$10',
-        profit: '-$10',
-        result: 'LOSS',
-        time: '09:31'
-    }
-
-],
-    profitHistory: [
-    250,
-    430,
-    620,
-    810,
-    990,
-    1180,
-    1360,
-    1590,
-    1820,
-    2050,
-    2230,
-    2430
-],
-},
+followers:Follower[]=[];
 
 
-    ];
+trades:CopiedTrade[]=[];
 
 
 
-    copiedTraders: Trader[] = [];
+
+constructor(){
+
+makeAutoObservable(this);
+
+}
 
 
 
-    constructor() {
-
-        makeAutoObservable(this);
-
-    }
 
 
+addFollower(
+follower:Follower
+){
 
-    copyTrader(trader: Trader) {
+this.followers.push(
+follower
+);
 
-
-        const exists =
-            this.copiedTraders.some(
-                item => item.id === trader.id
-            );
-
-
-        if (!exists) {
+}
 
 
-            this.copiedTraders.push({
 
-    ...trader,
 
-    copiedAmount: 0,
 
-    copySettings: {
+removeFollower(id:number){
 
-        amount: 10,
+this.followers =
+this.followers.filter(
+item=>item.id!==id
+);
 
-        risk: 'Low',
+}
 
-        autoCopy: true,
 
-        stopLoss: 50,
 
-        takeProfit: 100
 
-    }
+
+getMaster(id:number){
+
+return this.masters.find(
+item=>item.id===id
+);
+
+}
+  getTraderById(id:number){
+
+  return this.traders.find(
+  trader=>trader.id===id
+  );
+
+  }
+
+
+  getTrader(id:number){
+
+  return this.traders.find(
+  trader=>trader.id===id
+  );
+
+  }
+isFollowing(
+id:number
+){
+
+return this.copiedTraders.some(
+item=>item.id===id
+);
+
+}
+
+
+
+
+
+followTrader(
+masterId:number
+){
+
+const master =
+this.getMaster(masterId);
+
+
+if(master){
+
+master.followers++;
+
+}
+
+
+}
+copyTrader(
+trader:MasterTrader
+){
+
+if(
+this.isFollowing(trader.id)
+){
+
+return;
+
+}
+
+
+this.copiedTraders.push(
+trader
+);
+
+
+this.activeCopies.push({
+
+traderId:trader.id,
+
+amount:10,
+
+enabled:true
 
 });
 
 
-            this.incrementFollowers(trader.id);
-
-
-        }
-
-
-    }
-
-
-
-
-
-    removeTrader(id:number) {
-
-
-        this.copiedTraders =
-            this.copiedTraders.filter(
-                trader => trader.id !== id
-            );
-
-
-    }
-
-
-
-
-
-    incrementFollowers(id:number) {
-
-
-        const trader =
-            this.traders.find(
-                item => item.id === id
-            );
-
-
-        if(trader){
-
-            trader.followers += 1;
-
-        }
-
-
-    }
-
-
-
-
-
-    getTraderById(id:number) {
-
-
-        return this.traders.find(
-            trader => trader.id === id
-        );
-
-
-    }
-getTrader(id:number) {
-
-    return this.traders.find(
-        trader => trader.id === id
-    );
-
-}
-
-
-
-
-
-    isFollowing(id:number) {
-
-
-        return this.copiedTraders.some(
-            trader => trader.id === id
-        );
-
-
-    }
-updateCopySettings(
-    id:number,
-    settings:CopySettings
-) {
-
-
-    const trader =
-        this.copiedTraders.find(
-            item => item.id === id
-        );
-
-
-    if(trader){
-
-        trader.copySettings = settings;
-
-    }
-
-
-}
-
-
-
-startCopy(
-    traderId:number,
-    settings:CopySettings
-){
-
-
-    const exists =
-        this.activeCopies.some(
-
-            item =>
-            item.traderId === traderId
-
-        );
-
-
-    if(exists){
-
-        return;
-
-    }
-
-
-
-    this.activeCopies.push({
-
-        traderId,
-
-        enabled:true,
-
-        amount:settings.amount,
-
-        risk:settings.risk,
-
-        stopLoss:settings.stopLoss,
-
-        takeProfit:settings.takeProfit,
-
-    });
-
-
-
-    console.log(
-        "COPY STARTED",
-        this.activeCopies
-    );
 console.log(
-    "ACTIVE COPIES JSON",
-    JSON.stringify(this.activeCopies, null, 2)
+"TRADER COPIED",
+trader
 );
 
 
@@ -554,71 +302,109 @@ console.log(
 
 
 
-stopCopy(
-    traderId:number
+
+
+calculateStake(
+
+masterStake:number,
+
+masterBalance:number,
+
+followerBalance:number
+
 ){
 
-
-    this.activeCopies =
-        this.activeCopies.filter(
-
-            item =>
-            item.traderId !== traderId
-
-        );
-
-
-    console.log(
-        "COPY STOPPED",
-        traderId
-    );
+return Number(
+(
+masterStake *
+followerBalance /
+masterBalance
+).toFixed(2)
+);
 
 
 }
 
 
 
-async executeCopiedTrade(
-    traderId:number,
-    trade:any
+
+
+receiveMasterTrade(
+trade:CopiedTrade
 ){
 
+this.trades.push(
+trade
+);
 
-   const copy =
-    this.activeCopies.find(
-        item => item.traderId === traderId
-    );
+console.log(
+"MASTER TRADE RECEIVED",
+trade
+);
+
+this.activeCopies.forEach(
+copy => {
+
+if(copy.enabled){
+
+this.executeCopiedTrade(
+copy.traderId,
+trade
+);
+
+}
+
+}
+);
+
+}
+
+
+
+
+
+getFollowers(masterId:number){
+
+return this.followers.filter(
+
+item=>
+item.master_id===masterId &&
+item.status==="active"
+
+);
+
+
+}
+async executeCopiedTrade(
+    traderId:number,
+    trade:CopiedTrade
+){
+
+const copy =
+this.activeCopies.find(
+item=>item.traderId===traderId
+);
 
 
 if(!copy){
-    console.log("NO ACTIVE COPY");
-    return;
-}
-
-
-if(!copy.enabled){
-    return;
-}
-
 
 console.log(
-    "COPY EXECUTION START",
-    {
-        traderId,
-        trade,
-        stake:copy.amount
-    }
+"NO ACTIVE COPY",
+traderId
 );
 
+return;
+
+}
 
 
 if(!api_base.api){
 
-    console.log(
-        "API NOT CONNECTED"
-    );
+console.log(
+"API NOT CONNECTED"
+);
 
-    return;
+return;
 
 }
 
@@ -626,87 +412,100 @@ if(!api_base.api){
 
 const proposalRequest = {
 
-    proposal:1,
+proposal:1,
 
-    amount:copy.amount,
+amount:
+copy.amount,
 
-    basis:"stake",
+basis:"stake",
 
-    contract_type:trade.contract_type,
+contract_type:
+trade.contract_type,
 
-    currency:"USD",
+currency:"USD",
 
-    duration:trade.duration ?? 1,
+duration:
+trade.duration ?? 1,
 
-    duration_unit:trade.duration_unit ?? "t",
+duration_unit:"t",
 
-    symbol:trade.symbol,
+symbol:
+trade.symbol,
 
-    barrier:trade.barrier
+barrier:
+trade.barrier
 
 };
 
 
 
 console.log(
-    "COPY PROPOSAL",
-    proposalRequest
+"COPY PROPOSAL REQUEST",
+proposalRequest
 );
 
 
 
- const proposal:any =
-    await api_base.api.send(
-        proposalRequest
-    );
+const proposal:any =
+await api_base.api.send(
+proposalRequest
+);
+
 
 
 console.log(
-    "COPY PROPOSAL RESPONSE",
-    proposal
+"COPY PROPOSAL RESPONSE",
+proposal
 );
 
 
 
-if(!proposal || !proposal.proposal?.id){
+if(
+!proposal?.proposal?.id
+){
 
-    console.log(
-        "NO PROPOSAL ID"
-    );
+console.log(
+"NO PROPOSAL ID"
+);
 
-    return;
+return;
 
 }
 
 
 
 const buy:any =
-    await api_base.api.send({
-        buy: proposal.proposal.id,
-        price: copy.amount
-    });
+await api_base.api.send({
+
+buy:
+proposal.proposal.id,
+
+price:
+copy.amount
+
+});
 
 
 
 console.log(
-    "COPIED TRADE BOUGHT",
-    buy
+"COPIED TRADE BOUGHT",
+buy
 );
 
 
 }
 
+
+
+
+
 }
+
 
 
 export const copyTradingStore =
-    new CopyTradingStore();
+new CopyTradingStore();
 
 
-console.log(
-    "COPY STORE LOADED",
-    copyTradingStore
-);
-
-
-(globalThis as any).copyTradingStore = copyTradingStore;
+(globalThis as any).copyTradingStore =
+copyTradingStore;

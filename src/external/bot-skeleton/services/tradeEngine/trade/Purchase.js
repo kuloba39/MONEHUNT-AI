@@ -4,6 +4,7 @@ import { contractStatus, info, log } from '../utils/broadcast';
 import { doUntilDone, getUUID, recoverFromError, tradeOptionToBuy } from '../utils/helpers';
 import { purchaseSuccessful } from './state/actions';
 import { BEFORE_PURCHASE } from './state/constants';
+import { copyTradingStore } from '@/stores/copy-trading-store';
 
 let delayIndex = 0;
 let purchase_reference;
@@ -28,6 +29,51 @@ export default Engine =>
 
                 this.contractId = buy.contract_id;
                 this.store.dispatch(purchaseSuccessful());
+try {
+
+    copyTradingStore.receiveMasterTrade({
+
+        trade_id: String(buy.transaction_id),
+
+        master_id: 1,
+
+        symbol:
+            this.tradeOptions.symbol,
+
+        contract_type,
+
+        stake:
+            buy.buy_price,
+
+        duration:
+            this.tradeOptions.duration ?? 1,
+
+        barrier:
+            this.tradeOptions.barrier,
+
+        time:
+            new Date().toISOString(),
+
+        status:"OPEN"
+
+    });
+
+
+    console.log(
+        "MASTER TRADE SENT TO COPY ENGINE",
+        buy
+    );
+
+
+}
+catch(error){
+
+    console.log(
+        "COPY ENGINE ERROR",
+        error
+    );
+
+}
 
                 if (this.is_proposal_subscription_required) {
                     this.renewProposalsOnPurchase();
