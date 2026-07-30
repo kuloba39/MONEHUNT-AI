@@ -32,7 +32,7 @@ export const useAnalysisTicks = (
         Same storage for all markets.
     */
 
-    const STORAGE_KEY = 'd_circles_global_ticks';
+    const STORAGE_KEY = `d_circles_ticks_${market}`;
 
 
 
@@ -91,7 +91,10 @@ export const useAnalysisTicks = (
     useEffect(()=>{
 
 
-        if(!market) return;
+    if(!market) return;
+
+
+    setTicks([]);
 
 
 
@@ -158,11 +161,13 @@ api.api.send({
 
             const formattedPrice = Number(price).toFixed(2);
 
-const pipSize = 2;
+const decimals =
+    String(price).split('.')[1]?.length ?? 0;
+
 
 const digit = Number(
     Number(price)
-        .toFixed(pipSize)
+        .toFixed(decimals)
         .replace(".", "")
         .slice(-1)
 );
