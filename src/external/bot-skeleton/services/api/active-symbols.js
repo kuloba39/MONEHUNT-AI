@@ -61,6 +61,18 @@ export default class ActiveSymbols {
             // Wait for the promise and use its resolved value
             const symbols = await api_base.active_symbols_promise;
             this.active_symbols = symbols ?? api_base?.active_symbols ?? [];
+            console.log(
+    "🔥 ACTIVE SYMBOL COUNT:",
+    this.active_symbols.length
+);
+
+console.log(
+    "🔥 SYNTHETIC CHECK:",
+    this.active_symbols.filter(
+        s => s.underlying_symbol?.startsWith("1HZ") ||
+             s.symbol?.startsWith("1HZ")
+    ).slice(0,20)
+);
         }
 
         // If still no symbols after waiting, try one more time with a fresh fetch
@@ -84,7 +96,10 @@ export default class ActiveSymbols {
 
         this.is_initialised = true;
         this.processed_symbols = this.processActiveSymbols();
-
+        console.log(
+    "🔥 PROCESSED SYNTHETIC:",
+    this.processed_symbols.synthetic_index
+);
         this.trading_times.onMarketOpenCloseChanged = changes => {
             Object.keys(changes).forEach(symbol_name => {
                 const symbol_obj = this.active_symbols[symbol_name];
