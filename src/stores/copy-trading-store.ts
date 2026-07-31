@@ -1192,15 +1192,13 @@ await this.loadMastersFromServer();
 
 
 
-    getMarketplaceTraders(){
+getMarketplaceTraders(){
 
-
-        return this.masters
+    return (this.masters || [])
 
         .filter(
 
             master =>
-
             master.status === "active"
 
         )
@@ -1210,166 +1208,108 @@ await this.loadMastersFromServer();
             master => ({
 
 
-
                 id:
-
                 master.id,
 
 
-
                 name:
-
                 master.name,
 
 
-
                 avatar:
-
                 master.avatar,
 
 
-
                 country:
-
                 master.country,
 
 
-
                 strategy:
-
                 master.strategy,
 
 
-
                 profit:
-
                 master.roi,
-
 
 
                 monthlyProfit:
-
                 master.monthlyProfit,
 
 
-
                 roi:
-
                 master.roi,
 
 
-
                 winRate:
-
                 master.winRate,
 
 
-
                 totalTrades:
-
                 master.totalTrades,
 
 
-
                 wins:
-
                 master.wins,
 
 
-
                 losses:
-
                 master.losses,
 
 
-
                 drawdown:
-
                 master.drawdown,
 
 
-
                 followers:
-
                 master.followers,
 
 
-
                 risk:
-
                 master.risk,
 
 
-
                 status:
-
                 master.status,
 
 
-
                 verified:
-
                 master.verified,
 
 
-
                 experience:
-
                 master.experience,
 
 
-
                 markets:
-
-                master.markets,
-
+                master.markets || [],
 
 
                 contracts:
-
-                master.contracts,
-
+                master.contracts || [],
 
 
                 profitHistory:
-
-                master.profitHistory,
-
+                master.profitHistory || [],
 
 
                 tradeHistory:
-
-                master.tradeHistory,
-
+                master.tradeHistory || [],
 
 
                 copySettings:
-
-                master.copySettings
-
-
+                master.copySettings || {}
 
             })
 
         );
 
 
-    }
-
-
-
-
-
-
-
-
-
+}
     getMasterById(
 
         id:number
 
     ){
-
 
         return this.masters.find(
 
@@ -1379,14 +1319,12 @@ await this.loadMastersFromServer();
 
         );
 
-
     }
 
 
-
-
-
 }
+
+
 export const copyTradingStore =
 new CopyTradingStore();
 

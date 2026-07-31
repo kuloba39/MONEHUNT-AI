@@ -91,17 +91,99 @@ export default async function handler(req, res) {
 
             const newMaster = {
 
-                ...master,
+    id: Date.now(),
 
-                id: Date.now(),
+    name: master.name,
 
-                followers:0,
+    account_id: master.account_id,
 
-                status:"active",
 
-                createdAt:Date.now()
+    avatar:
+    master.avatar || "",
 
-            };
+
+    country:
+    master.country || "Unknown",
+
+
+    strategy:
+    master.strategy || "AI Trading",
+
+
+    profit:
+    master.profit || "0",
+
+
+    monthlyProfit:
+    master.monthlyProfit || "0",
+
+
+    roi:
+    master.roi || "0",
+
+
+    winRate:
+    master.winRate || "0",
+
+
+    totalTrades:
+    master.totalTrades || 0,
+
+
+    wins:
+    master.wins || 0,
+
+
+    losses:
+    master.losses || 0,
+
+
+    drawdown:
+    master.drawdown || "0",
+
+
+    risk:
+    master.risk || "medium",
+
+
+    followers:0,
+
+
+    balance:
+    master.balance || 0,
+
+
+    experience:
+    master.experience || "new",
+
+
+    markets:
+    master.markets || [],
+
+
+    contracts:
+    master.contracts || [],
+
+
+    status:"active",
+
+
+    verified:false,
+
+
+    profitHistory:[],
+
+
+    tradeHistory:[],
+
+
+    copySettings:
+    master.copySettings || {},
+
+
+    createdAt:Date.now()
+
+};
 
 
 

@@ -11,7 +11,7 @@ const CopyTrading = observer(() => {
 
 
     const traders =
-        copyTradingStore.getMarketplaceTraders();
+    copyTradingStore.getMarketplaceTraders() || [];
       console.log(
     "MARKETPLACE DATA",
     traders
@@ -19,7 +19,7 @@ const CopyTrading = observer(() => {
 
 
     const activeCopies =
-        copyTradingStore.activeCopies;
+    copyTradingStore.activeCopies || [];
 
 
     const followTrader = (trader:any) => {
