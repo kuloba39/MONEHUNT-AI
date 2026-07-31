@@ -15,7 +15,8 @@ import CoreStoreProvider from './CoreStoreProvider';
 import i18nInstance from './i18n';
 import './app-root.scss';
 import CopyTradingPage from '../pages/copy-trading'; 
-import MasterRegisterPage from '../pages/copy-trading/master-register-page'; 
+import MasterRegisterPage from '../pages/copy-trading/master-register-page';
+import FollowerConnectPage from '../pages/copy-trading/follower-connect-page'; 
 
 const Layout = lazy(() => import('../components/layout'));
 const AppRoot = lazy(() => import('./app-root'));
@@ -74,6 +75,10 @@ const router = createBrowserRouter(
 <Route
  path='copy-trading/register'
  element={<MasterRegisterPage />}
+/>
+<Route
+path="copy-trading/connect"
+element={<FollowerConnectPage />}
 />
 <Route
     path='copy-trading/trader/:id'

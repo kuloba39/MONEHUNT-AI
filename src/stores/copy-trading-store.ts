@@ -65,6 +65,7 @@ export interface MasterTrader {
 
 
 
+
 export interface Follower {
 
 
@@ -73,6 +74,8 @@ export interface Follower {
     user_id:number;
 
     master_id:number;
+
+    account_id:string;
 
     deriv_token:string;
 
@@ -89,6 +92,7 @@ export interface Follower {
 
 
 
+
 export interface CopiedTrade {
 
 
@@ -96,35 +100,26 @@ export interface CopiedTrade {
 
     master_id:number;
 
-
     symbol:string;
-
 
     contract_type:string;
 
-
     amount:number;
-
 
     duration:number;
 
-
     duration_unit:string;
-
 
     barrier?:string;
 
-
     currency:string;
-
 
     basis:string;
 
-
     timestamp:number;
 
-
 }
+
 
 
 
@@ -132,16 +127,14 @@ export interface CopiedTrade {
 class CopyTradingStore {
 
 
-    masters:MasterTrader[]=[];
+    masters:MasterTrader[] = [];
 
+    followers:Follower[] = [];
 
-    followers:Follower[]=[];
+    activeCopies:any[] = [];
 
+    trades:CopiedTrade[] = [];
 
-    activeCopies:any[]=[];
-
-
-    trades:CopiedTrade[]=[];
 
 
 
@@ -149,197 +142,221 @@ class CopyTradingStore {
 
         makeAutoObservable(this);
 
+
+        this.loadMasters();
+
+        this.loadFollowers();
+
     }
 
 
 
 
 
+
+    /*
+        MASTER STORAGE
+    */
+
+
+    saveMasters(){
+
+
+        localStorage.setItem(
+
+            "copy_trading_masters",
+
+            JSON.stringify(
+                this.masters
+            )
+
+        );
+
+
+    }
+
+
+
+
+
+
+    loadMasters(){
+
+
+        try{
+
+
+            const saved =
+            localStorage.getItem(
+                "copy_trading_masters"
+            );
+
+
+
+            if(saved){
+
+
+                this.masters =
+                JSON.parse(saved);
+
+
+            }
+
+
+
+        }catch(error){
+
+
+            console.error(
+                "LOAD MASTERS FAILED",
+                error
+            );
+
+
+        }
+
+
+    }
+
+
+
+
+
+
+    /*
+        FOLLOWER STORAGE
+    */
+
+
+    saveFollowers(){
+
+
+        localStorage.setItem(
+
+            "copy_trading_followers",
+
+            JSON.stringify(
+                this.followers
+            )
+
+        );
+
+
+    }
+
+
+
+
+
+
+    loadFollowers(){
+
+
+        try{
+
+
+            const saved =
+            localStorage.getItem(
+                "copy_trading_followers"
+            );
+
+
+
+            if(saved){
+
+
+                this.followers =
+                JSON.parse(saved);
+
+
+            }
+
+
+
+        }catch(error){
+
+
+            console.error(
+                "LOAD FOLLOWERS FAILED",
+                error
+            );
+
+
+        }
+
+
+    }
+
+
+
+
+
+
+    /*
+        CHECK DUPLICATES
+
+        One Deriv account
+        = one registration
+    */
+
+
+    isFollowerRegistered(
+        account_id:string
+    ){
+
+
+        return this.followers.some(
+
+            follower =>
+
+            follower.account_id === account_id
+
+        );
+
+
+    }
+
+
+
+
+
+    isMasterRegistered(
+        account_id:string
+    ){
+
+
+        return this.masters.some(
+
+            master =>
+
+            master.account_id === account_id
+
+        );
+
+
+    }
     /*
         MASTER REGISTRATION
 
-        Any verified Deriv real account
-        can become a marketplace master.
-
-        No API token stored.
+        Creates marketplace trader
+        No API token stored
     */
+
 
     registerMaster(data:any){
 
 
-        const master:MasterTrader = {
-
-    id:
-    Date.now(),
-
-
-    name:
-    data.name ||
-    "Anonymous Trader",
-
-
-    avatar:
-    data.avatar ||
-    "👤",
-
-
-    country:
-    data.country ||
-    "Unknown",
-
-
-    strategy:
-    data.strategy ||
-    "Deriv Trading Strategy",
-
-
-    profit:
-    "0%",
-
-
-    monthlyProfit:
-    "0%",
-
-
-    roi:
-    "0%",
-
-
-    winRate:
-    "0%",
-
-
-    totalTrades:
-    0,
-
-
-    wins:
-    0,
-
-
-    losses:
-    0,
-
-
-    drawdown:
-    "0%",
-
-
-    risk:
-    data.risk ||
-    "Medium",
-
-
-    followers:
-    0,
-
-
-    balance:
-    data.balance ||
-    0,
-
-
-    account_id:
-    data.account_id ||
-    "",
-
-
-    experience:
-    data.experience ||
-    "",
-
-
-    markets:
-    data.markets ||
-    [],
-
-
-    contracts:
-    data.contracts ||
-    [],
-
-
-    status:
-    "active",
-
-
-    verified:
-    true,
-
-
-    createdAt:
-    Date.now(),
-
-
-    profitHistory:
-    [],
-
-
-    tradeHistory:
-    [],
-
-
-    copySettings:
-    {}
-
-};
-
-
-
-        this.masters.push(
-            master
-        );
-
-
-
-        console.log(
-            "MASTER TRADER REGISTERED",
-            master
-        );
-
-
-
-        return master;
-
-    }
-
-
-
-
-
-    /*
-        FOLLOWER CONNECTS USING
-        THEIR OWN DERIV TOKEN
-    */
-
-
-    async addFollower(
-        follower:Follower
-    ){
-
-
-        this.followers.push(
-            follower
-        );
-
-
-
-        const connection =
-        await followerDerivConnection.connect(
-            follower.id,
-            follower.deriv_token
-        );
-
-
-
-        if(!connection){
-
+        if(
+            data.account_id &&
+            this.isMasterRegistered(
+                data.account_id
+            )
+        ){
 
             console.log(
-                "FOLLOWER CONNECTION FAILED",
-                follower.id
+                "MASTER ACCOUNT ALREADY REGISTERED",
+                data.account_id
             );
-
 
             return false;
 
@@ -348,17 +365,261 @@ class CopyTradingStore {
 
 
 
-        console.log(
-            "FOLLOWER READY",
-            follower.id
+
+        const master:MasterTrader = {
+
+
+            id:
+            Date.now(),
+
+
+            name:
+            data.name ||
+            "Anonymous Trader",
+
+
+            avatar:
+            data.avatar ||
+            "👤",
+
+
+            country:
+            data.country ||
+            "Global",
+
+
+            strategy:
+            data.strategy ||
+            "Deriv Trading Strategy",
+
+
+            profit:
+            "0%",
+
+
+            monthlyProfit:
+            "0%",
+
+
+            roi:
+            "0%",
+
+
+            winRate:
+            "0%",
+
+
+            totalTrades:
+            0,
+
+
+            wins:
+            0,
+
+
+            losses:
+            0,
+
+
+            drawdown:
+            "0%",
+
+
+            risk:
+            data.risk ||
+            "Medium",
+
+
+            followers:
+            0,
+
+
+            balance:
+            Number(
+                data.balance || 0
+            ),
+
+
+            account_id:
+            data.account_id ||
+            "",
+
+
+            experience:
+            data.experience ||
+            "",
+
+
+            markets:
+            data.markets ||
+            [],
+
+
+            contracts:
+            data.contracts ||
+            [],
+
+
+            status:
+            "active",
+
+
+            verified:
+            true,
+
+
+            createdAt:
+            Date.now(),
+
+
+            profitHistory:
+            [],
+
+
+            tradeHistory:
+            [],
+
+
+            copySettings:
+            {}
+
+        };
+
+
+
+
+
+        this.masters.push(
+            master
         );
+
+
+        this.saveMasters();
+
+
+
+        console.log(
+            "MASTER REGISTERED",
+            master
+        );
+
+
+
+        return master;
+
+
+    }
+
+
+
+
+
+
+
+
+
+    /*
+        FOLLOWER REGISTRATION
+
+        User pastes own Deriv token
+        Account is verified first
+    */
+
+
+    async addFollower(
+        follower:Follower
+    ){
+
+
+
+        if(
+            this.isFollowerRegistered(
+                follower.account_id
+            )
+        ){
+
+            console.log(
+                "FOLLOWER ACCOUNT ALREADY REGISTERED",
+                follower.account_id
+            );
+
+
+            return false;
+
+
+        }
+
+
+
+
+
+
+        const connection =
+
+        await followerDerivConnection.connect(
+
+            follower.id,
+
+            follower.deriv_token
+
+        );
+
+
+
+
+
+
+        if(!connection){
+
+
+            console.log(
+                "FOLLOWER TOKEN INVALID",
+                follower.account_id
+            );
+
+
+            return false;
+
+
+        }
+
+
+
+
+
+
+        this.followers.push(
+
+            follower
+
+        );
+
+
+
+        this.saveFollowers();
+
+
+
+
+
+        console.log(
+
+            "FOLLOWER REGISTERED",
+
+            follower
+
+        );
+
 
 
 
         return true;
 
 
+
     }
+
+
 
 
 
@@ -372,25 +633,74 @@ class CopyTradingStore {
 
 
     followMaster(
+
         masterId:number,
+
         followerId:number
+
     ){
 
 
+
         const master =
-        this.getMaster(masterId);
+
+        this.getMaster(
+            masterId
+        );
+
 
 
 
         if(!master){
 
+
             console.log(
                 "MASTER NOT FOUND"
             );
 
-            return;
+
+            return false;
+
 
         }
+
+
+
+
+
+
+        const alreadyFollowing =
+
+        this.activeCopies.some(
+
+            copy =>
+
+            copy.masterId === masterId &&
+
+            copy.followerId === followerId
+
+        );
+
+
+
+
+
+
+        if(alreadyFollowing){
+
+
+            console.log(
+                "ALREADY FOLLOWING MASTER"
+            );
+
+
+            return false;
+
+
+        }
+
+
+
 
 
 
@@ -398,25 +708,46 @@ class CopyTradingStore {
 
 
 
+
+
+
         this.activeCopies.push({
+
 
             masterId,
 
+
             followerId,
 
+
             enabled:true
+
 
         });
 
 
 
+
+
+
         console.log(
-            "FOLLOW SUBSCRIBED",
+
+            "MASTER FOLLOWED",
+
             {
                 masterId,
                 followerId
             }
+
         );
+
+
+
+
+
+
+        return true;
+
 
 
     }
@@ -425,10 +756,11 @@ class CopyTradingStore {
 
 
 
-
-
     /*
         MASTER SENDS TRADE
+
+        Receives trade from
+        Purchase.js copy engine
     */
 
 
@@ -437,41 +769,62 @@ class CopyTradingStore {
     ){
 
 
+
         this.trades.push(
             trade
         );
 
 
 
+
+
         console.log(
+
             "MASTER TRADE RECEIVED",
+
             trade
+
         );
+
 
 
 
 
         const copies =
+
         this.activeCopies.filter(
-            c =>
-            c.masterId === trade.master_id &&
-            c.enabled
+
+            copy =>
+
+            copy.masterId === trade.master_id &&
+
+            copy.enabled
+
         );
+
+
+
 
 
 
         copies.forEach(
+
             copy => {
 
 
                 this.executeCopiedTrade(
+
                     copy.followerId,
+
                     trade
+
                 );
 
 
             }
+
         );
+
 
 
     }
@@ -483,23 +836,36 @@ class CopyTradingStore {
 
 
 
+
     /*
-        EXECUTE TRADE ON FOLLOWER ACCOUNT
+        EXECUTE COPIED TRADE
+
+        Sends trade to follower account
     */
 
 
     async executeCopiedTrade(
+
         followerId:number,
+
         trade:CopiedTrade
+
     ){
 
 
 
         const follower =
+
         this.followers.find(
+
             f =>
+
             f.id === followerId
+
         );
+
+
+
 
 
 
@@ -507,13 +873,18 @@ class CopyTradingStore {
 
 
             console.log(
+
                 "FOLLOWER NOT FOUND"
+
             );
 
 
             return;
 
+
         }
+
+
 
 
 
@@ -522,12 +893,16 @@ class CopyTradingStore {
             follower.status !== "active"
         ){
 
+
             console.log(
-                "FOLLOWER PAUSED"
+
+                "FOLLOWER ACCOUNT PAUSED"
+
             );
 
 
             return;
+
 
         }
 
@@ -536,25 +911,40 @@ class CopyTradingStore {
 
 
 
+
         let amount =
-    trade.amount *
-    (
-        follower.copy_percentage / 100
-    );
+
+        trade.amount *
+
+        (
+
+            follower.copy_percentage / 100
+
+        );
+
 
 
 
 
 
         if(
-    amount >
-    follower.max_stake
-){
 
-    amount =
-    follower.max_stake;
+            amount >
 
-}
+            follower.max_stake
+
+        ){
+
+
+            amount =
+
+            follower.max_stake;
+
+
+        }
+
+
+
 
 
 
@@ -562,35 +952,62 @@ class CopyTradingStore {
 
         const request = {
 
-    amount:
-        Number(amount.toFixed(2)),
 
-    basis:
-        "stake",
+
+            amount:
+
+            Number(
+
+                amount.toFixed(2)
+
+            ),
+
+
+
+            basis:
+
+            follower.copy_percentage
+
+            ? "stake"
+
+            : trade.basis,
+
 
 
             contract_type:
+
             trade.contract_type,
 
 
+
             currency:
+
             trade.currency,
 
 
+
             duration:
+
             trade.duration,
 
 
+
             duration_unit:
-    trade.duration_unit,
+
+            trade.duration_unit,
+
 
 
             symbol:
+
             trade.symbol,
 
 
+
             barrier:
+
             trade.barrier
+
 
 
         };
@@ -599,10 +1016,19 @@ class CopyTradingStore {
 
 
 
+
+
+
         console.log(
+
             "COPY TRADE REQUEST",
+
             request
+
         );
+
+
+
 
 
 
@@ -620,9 +1046,24 @@ class CopyTradingStore {
 
 
 
+
+
+
         console.log(
+
             "COPIED TRADE EXECUTED",
-            follower.id
+
+            {
+
+                follower:
+
+                follower.account_id,
+
+
+                trade
+
+            }
+
         );
 
 
@@ -636,14 +1077,25 @@ class CopyTradingStore {
 
 
 
+
+    /*
+        GET MASTER
+    */
+
+
     getMaster(
+
         id:number
+
     ){
 
 
         return this.masters.find(
-            m =>
-            m.id===id
+
+            master =>
+
+            master.id === id
+
         );
 
 
@@ -654,16 +1106,28 @@ class CopyTradingStore {
 
 
 
+
+
+
+    /*
+        GET FOLLOWERS OF MASTER
+    */
+
+
     getFollowers(
+
         masterId:number
+
     ){
 
 
         return this.followers.filter(
 
-            f =>
-            f.master_id===masterId &&
-            f.status==="active"
+            follower =>
+
+            follower.master_id === masterId &&
+
+            follower.status === "active"
 
         );
 
@@ -674,77 +1138,236 @@ class CopyTradingStore {
 
 
 
-        getMarketplaceMasters(){
+
+
+
+
+    /*
+        MARKETPLACE DATA
+
+        Used by copy-trading.tsx
+    */
+
+
+    getMarketplaceMasters(){
+
 
         return this.masters.filter(
-            m =>
-            m.status==="active"
+
+            master =>
+
+            master.status === "active"
+
         );
+
 
     }
 
 
-    getMasterById(id:number){
+
+
+
+
+
+
+
+    getMarketplaceTraders(){
+
+
+        return this.masters
+
+        .filter(
+
+            master =>
+
+            master.status === "active"
+
+        )
+
+        .map(
+
+            master => ({
+
+
+
+                id:
+
+                master.id,
+
+
+
+                name:
+
+                master.name,
+
+
+
+                avatar:
+
+                master.avatar,
+
+
+
+                country:
+
+                master.country,
+
+
+
+                strategy:
+
+                master.strategy,
+
+
+
+                profit:
+
+                master.roi,
+
+
+
+                monthlyProfit:
+
+                master.monthlyProfit,
+
+
+
+                roi:
+
+                master.roi,
+
+
+
+                winRate:
+
+                master.winRate,
+
+
+
+                totalTrades:
+
+                master.totalTrades,
+
+
+
+                wins:
+
+                master.wins,
+
+
+
+                losses:
+
+                master.losses,
+
+
+
+                drawdown:
+
+                master.drawdown,
+
+
+
+                followers:
+
+                master.followers,
+
+
+
+                risk:
+
+                master.risk,
+
+
+
+                status:
+
+                master.status,
+
+
+
+                verified:
+
+                master.verified,
+
+
+
+                experience:
+
+                master.experience,
+
+
+
+                markets:
+
+                master.markets,
+
+
+
+                contracts:
+
+                master.contracts,
+
+
+
+                profitHistory:
+
+                master.profitHistory,
+
+
+
+                tradeHistory:
+
+                master.tradeHistory,
+
+
+
+                copySettings:
+
+                master.copySettings
+
+
+
+            })
+
+        );
+
+
+    }
+
+
+
+
+
+
+
+
+
+    getMasterById(
+
+        id:number
+
+    ){
+
 
         return this.masters.find(
-            m => m.id === id
+
+            master =>
+
+            master.id === id
+
         );
 
+
     }
-getMarketplaceTraders(){
 
-    return this.masters.map(master => ({
 
-        id: master.id,
 
-        name: master.name,
-
-        avatar:"👤",
-
-        country:"Global",
-
-        strategy:"Deriv Strategy",
-
-        profit:master.roi,
-
-        monthlyProfit:"0%",
-
-        winRate:"0%",
-
-        totalTrades:master.profitHistory.length,
-
-        wins:0,
-
-        losses:0,
-
-        drawdown:"0%",
-
-        followers:master.followers,
-
-        risk:"Medium",
-
-        status:master.status,
-
-        profitHistory:master.profitHistory,
-
-        tradeHistory:[],
-
-        copySettings:{}
-
-    }));
-
-}
 
 
 }
-
-
-
-
-
 export const copyTradingStore =
 new CopyTradingStore();
-
 
 
 (globalThis as any).copyTradingStore =

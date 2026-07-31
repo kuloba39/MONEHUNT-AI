@@ -1,10 +1,13 @@
 import './master-register-page.scss';
 import { useState } from "react";
 import { copyTradingStore } from "@/stores/copy-trading-store";
+import { useNavigate } from "react-router-dom";
 
 
 
 const MasterRegisterPage = () => {
+
+const navigate = useNavigate();
 
 
 const [form,setForm] = useState({
@@ -66,6 +69,8 @@ about:form.about
 alert(
 "Trader registered and added to marketplace"
 );
+
+navigate("/copy-trading");
 
 
 };

@@ -12,6 +12,10 @@ const CopyTrading = observer(() => {
 
     const traders =
         copyTradingStore.getMarketplaceTraders();
+      console.log(
+    "MARKETPLACE DATA",
+    traders
+);
 
 
     const activeCopies =
@@ -56,6 +60,18 @@ const CopyTrading = observer(() => {
     }
 >
     Become a Master Trader
+</button>
+<button
+
+className="copy-trading__connect-btn"
+
+onClick={() =>
+window.location.href =
+"/copy-trading/connect"
+}
+
+>
+Connect Deriv Account
 </button>
 
             </div>
