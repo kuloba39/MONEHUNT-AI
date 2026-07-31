@@ -141,13 +141,13 @@ class CopyTradingStore {
 
         constructor(){
 
-        makeAutoObservable(this);
+    makeAutoObservable(this);
 
-        this.loadMasters();
+    this.loadMastersFromServer();
 
-        this.loadFollowers();
+    this.loadFollowers();
 
-    }
+}
 
 
 
@@ -176,45 +176,40 @@ class CopyTradingStore {
     }
 async loadMastersFromServer(){
 
-
     try{
 
-
         const masters =
-
-        await marketplaceService.getMasters();
-
+            await marketplaceService.getMasters();
 
 
         this.masters =
-        masters;
+            masters;
 
+
+        localStorage.setItem(
+            "copy_trading_masters",
+            JSON.stringify(masters)
+        );
 
 
         console.log(
-
-            "MARKETPLACE LOADED",
-
+            "GLOBAL MARKETPLACE LOADED",
             masters
-
         );
 
 
     }
     catch(error){
 
-
         console.log(
-
             "MARKETPLACE SERVER ERROR",
-
             error
-
         );
 
 
-    }
+        this.loadMasters();
 
+    }
 
 }
 
@@ -993,67 +988,50 @@ await this.loadMastersFromServer();
 
 
 
-        const request = {
+       const request = {
 
 
-
-            amount:
-
-            Number(
-
-                amount.toFixed(2)
-
-            ),
+    amount:
+    Number(
+        amount.toFixed(2)
+    ),
 
 
-
-            basis:
-
-            follower.copy_percentage
-
-            ? "stake"
-
-            : trade.basis,
+    basis:
+    follower.copy_percentage
+    ? "stake"
+    : trade.basis,
 
 
-
-            contract_type:
-
-            trade.contract_type,
+    contract_type:
+    trade.contract_type,
 
 
-
-            currency:
-
-            trade.currency,
+    currency:
+    trade.currency,
 
 
-
-            duration:
-
-            trade.duration,
+    duration:
+    trade.duration,
 
 
-
-            duration_unit:
-
-            trade.duration_unit,
+    duration_unit:
+    trade.duration_unit,
 
 
-
-            symbol:
-
-            trade.symbol,
+    symbol:
+    trade.symbol,
 
 
-
-            barrier:
-
-            trade.barrier
+    barrier:
+    trade.barrier,
 
 
+    timestamp:
+    Date.now()
 
-        };
+
+};
 
 
 
