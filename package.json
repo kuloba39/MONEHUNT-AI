@@ -2,6 +2,7 @@
   "name": "my-trading-bot",
   "version": "0.2.0",
   "private": true,
+  "packageManager": "npm@11.16.0",
   "engines": {
     "node": "24.x"
   },
@@ -98,6 +99,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "@vercel/node": "^5.9.3",
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^29.7.0",
     "babel-plugin-syntax-dynamic-import": "^6.18.0",
