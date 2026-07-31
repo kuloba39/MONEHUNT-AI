@@ -62,7 +62,6 @@ const CopyTrading = observer(() => {
     Become a Master Trader
 </button>
 <button
-
 className="copy-trading__connect-btn"
 
 onClick={() =>
@@ -71,9 +70,14 @@ window.location.href =
 }
 
 >
-Connect Deriv Account
-</button>
 
+<span className="connect-icon">
+🔗
+</span>
+
+Connect Deriv Account
+
+</button>
             </div>
 
 

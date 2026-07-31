@@ -519,3 +519,82 @@
     opacity:.85;
 
 }
+.copy-trading__connect-btn {
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+gap:10px;
+
+
+height:46px;
+
+
+padding:0 24px;
+
+
+border-radius:12px;
+
+
+border:1px solid rgba(255,255,255,.15);
+
+
+background:
+
+linear-gradient(
+135deg,
+rgba(59,130,246,.25),
+rgba(0,255,157,.15)
+);
+
+
+color:white;
+
+
+font-size:14px;
+
+
+font-weight:700;
+
+
+cursor:pointer;
+
+
+backdrop-filter:blur(12px);
+
+
+transition:.25s ease;
+
+
+}
+
+
+.copy-trading__connect-btn:hover {
+
+
+transform:translateY(-2px);
+
+
+border-color:
+rgba(0,255,157,.5);
+
+
+box-shadow:
+
+0 10px 30px rgba(0,255,157,.15);
+
+
+}
+
+
+
+.connect-icon {
+
+
+font-size:18px;
+
+
+}
