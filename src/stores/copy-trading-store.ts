@@ -1,6 +1,7 @@
 import { makeAutoObservable } from "mobx";
 import { followerDerivConnection } from "@/services/follower-deriv-connection.service";
 import { followerTradeExecutor } from "@/services/follower-trade-executor.service";
+import { marketplaceService } from "@/services/copy-trading/marketplace.service";
 
 
 
@@ -138,10 +139,9 @@ class CopyTradingStore {
 
 
 
-    constructor(){
+        constructor(){
 
         makeAutoObservable(this);
-
 
         this.loadMasters();
 
@@ -174,6 +174,49 @@ class CopyTradingStore {
 
 
     }
+async loadMastersFromServer(){
+
+
+    try{
+
+
+        const masters =
+
+        await marketplaceService.getMasters();
+
+
+
+        this.masters =
+        masters;
+
+
+
+        console.log(
+
+            "MARKETPLACE LOADED",
+
+            masters
+
+        );
+
+
+    }
+    catch(error){
+
+
+        console.log(
+
+            "MARKETPLACE SERVER ERROR",
+
+            error
+
+        );
+
+
+    }
+
+
+}
 
 
 
@@ -343,7 +386,7 @@ class CopyTradingStore {
     */
 
 
-    registerMaster(data:any){
+    async registerMaster(data:any){
 
 
         if(
@@ -489,12 +532,12 @@ class CopyTradingStore {
 
 
 
-        this.masters.push(
-            master
-        );
+        await marketplaceService.registerMaster(
+    master
+);
 
 
-        this.saveMasters();
+await this.loadMastersFromServer();
 
 
 
