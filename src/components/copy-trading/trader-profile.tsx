@@ -66,10 +66,18 @@ const TraderProfile = ({ trader }: Props) => {
 
             </div>
             <ProfitChart
-    data={trader.profitHistory}
+    data={
+        Array.isArray(trader.profitHistory)
+        ? trader.profitHistory
+        : []
+    }
 />
           <TradeHistory
-    trades={trader.tradeHistory}
+    trades={
+        Array.isArray(trader.tradeHistory)
+        ? trader.tradeHistory
+        : []
+    }
 />
     <CopySettings
 
@@ -77,7 +85,7 @@ const TraderProfile = ({ trader }: Props) => {
 
     traderName={trader.name}
 
-    settings={trader.copySettings}
+    settings={trader.copySettings || {}}
 
 />
 

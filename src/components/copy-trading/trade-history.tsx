@@ -12,6 +12,11 @@ interface Props {
 
 const TradeHistory = ({ trades }: Props) => {
 
+    const safeTrades =
+    Array.isArray(trades)
+    ? trades
+    : [];
+
 
     return (
 
@@ -62,7 +67,7 @@ const TradeHistory = ({ trades }: Props) => {
                     <tbody>
 
 
-                        {trades.map((trade, index) => (
+                        {safeTrades.map((trade, index) => (
 
                             <tr key={index}>
 

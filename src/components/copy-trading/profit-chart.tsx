@@ -5,7 +5,9 @@ interface Props {
 
 const ProfitChart = ({ data }: Props) => {
 
-    const maxValue = Math.max(...data);
+    const safeData = Array.isArray(data) ? data : [];
+
+    const maxValue = Math.max(...safeData, 1);
 
     return (
 
@@ -15,7 +17,7 @@ const ProfitChart = ({ data }: Props) => {
 
             <div className="profit-chart__bars">
 
-                {data.map((value, index) => (
+                {safeData.map((value, index) => (
 
                     <div
                         key={index}

@@ -10,8 +10,14 @@ const CopyTrading = observer(() => {
     console.log("COPY TRADING COMPONENT LOADED");
 
 
-    const traders =
-    copyTradingStore.getMarketplaceTraders() || [];
+    const marketplaceTraders =
+copyTradingStore.getMarketplaceTraders();
+
+
+const traders =
+Array.isArray(marketplaceTraders)
+    ? marketplaceTraders
+    : [];
       console.log(
     "MARKETPLACE DATA",
     traders
