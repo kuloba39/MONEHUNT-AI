@@ -1,6 +1,6 @@
 import './copy-settings.scss';
 import { useState } from 'react';
-import { 
+import {
     copyTradingStore,
     type CopySettings as CopySettingsType
 } from '@/stores/copy-trading-store';
@@ -9,11 +9,11 @@ import { followerCopyService } from "@/services/copy-trading/follower-copy.servi
 
 interface Props {
 
-    traderId:number;
+    traderId: number;
 
-    traderName:string;
+    traderName: string;
 
-    settings?:CopySettingsType;
+    settings?: CopySettingsType;
 
 }
 
@@ -23,10 +23,10 @@ const CopySettings = ({
     traderId,
     traderName,
     settings
-}:Props)=>{
+}: Props) => {
 
 
-    if(!settings){
+    if (!settings) {
 
         return null;
 
@@ -34,24 +34,105 @@ const CopySettings = ({
 
 
 
-    const [copyAmount,setCopyAmount] =
+    const [copyAmount, setCopyAmount] =
         useState(settings.amount);
 
 
-    const [risk,setRisk] =
+    const [risk, setRisk] =
         useState(settings.risk);
 
 
-    const [autoCopy,setAutoCopy] =
+    const [autoCopy, setAutoCopy] =
         useState(settings.autoCopy);
 
 
-    const [stopLoss,setStopLoss] =
+    const [stopLoss, setStopLoss] =
         useState(settings.stopLoss);
 
 
-    const [takeProfit,setTakeProfit] =
+    const [takeProfit, setTakeProfit] =
         useState(settings.takeProfit);
+
+
+
+    const handleSaveSettings = () => {
+
+
+        const follower =
+            copyTradingStore.followers[0];
+
+
+
+        if (!follower) {
+
+            console.error(
+                "NO FOLLOWER ACCOUNT REGISTERED"
+            );
+
+            return;
+
+        }
+
+
+
+        const updatedSettings = {
+
+            amount: copyAmount,
+
+            risk,
+
+            autoCopy,
+
+            stopLoss,
+
+            takeProfit
+
+        };
+
+
+
+        copyTradingStore.updateCopySettings(
+
+            traderId,
+
+            updatedSettings
+
+        );
+
+
+
+        followerCopyService.startCopy({
+
+            masterId: traderId,
+
+            followerId: follower.id,
+
+            enabled: true
+
+        });
+
+
+
+        console.log(
+
+            "COPY STARTED",
+
+            {
+
+                masterId: traderId,
+
+                followerId: follower.id,
+
+                traderName,
+
+                updatedSettings
+
+            }
+
+        );
+
+
+    };
 
 
 
@@ -91,7 +172,7 @@ const CopySettings = ({
 
                     value={copyAmount}
 
-                    onChange={(e)=>
+                    onChange={(e) =>
                         setCopyAmount(
                             Number(e.target.value)
                         )
@@ -114,7 +195,7 @@ const CopySettings = ({
 
                     value={risk}
 
-                    onChange={(e)=>
+                    onChange={(e) =>
                         setRisk(
                             e.target.value as CopySettingsType['risk']
                         )
@@ -122,15 +203,15 @@ const CopySettings = ({
 
                 >
 
-                    <option>
+                    <option value="Low">
                         Low
                     </option>
 
-                    <option>
+                    <option value="Medium">
                         Medium
                     </option>
 
-                    <option>
+                    <option value="High">
                         High
                     </option>
 
@@ -151,7 +232,7 @@ const CopySettings = ({
 
                         checked={autoCopy}
 
-                        onChange={(e)=>
+                        onChange={(e) =>
                             setAutoCopy(
                                 e.target.checked
                             )
@@ -183,7 +264,7 @@ const CopySettings = ({
 
                         value={stopLoss}
 
-                        onChange={(e)=>
+                        onChange={(e) =>
                             setStopLoss(
                                 Number(e.target.value)
                             )
@@ -208,7 +289,7 @@ const CopySettings = ({
 
                         value={takeProfit}
 
-                        onChange={(e)=>
+                        onChange={(e) =>
                             setTakeProfit(
                                 Number(e.target.value)
                             )
@@ -228,101 +309,7 @@ const CopySettings = ({
 
                 className="copy-settings__button"
 
-                onClick={()=>{
-
-
-                    const follower =
-                        copyTradingStore.followers[0];
-
-
-                    if(!follower){
-
-
-                        console.error(
-                            "NO FOLLOWER ACCOUNT REGISTERED"
-                        );
-
-
-                        return;
-
-                    }
-
-
-
-                    const updatedSettings = {
-
-                        amount:copyAmount,
-
-                        risk,
-
-                        autoCopy,
-
-                        stopLoss,
-
-                        takeProfit
-
-                    };
-
-
-
-                    copyTradingStore.updateCopySettings(
-
-                        traderId,
-
-                        updatedSettings
-
-                    );
-
-
-
-
-                    const follower = copyTradingStore.followers[0];
-
-
-if(!follower){
-
-    console.error(
-        "NO FOLLOWER ACCOUNT REGISTERED"
-    );
-
-    return;
-
-}
-
-
-followerCopyService.startCopy({
-
-    masterId: traderId,
-
-    followerId: follower.id,
-
-    enabled: true
-
-});
-
-
-
-
-                    console.log(
-
-                        "COPY STARTED",
-
-                        {
-
-                            masterId:traderId,
-
-                            followerId:follower.id,
-
-                            traderName,
-
-                            updatedSettings
-
-                        }
-
-                    );
-
-
-                }}
+                onClick={handleSaveSettings}
 
             >
 
