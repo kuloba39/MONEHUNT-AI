@@ -117,7 +117,7 @@ export interface CopiedTrade {
 
     basis:string;
 
-    timestamp:number;
+       timestamp:number;
 
 }
 
@@ -137,9 +137,22 @@ class CopyTradingStore {
     trades:CopiedTrade[] = [];
 
 
+    followerConnection = {
+
+        connected:false,
+
+        account_id:"",
+
+        deriv_token:"",
+
+        verified:false
+
+    };
 
 
-        constructor(){
+
+
+    constructor(){
 
     makeAutoObservable(this);
 
@@ -183,18 +196,22 @@ async loadMastersFromServer(){
 
 
         this.masters =
-            masters;
+            Array.isArray(masters)
+            ?
+            masters
+            :
+            [];
 
 
         localStorage.setItem(
             "copy_trading_masters",
-            JSON.stringify(masters)
+            JSON.stringify(this.masters)
         );
 
 
         console.log(
             "GLOBAL MARKETPLACE LOADED",
-            masters
+            this.masters
         );
 
 
