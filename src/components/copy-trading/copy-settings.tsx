@@ -2,6 +2,7 @@ import './copy-settings.scss';
 import { copyTradingStore } from '@/stores/copy-trading-store';
 import { useState } from 'react';
 import { copyTradingStore, type CopySettings as CopySettingsType } from '@/stores/copy-trading-store';
+import { followerCopyService } from "@/services/copy-trading/follower-copy.service";
 
 
 interface Props {
@@ -287,10 +288,15 @@ if (!settings) {
     );
 
 
-    copyTradingStore.startCopy(
-        traderId,
-        settings
-    );
+    followerCopyService.startCopy({
+
+    masterId: traderId,
+
+    followerId: 1,
+
+    enabled: true
+
+});
 
 
         console.log(
