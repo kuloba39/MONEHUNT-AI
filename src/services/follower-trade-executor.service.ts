@@ -3,6 +3,8 @@ from './follower-deriv-connection.service';
 
 import { CopyTrade } 
 from './copy-trading/types';
+import { copyTradingStore }
+from '@/stores/copy-trading-store';
 
 
 
@@ -13,6 +15,60 @@ async execute(
     followerId:number,
     trade:CopyTrade
 ){
+
+
+    const follower =
+    copyTradingStore.followers.find(
+
+        f =>
+        f.id === followerId
+
+    );
+
+
+
+    if(!follower){
+
+
+        console.log(
+
+            "FOLLOWER NOT FOUND",
+
+            followerId
+
+        );
+
+
+        return;
+
+
+    }
+
+
+
+
+    if(follower.status !== "active"){
+
+
+        console.log(
+
+            "FOLLOWER NOT ACTIVE - TRADE BLOCKED",
+
+            {
+                followerId,
+                status:follower.status
+            }
+
+        );
+
+
+        return;
+
+
+    }
+
+
+
 
 
     const api =

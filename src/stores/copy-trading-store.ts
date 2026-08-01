@@ -2,6 +2,7 @@ import { makeAutoObservable } from "mobx";
 import { followerDerivConnection } from "@/services/follower-deriv-connection.service";
 import { followerTradeExecutor } from "@/services/follower-trade-executor.service";
 import { marketplaceService } from "@/services/copy-trading/marketplace.service";
+import { followerVerificationService } from "@/services/copy-trading/follower-verification.service";
 
 
 
@@ -72,21 +73,120 @@ export interface Follower {
 
     id:number;
 
+
     user_id:number;
 
+
     master_id:number;
+
+
+
+    /*
+        DERIV ACCOUNT CONNECTION
+    */
 
     account_id:string;
 
     deriv_token:string;
 
-    copy_percentage:number;
+    verified?:boolean;
 
-    max_stake:number;
+
+
+    /*
+        FOLLOWER PROFILE
+    */
+
+    profile?:{
+
+        name:string;
+
+        account_type:string;
+
+        currency:string;
+
+    };
+
+
+
+    /*
+        COPY SETTINGS
+    */
+
+    settings?:{
+
+        copy_mode:
+        "same_as_master" |
+        "fixed_amount" |
+        "multiplier" |
+        "percentage";
+
+
+        copy_percentage:number;
+
+
+        fixed_amount:number;
+
+
+        multiplier:number;
+
+
+        max_stake:number;
+
+
+        daily_loss_limit:number;
+
+
+        stop_loss:number;
+
+
+        take_profit:number;
+
+    };
+
+
+
+    /*
+        FOLLOWER STATUS
+    */
 
     status:
+
+    "pending" |
+
     "active" |
-    "paused";
+
+    "paused" |
+
+    "stopped" |
+
+    "unfollowed";
+
+
+
+    /*
+        PERFORMANCE TRACKING
+    */
+
+    statistics?:{
+
+        copied_trades:number;
+
+
+        total_profit:number;
+
+
+        total_loss:number;
+
+
+    };
+
+
+    created_at?:number;
+
+
+    last_trade?:number;
+
 
 }
 
@@ -609,35 +709,64 @@ await this.loadMastersFromServer();
 
 
 
-        const connection =
+        const verification =
 
-        await followerDerivConnection.connect(
+await followerVerificationService.verify(
 
-            follower.id,
+    follower.deriv_token
 
-            follower.deriv_token
-
-        );
+);
 
 
 
+if(!verification){
+
+
+    console.log(
+
+        "FOLLOWER VERIFICATION FAILED"
+
+    );
+
+
+    return false;
+
+
+}
 
 
 
-        if(!connection){
 
 
-            console.log(
-                "FOLLOWER TOKEN INVALID",
-                follower.account_id
-            );
+follower.account_id =
+
+verification.account_id;
 
 
-            return false;
+
+follower.verified =
+
+verification.verified;
 
 
-        }
 
+follower.profile = {
+
+
+    ...(follower.profile || {}),
+
+
+    account_type:
+
+    verification.account_type,
+
+
+    currency:
+
+    verification.currency
+
+
+};
 
 
 
@@ -673,7 +802,307 @@ await this.loadMastersFromServer();
 
 
     }
+    /*
+        ACTIVATE FOLLOWER
 
+        Changes follower from pending
+        to active after confirmation
+    */
+
+    activateFollower(
+
+        followerId:number
+
+    ){
+
+
+        const follower =
+
+        this.followers.find(
+
+            f =>
+            f.id === followerId
+
+        );
+
+
+
+        if(!follower){
+
+
+            console.log(
+
+                "FOLLOWER NOT FOUND",
+
+                followerId
+
+            );
+
+
+            return false;
+
+
+        }
+
+
+
+
+        follower.status = "active";
+
+
+
+        this.saveFollowers();
+
+
+
+        console.log(
+
+            "FOLLOWER ACTIVATED",
+
+            follower
+
+        );
+
+
+
+        return true;
+
+
+    }
+
+    /*
+        PAUSE FOLLOWER
+
+        Keeps relationship
+        but blocks new copied trades
+    */
+
+    pauseFollower(
+
+        followerId:number
+
+    ){
+
+
+        const follower =
+
+        this.followers.find(
+
+            f =>
+            f.id === followerId
+
+        );
+
+
+        if(!follower){
+
+            return false;
+
+        }
+
+
+
+        follower.status = "paused";
+
+
+        this.saveFollowers();
+
+
+        console.log(
+
+            "FOLLOWER PAUSED",
+
+            follower
+
+        );
+
+
+        return true;
+
+
+    }
+
+
+
+
+
+
+    /*
+        RESUME FOLLOWER
+    */
+
+    resumeFollower(
+
+        followerId:number
+
+    ){
+
+
+        const follower =
+
+        this.followers.find(
+
+            f =>
+            f.id === followerId
+
+        );
+
+
+        if(!follower){
+
+            return false;
+
+        }
+
+
+
+        follower.status = "active";
+
+
+        this.saveFollowers();
+
+
+
+        console.log(
+
+            "FOLLOWER RESUMED",
+
+            follower
+
+        );
+
+
+        return true;
+
+
+    }
+
+
+
+
+
+
+    /*
+        STOP FOLLOWER
+
+        Stops copying
+        but keeps history
+    */
+
+    stopFollower(
+
+        followerId:number
+
+    ){
+
+
+        const follower =
+
+        this.followers.find(
+
+            f =>
+            f.id === followerId
+
+        );
+
+
+        if(!follower){
+
+            return false;
+
+        }
+
+
+
+        follower.status = "stopped";
+
+
+        this.saveFollowers();
+
+
+
+        console.log(
+
+            "FOLLOWER STOPPED",
+
+            follower
+
+        );
+
+
+        return true;
+
+
+    }
+
+
+
+
+
+
+    /*
+        UNFOLLOW MASTER
+
+        Removes active relationship
+    */
+
+    unfollowFollower(
+
+        followerId:number
+
+    ){
+
+
+        const follower =
+
+        this.followers.find(
+
+            f =>
+            f.id === followerId
+
+        );
+
+
+        if(!follower){
+
+            return false;
+
+        }
+
+
+
+        follower.status = "unfollowed";
+
+
+
+        this.activeCopies =
+
+        this.activeCopies.filter(
+
+            copy =>
+            copy.followerId !== followerId
+
+        );
+
+
+
+        this.saveFollowers();
+
+
+
+        console.log(
+
+            "FOLLOWER UNFOLLOWED",
+
+            follower
+
+        );
+
+
+        return true;
+
+
+    }
 
 
 

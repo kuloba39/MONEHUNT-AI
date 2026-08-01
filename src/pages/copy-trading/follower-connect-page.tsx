@@ -1,176 +1,189 @@
 import { useState } from "react";
 import { copyTradingStore } from "@/stores/copy-trading-store";
 import { useNavigate } from "react-router-dom";
-import './follower-connect-page.scss';
+import "./follower-connect-page.scss";
 
 
 const FollowerConnectPage = () => {
 
 
-    const navigate = useNavigate();
+const navigate = useNavigate();
 
 
-    const [token,setToken] = useState("");
 
-    const [status,setStatus] = useState("");
+const [step,setStep] = useState(1);
 
-    const [selectedMaster,setSelectedMaster] =
-    useState<number | null>(null);
 
+const [status,setStatus] = useState("");
 
 
-    const masters =
-    copyTradingStore.getMarketplaceMasters();
 
+const [selectedMaster,setSelectedMaster] =
+useState<number | null>(null);
 
 
-    const connect = async()=>{
 
+const [token,setToken] =
+useState("");
 
-        if(!selectedMaster){
 
 
-            setStatus(
-                "Please select a trader to copy"
-            );
+const [profile,setProfile] = useState({
 
+    name:"",
+    account_type:"Real",
+    currency:"USD"
 
-            return;
+});
 
 
-        }
 
+const [settings,setSettings] = useState({
 
+    copy_mode:"same_as_master",
 
-        if(!token){
+    copy_percentage:100,
 
+    fixed_amount:1,
 
-            setStatus(
-                "Please enter your Deriv API token"
-            );
+    multiplier:1,
 
+    max_stake:10,
 
-            return;
+    daily_loss_limit:10,
 
+    stop_loss:0,
 
-        }
+    take_profit:0
 
+});
 
 
 
-        const follower = {
+const masters =
+copyTradingStore.getMarketplaceMasters();
 
 
-            id:
-            Date.now(),
 
 
 
-            user_id:
-            Date.now(),
+const connect = async()=>{
 
 
+if(!selectedMaster){
 
-            master_id:
-            selectedMaster,
+setStatus(
+"Please select a master trader"
+);
 
+return;
 
+}
 
-            deriv_token:
-            token,
 
 
+if(!token){
 
-            copy_percentage:
-            100,
+setStatus(
+"Enter your Deriv API token"
+);
 
+return;
 
+}
 
-            max_stake:
-            10,
 
 
 
-            status:
-            "active" as const
 
+const follower:any = {
 
-        };
 
+id:Date.now(),
 
 
+user_id:Date.now(),
 
 
-        const connected =
+master_id:selectedMaster,
 
-        await copyTradingStore.addFollower(
 
-            follower
+account_id:"",
 
-        );
 
+deriv_token:token,
 
 
+profile,
 
 
-        if(connected){
+settings,
 
 
+copy_percentage:
+settings.copy_percentage,
 
-            copyTradingStore.followMaster(
 
+max_stake:
+settings.max_stake,
 
-                selectedMaster,
 
+status:"pending"
 
-                follower.id
 
+};
 
-            );
 
 
 
 
-            setStatus(
+const connected =
 
-                "Deriv account verified successfully"
+await copyTradingStore.addFollower(
 
-            );
+follower
 
+);
 
 
 
-            setTimeout(()=>{
 
 
-                navigate(
+if(!connected){
 
-                    "/copy-trading"
+setStatus(
+"Deriv verification failed"
+);
 
-                );
+return;
 
+}
 
-            },1500);
 
 
 
 
-        }else{
+setStatus(
+"Account verified. Review your copy settings before activation."
+);
 
 
+setStep(6);
 
-            setStatus(
 
-                "Invalid token or connection failed"
 
-            );
+setTimeout(()=>{
 
 
-        }
+navigate("/copy-trading");
 
 
+},1500);
 
-    };
+
+
+};
+
 
 
 
@@ -183,54 +196,56 @@ return (
 
 
 <h1>
-Client Registration
+Follower Registration
 </h1>
 
 
 
+<div className="copy-wizard">
+
 
 <p>
-Verify your Deriv account to join copy trading.
+Step {step} / 5
 </p>
 
 
 
+</div>
+
+
+
+
+
+{
+step===1 && (
+
+<>
+
+<h3>
+Select Master Trader
+</h3>
 
 
 <select
 
-
 value={selectedMaster || ""}
 
-
-
 onChange={(e)=>
-
-    setSelectedMaster(
-
-        Number(e.target.value)
-
-    )
-
+setSelectedMaster(
+Number(e.target.value)
+)
 }
-
-
 
 >
 
-
 <option value="">
-
-Select trader to copy
-
+Select trader
 </option>
-
 
 
 {
 
 masters.map(master=>(
-
 
 <option
 
@@ -250,36 +265,216 @@ value={master.id}
 }
 
 
+</select>
+
+
+
+<button
+
+onClick={()=>{
+
+if(!selectedMaster){
+
+setStatus(
+"Select a trader first"
+);
+
+return;
+
+}
+
+setStep(2);
+
+}}
+
+>
+
+Continue
+
+</button>
+
+
+</>
+
+)
+
+}
+
+
+
+
+
+
+
+{
+step===2 && (
+
+<>
+
+<h3>
+Your Profile
+</h3>
+
+
+<input
+
+placeholder="Your name"
+
+value={profile.name}
+
+onChange={(e)=>
+
+setProfile({
+
+...profile,
+
+name:e.target.value
+
+})
+
+}
+
+/>
+
+
+
+<select
+
+value={profile.account_type}
+
+onChange={(e)=>
+
+setProfile({
+
+...profile,
+
+account_type:e.target.value
+
+})
+
+}
+
+>
+
+<option>
+Real
+</option>
+
+<option>
+Demo
+</option>
 
 </select>
 
 
 
+<button
+
+onClick={()=>setStep(3)}
+
+>
+
+Continue
+
+</button>
 
 
+</>
 
-
-<input
-
-
-type="password"
-
-
-placeholder="Enter Deriv API Token"
-
-
-
-value={token}
-
-
-
-onChange={
-
-e=>setToken(e.target.value)
+)
 
 }
 
 
+
+
+
+
+
+{
+step===3 && (
+
+<>
+
+<h3>
+Connect Deriv Account
+</h3>
+
+
+<input
+
+type="password"
+
+placeholder="Deriv API Token"
+
+value={token}
+
+onChange={(e)=>
+
+setToken(e.target.value)
+
+}
+
+/>
+
+
+
+<button
+
+onClick={()=>setStep(4)}
+
+>
+
+Continue
+
+</button>
+
+
+</>
+
+)
+
+}
+
+
+
+
+
+
+
+{
+step===4 && (
+
+<>
+
+<h3>
+Copy Risk Settings
+</h3>
+
+
+
+<label>
+Maximum Stake
+</label>
+
+
+<input
+
+type="number"
+
+value={settings.max_stake}
+
+onChange={(e)=>
+
+setSettings({
+
+...settings,
+
+max_stake:Number(e.target.value)
+
+})
+
+}
 
 />
 
@@ -287,21 +482,102 @@ e=>setToken(e.target.value)
 
 
 
+<label>
+Copy Percentage
+</label>
+
+
+<input
+
+type="number"
+
+value={settings.copy_percentage}
+
+onChange={(e)=>
+
+setSettings({
+
+...settings,
+
+copy_percentage:Number(e.target.value)
+
+})
+
+}
+
+/>
+
+
+
 
 
 <button
 
-className="client-register-btn"
+onClick={()=>setStep(5)}
 
+>
+
+Continue
+
+</button>
+
+
+</>
+
+)
+
+}
+
+
+
+
+
+
+
+{
+step===5 && (
+
+<>
+
+<h3>
+Confirm Copy Trading
+</h3>
+
+
+<p>
+Master selected successfully
+</p>
+
+
+<p>
+Copy Percentage:
+{settings.copy_percentage}%
+</p>
+
+
+<p>
+Maximum Stake:
+{settings.max_stake}
+</p>
+
+
+
+<button
 
 onClick={connect}
 
 >
 
-Register Client
+Activate Copy Trading
 
 </button>
 
+
+</>
+
+)
+
+}
 
 
 
@@ -316,10 +592,7 @@ Register Client
 
 
 
-
-
 </div>
-
 
 );
 
