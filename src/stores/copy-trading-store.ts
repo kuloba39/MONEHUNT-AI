@@ -1751,7 +1751,7 @@ getMarketplaceTraders(){
 
 
 }
-    getMasterById(
+        getMasterById(
 
         id:number
 
@@ -1764,6 +1764,74 @@ getMarketplaceTraders(){
             master.id === id
 
         );
+
+    }
+
+
+
+    getTraderById(id:number) {
+
+        return this.masters.find(
+            master =>
+            master.id === id
+        );
+
+    }
+
+
+
+    getTrader(id:number) {
+
+        return this.masters.find(
+            master =>
+            master.id === id
+        );
+
+    }
+
+
+
+    updateCopySettings(
+        id:number,
+        settings:any
+    ){
+
+        const master =
+            this.masters.find(
+                item =>
+                item.id === id
+            );
+
+
+        if(master){
+
+            master.copySettings = {
+                ...master.copySettings,
+                ...settings
+            };
+
+        }
+
+
+        const activeCopy =
+            this.activeCopies.find(
+                item =>
+                item.id === id ||
+                item.master_id === id
+            );
+
+
+        if(activeCopy){
+
+            activeCopy.copySettings = {
+                ...activeCopy.copySettings,
+                ...settings
+            };
+
+        }
+
+
+        this.saveMasters();
 
     }
 
