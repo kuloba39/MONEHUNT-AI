@@ -606,13 +606,19 @@ async loadMastersFromServer(){
 
 
             markets:
-            data.markets ||
-            [],
+Array.isArray(data.markets)
+?
+data.markets
+:
+[],
 
 
-            contracts:
-            data.contracts ||
-            [],
+contracts:
+Array.isArray(data.contracts)
+?
+data.contracts
+:
+[],
 
 
             status:
@@ -628,15 +634,23 @@ async loadMastersFromServer(){
 
 
             profitHistory:
-            [],
+Array.isArray(data.profitHistory)
+?
+data.profitHistory
+:
+[],
 
 
-            tradeHistory:
-            [],
+tradeHistory:
+Array.isArray(data.tradeHistory)
+?
+data.tradeHistory
+:
+[],
 
 
-            copySettings:
-            {}
+copySettings:
+data.copySettings || {}
 
         };
 
