@@ -1,17 +1,19 @@
 import './copy-settings.scss';
-import { copyTradingStore } from '@/stores/copy-trading-store';
 import { useState } from 'react';
-import { copyTradingStore, type CopySettings as CopySettingsType } from '@/stores/copy-trading-store';
+import { 
+    copyTradingStore,
+    type CopySettings as CopySettingsType
+} from '@/stores/copy-trading-store';
 import { followerCopyService } from "@/services/copy-trading/follower-copy.service";
 
 
 interface Props {
 
-    traderId: number;
+    traderId:number;
 
-    traderName: string;
+    traderName:string;
 
-    settings?: CopySettingsType;
+    settings?:CopySettingsType;
 
 }
 
@@ -21,71 +23,35 @@ const CopySettings = ({
     traderId,
     traderName,
     settings
-}: Props) => {
-if (!settings) {
+}:Props)=>{
 
-    return null;
 
-}
+    if(!settings){
 
-    const [copyAmount, setCopyAmount] =
+        return null;
+
+    }
+
+
+
+    const [copyAmount,setCopyAmount] =
         useState(settings.amount);
 
 
-    const [risk, setRisk] =
+    const [risk,setRisk] =
         useState(settings.risk);
 
 
-    const [autoCopy, setAutoCopy] =
+    const [autoCopy,setAutoCopy] =
         useState(settings.autoCopy);
 
 
-    const [stopLoss, setStopLoss] =
+    const [stopLoss,setStopLoss] =
         useState(settings.stopLoss);
 
 
-    const [takeProfit, setTakeProfit] =
+    const [takeProfit,setTakeProfit] =
         useState(settings.takeProfit);
-
-
-
-    const saveSettings = () => {
-
-
-        copyTradingStore.updateCopySettings(
-
-            traderId,
-
-            {
-                amount: copyAmount,
-
-                risk,
-
-                autoCopy,
-
-                stopLoss,
-
-                takeProfit
-
-            }
-
-        );
-
-
-        console.log(
-            "COPY SETTINGS SAVED",
-            {
-                traderId,
-                copyAmount,
-                risk,
-                autoCopy,
-                stopLoss,
-                takeProfit
-            }
-        );
-
-
-    };
 
 
 
@@ -112,9 +78,7 @@ if (!settings) {
 
 
 
-
             <div className="copy-settings__group">
-
 
                 <label>
                     Copy Amount
@@ -135,15 +99,11 @@ if (!settings) {
 
                 />
 
-
             </div>
 
 
 
-
-
             <div className="copy-settings__group">
-
 
                 <label>
                     Risk Level
@@ -177,18 +137,13 @@ if (!settings) {
 
                 </select>
 
-
             </div>
-
-
 
 
 
             <div className="copy-settings__toggle">
 
-
                 <label>
-
 
                     <input
 
@@ -204,17 +159,11 @@ if (!settings) {
 
                     />
 
-
                     Enable Auto Copy
-
 
                 </label>
 
-
             </div>
-
-
-
 
 
 
@@ -243,8 +192,6 @@ if (!settings) {
                     />
 
                 </div>
-
-
 
 
 
@@ -277,42 +224,111 @@ if (!settings) {
 
 
 
-
             <button
-    className="copy-settings__button"
-    onClick={() => {
 
-    copyTradingStore.updateCopySettings(
-        traderId,
-        settings
+                className="copy-settings__button"
+
+                onClick={()=>{
+
+
+                    const follower =
+                        copyTradingStore.followers[0];
+
+
+                    if(!follower){
+
+
+                        console.error(
+                            "NO FOLLOWER ACCOUNT REGISTERED"
+                        );
+
+
+                        return;
+
+                    }
+
+
+
+                    const updatedSettings = {
+
+                        amount:copyAmount,
+
+                        risk,
+
+                        autoCopy,
+
+                        stopLoss,
+
+                        takeProfit
+
+                    };
+
+
+
+                    copyTradingStore.updateCopySettings(
+
+                        traderId,
+
+                        updatedSettings
+
+                    );
+
+
+
+
+                    const follower = copyTradingStore.followers[0];
+
+
+if(!follower){
+
+    console.error(
+        "NO FOLLOWER ACCOUNT REGISTERED"
     );
 
+    return;
 
-    followerCopyService.startCopy({
+}
+
+
+followerCopyService.startCopy({
 
     masterId: traderId,
 
-    followerId: 1,
+    followerId: follower.id,
 
     enabled: true
 
 });
 
 
-        console.log(
-            "SAVE COPY SETTINGS",
-            {
-                traderName,
-                settings
-            }
-        );
 
-    }}
->
 
-    Save Settings
+                    console.log(
 
-</button>
+                        "COPY STARTED",
+
+                        {
+
+                            masterId:traderId,
+
+                            followerId:follower.id,
+
+                            traderName,
+
+                            updatedSettings
+
+                        }
+
+                    );
+
+
+                }}
+
+            >
+
+                Save Settings
+
+            </button>
 
 
 
@@ -320,7 +336,9 @@ if (!settings) {
 
     );
 
+
 };
+
 
 
 export default CopySettings;
