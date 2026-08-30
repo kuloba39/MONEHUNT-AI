@@ -101,18 +101,27 @@ class FollowerVerificationService {
                 (await accountsResponse.json()) as DerivAccountsResponse;
 
             console.log(
-                "DERIV ACCOUNTS RESPONSE",
-                {
-                    status:
-                        accountsResponse.status,
+    "DERIV ACCOUNTS RESPONSE",
+    {
+        status:
+            accountsResponse.status,
 
-                    ok:
-                        accountsResponse.ok,
+        ok:
+            accountsResponse.ok,
 
-                    result:
-                        accountsResult,
-                }
-            );
+        result:
+            accountsResult,
+    }
+);
+
+console.log(
+    "DERIV ACCOUNTS RAW JSON",
+    JSON.stringify(
+        accountsResult,
+        null,
+        2
+    )
+);
 
             if (!accountsResponse.ok) {
 
