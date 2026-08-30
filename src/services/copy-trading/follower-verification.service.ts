@@ -8,9 +8,7 @@
 }
 
 interface DerivAccountsResponse {
-    data?: {
-        accounts?: DerivAccount[];
-    };
+    data?: DerivAccount[];
     accounts?: DerivAccount[];
     errors?: Array<{
         code?: string;
@@ -138,7 +136,7 @@ console.log(
             }
 
             const accounts =
-                accountsResult.data?.accounts ||
+                accountsResult.data ||
                 accountsResult.accounts ||
                 [];
 
@@ -445,3 +443,4 @@ console.log(
 
 export const followerVerificationService =
     new FollowerVerificationService();
+
