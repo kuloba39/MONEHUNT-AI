@@ -33,7 +33,7 @@ class MasterMarketplaceService {
 
 
         const master =
-        copyTradingStore.registerMasterTrader({
+        copyTradingStore.registerMaster({
 
             name:data.name,
 

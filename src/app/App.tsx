@@ -1,8 +1,6 @@
 import { lazy, Suspense } from 'react';
 import React from 'react';
 
-import TraderProfilePage from '../pages/copy-trading/trader-profile-page';
-
 import {
     createBrowserRouter,
     createRoutesFromElements,
@@ -42,16 +40,6 @@ import './app-root.scss';
 
 import CopyTradingPage 
 from '../pages/copy-trading';
-
-import MasterRegisterPage 
-from '../pages/copy-trading/master-register-page';
-
-import FollowerConnectPage 
-from '../pages/copy-trading/follower-connect-page';
-import FollowerDashboard
-from '../pages/copy-trading/follower-dashboard';
-
-
 
 const Layout = lazy(() => import('../components/layout'));
 
@@ -182,51 +170,17 @@ element={<CopyTradingPage />}
 
 
 
-<Route
-
-path='copy-trading/register'
-
-element={<MasterRegisterPage />}
-
-/>
 
 
 
 {/* FOLLOWER ONBOARDING */}
 
-<Route
-
-path='copy-trading/follow'
-
-element={<FollowerConnectPage />}
-
-/>
 
 
 
-{/* OLD LINK COMPATIBILITY */}
-
-<Route
-
-path='copy-trading/connect'
-
-element={<FollowerConnectPage />}
-
-/>
-<Route
-path="copy-trading/follower"
-element={<FollowerDashboard />}
-/>
 
 
 
-<Route
-
-path='copy-trading/trader/:id'
-
-element={<TraderProfilePage />}
-
-/>
 
 
 

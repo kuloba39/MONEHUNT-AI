@@ -187,7 +187,7 @@ class FollowerCopyService {
 
             (
 
-                follower.copy_percentage / 100
+                (follower.settings?.copy_percentage ?? 100) / 100
 
             );
 
@@ -197,12 +197,12 @@ class FollowerCopyService {
 
             amount >
 
-            follower.max_stake
+            follower.settings?.max_stake ?? Number.MAX_SAFE_INTEGER
 
         ){
 
             amount =
-                follower.max_stake;
+                follower.settings?.max_stake ?? Number.MAX_SAFE_INTEGER;
 
         }
 
@@ -250,7 +250,14 @@ class FollowerCopyService {
 
                 barrier:
 
-                    trade.barrier
+                    trade.barrier,
+
+
+
+                timestamp:
+
+                    Date.now()
+
 
 
             }
@@ -301,3 +308,8 @@ class FollowerCopyService {
 export const followerCopyService =
 
     new FollowerCopyService();
+
+
+
+
+

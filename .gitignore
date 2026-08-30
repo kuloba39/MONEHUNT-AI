@@ -3,3 +3,18 @@ node_modules/
 dist/
 .env.production
 .env*
+# Backup files
+*.backup.ts
+*.backup.tsx
+*.backup.js
+*.backup.scss
+*.before-final-fix.backup
+*.premium-backup
+
+# Investigation files
+balance-search.txt
+balance-all-search.txt
+function-calls.txt
+module-500-context.txt
+module-500-full.txt
+socket-auth-flow.txt

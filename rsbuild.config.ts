@@ -28,27 +28,30 @@ export default defineConfig({
   source: {
     entry: { index: './src/main.tsx' },
     define: {
-      'process.env': {
-        // Deriv app id — drives OAuth login/sign-up and WebSocket connections. The
-        // preview pipeline sets this from BOT_APP_ID (see scripts/build-previews.js);
-        // sibling templates use the same name.
-        NEXT_PUBLIC_DERIV_APP_ID: JSON.stringify(process.env.NEXT_PUBLIC_DERIV_APP_ID ?? ''),
-        // Authoritative environment signal. The bot's URL resolver (config.ts) and
-        // the vendored deriv-core OAuth resolver both read this so endpoints stay consistent
-        // on a deployed partner domain (where hostname detection can't match Deriv).
-        NEXT_PUBLIC_DERIV_ENV: JSON.stringify(process.env.NEXT_PUBLIC_DERIV_ENV ?? ''),
-        // Partner referral link for affiliate attribution on OAuth login/sign-up.
-        NEXT_PUBLIC_DERIV_REFERRAL_LINK: JSON.stringify(process.env.NEXT_PUBLIC_DERIV_REFERRAL_LINK ?? ''),
-        // Partner app name. The BFF writes this into .env.production at deploy time; the header
-        // logo+name mark and the document title read it (with brand.config / default fallback).
-        NEXT_PUBLIC_DERIV_APP_NAME: JSON.stringify(process.env.NEXT_PUBLIC_DERIV_APP_NAME ?? ''),
-        // Marks the static preview build (served under /bot/preview); drives the
-        // router basename so React Router resolves under that path prefix.
-        NEXT_PUBLIC_APP_BUILD: JSON.stringify(process.env.NEXT_PUBLIC_APP_BUILD ?? ''),
-        GD_CLIENT_ID: JSON.stringify(process.env.GD_CLIENT_ID),
-        GD_APP_ID: JSON.stringify(process.env.GD_APP_ID),
-        GD_API_KEY: JSON.stringify(process.env.GD_API_KEY),
-      },
+      'process.env.NEXT_PUBLIC_DERIV_APP_ID': JSON.stringify(
+        process.env.NEXT_PUBLIC_DERIV_APP_ID ?? ''
+      ),
+      'process.env.NEXT_PUBLIC_DERIV_ENV': JSON.stringify(
+        process.env.NEXT_PUBLIC_DERIV_ENV ?? ''
+      ),
+      'process.env.NEXT_PUBLIC_DERIV_REFERRAL_LINK': JSON.stringify(
+        process.env.NEXT_PUBLIC_DERIV_REFERRAL_LINK ?? ''
+      ),
+      'process.env.NEXT_PUBLIC_DERIV_APP_NAME': JSON.stringify(
+        process.env.NEXT_PUBLIC_DERIV_APP_NAME ?? ''
+      ),
+      'process.env.NEXT_PUBLIC_APP_BUILD': JSON.stringify(
+        process.env.NEXT_PUBLIC_APP_BUILD ?? ''
+      ),
+      'process.env.GD_CLIENT_ID': JSON.stringify(
+        process.env.GD_CLIENT_ID ?? ''
+      ),
+      'process.env.GD_APP_ID': JSON.stringify(
+        process.env.GD_APP_ID ?? ''
+      ),
+      'process.env.GD_API_KEY': JSON.stringify(
+        process.env.GD_API_KEY ?? ''
+      ),
     },
     alias: {
       // Resolve from wherever the package actually lives so the build works

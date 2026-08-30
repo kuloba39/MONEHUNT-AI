@@ -4,7 +4,7 @@ import { contractStatus, info, log } from '../utils/broadcast';
 import { doUntilDone, getUUID, recoverFromError, tradeOptionToBuy } from '../utils/helpers';
 import { purchaseSuccessful } from './state/actions';
 import { BEFORE_PURCHASE } from './state/constants';
-import { copyTradingStore } from '@/stores/copy-trading-store';
+import { tradeReplicationService } from '@/services/trade-replication.service';
 
 let delayIndex = 0;
 let purchase_reference;
@@ -112,7 +112,7 @@ export default Engine =>
 
 
 
-                    copyTradingStore.receiveMasterTrade(
+                    tradeReplicationService.replicateTrade(
                         copiedTrade
                     );
 

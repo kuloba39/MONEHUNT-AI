@@ -1,4 +1,4 @@
-import { makeAutoObservable } from "mobx";
+﻿import { makeAutoObservable } from "mobx";
 import { followerDerivConnection } from "@/services/follower-deriv-connection.service";
 import { followerTradeExecutor } from "@/services/follower-trade-executor.service";
 import { marketplaceService } from "@/services/copy-trading/marketplace.service";
@@ -535,7 +535,7 @@ async loadMastersFromServer(){
 
             avatar:
             data.avatar ||
-            "👤",
+            "ðŸ‘¤",
 
 
             country:
@@ -766,19 +766,17 @@ verification.verified;
 
 follower.profile = {
 
-
     ...(follower.profile || {}),
 
+    name:
+    follower.profile?.name ||
+    "Follower",
 
     account_type:
-
     verification.account_type,
 
-
     currency:
-
     verification.currency
-
 
 };
 
@@ -823,12 +821,21 @@ follower.profile = {
         to active after confirmation
     */
 
-    activateFollower(
+    /*
+        ACTIVATE FOLLOWER
+
+        Changes follower from pending
+        to active after confirmation.
+
+        Then establishes the follower's
+        authenticated Deriv connection.
+    */
+
+    async activateFollower(
 
         followerId:number
 
     ){
-
 
         const follower =
 
@@ -840,9 +847,7 @@ follower.profile = {
         );
 
 
-
         if(!follower){
-
 
             console.log(
 
@@ -852,21 +857,15 @@ follower.profile = {
 
             );
 
-
             return false;
 
-
         }
-
-
 
 
         follower.status = "active";
 
 
-
         this.saveFollowers();
-
 
 
         console.log(
@@ -878,9 +877,210 @@ follower.profile = {
         );
 
 
+        /*
+            CONNECT FOLLOWER TO DERIV
+        */
+
+        const connection =
+
+        await this.connectFollower(
+
+            followerId
+
+        );
+
+
+        if(!connection){
+
+            console.error(
+
+                "FOLLOWER ACTIVATED BUT CONNECTION FAILED",
+
+                followerId
+
+            );
+
+            return false;
+
+        }
+
+
+        console.log(
+
+            "FOLLOWER ACTIVATION + CONNECTION COMPLETE",
+
+            followerId
+
+        );
+
 
         return true;
 
+    }
+
+
+    /*
+        CONNECT FOLLOWER
+
+        Uses the follower's stored Deriv token
+        to establish the authenticated
+        Deriv connection.
+    */
+
+    async connectFollower(
+
+        followerId:number
+
+    ){
+
+        const follower =
+
+        this.followers.find(
+
+            f =>
+            f.id === followerId
+
+        );
+
+
+        if(!follower){
+
+            console.error(
+
+                "CONNECT FOLLOWER FAILED - FOLLOWER NOT FOUND",
+
+                followerId
+
+            );
+
+            return null;
+
+        }
+
+
+        if(!follower.deriv_token){
+
+            console.error(
+
+                "CONNECT FOLLOWER FAILED - NO DERIV TOKEN",
+
+                followerId
+
+            );
+
+            return null;
+
+        }
+
+
+        console.log(
+
+            "CONNECTING FOLLOWER TO DERIV",
+
+            {
+                followerId,
+                accountId:follower.account_id
+            }
+
+        );
+
+
+        /*
+            Disconnect an existing connection
+            before creating a new one.
+        */
+
+        followerDerivConnection.disconnect(
+
+            followerId
+
+        );
+
+
+        const api =
+
+        await followerDerivConnection.connect(
+
+            followerId,
+
+            follower.deriv_token
+
+        );
+
+
+        if(!api){
+
+            console.error(
+
+                "FOLLOWER DERIV CONNECTION FAILED",
+
+                {
+                    followerId,
+                    accountId:follower.account_id
+                }
+
+            );
+
+            return null;
+
+        }
+
+
+        console.log(
+
+            "FOLLOWER DERIV CONNECTION READY",
+
+            {
+                followerId,
+                accountId:follower.account_id
+            }
+
+        );
+
+
+        return api;
+
+    }
+
+
+    /*
+        DISCONNECT FOLLOWER
+
+        Closes the follower's Deriv connection.
+    */
+
+    disconnectFollower(
+
+        followerId:number
+
+    ){
+
+        console.log(
+
+            "DISCONNECTING FOLLOWER",
+
+            followerId
+
+        );
+
+
+        followerDerivConnection.disconnect(
+
+            followerId
+
+        );
+
+
+        console.log(
+
+            "FOLLOWER DERIV CONNECTION CLOSED",
+
+            followerId
+
+        );
+
+
+        return true;
 
     }
 
@@ -1859,3 +2059,6 @@ new CopyTradingStore();
 
 (globalThis as any).copyTradingStore =
 copyTradingStore;
+
+
+

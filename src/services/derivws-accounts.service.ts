@@ -134,6 +134,7 @@ export class DerivWSAccountsService {
                 const response = await fetch(endpoint, {
                     method: 'GET',
                     headers: {
+                        'Deriv-App-ID': process.env.NEXT_PUBLIC_DERIV_APP_ID || '',
                         Authorization: `Bearer ${accessToken}`,
                     },
                 });
@@ -198,6 +199,7 @@ export class DerivWSAccountsService {
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
+                        'Deriv-App-ID': process.env.NEXT_PUBLIC_DERIV_APP_ID || '',
                         Authorization: `Bearer ${accessToken}`,
                     },
                 });
