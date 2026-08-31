@@ -2,51 +2,46 @@ import { useState, useEffect } from 'react';
 import './analysis.scss';
 import { useAnalysisTicks } from './use-analysis-ticks';
 
-
 const Analysis = () => {
-const [localTime, setLocalTime] = useState(
-    new Date()
+const [localTime, setLocalTime] = useState(new Date());
+
+const [analysisTickCount] = useState(1000);
+
+const [market, setMarket] = useState(() => {
+    if (typeof window === 'undefined') {
+        return 'R_100';
+    }
+
+    return (
+        localStorage.getItem('d_circles_market') ||
+        'R_100'
+    );
+});
+
+useEffect(() => {
+    const timer = setInterval(() => {
+        setLocalTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+}, []);
+
+const ticks = useAnalysisTicks(
+    market,
+    analysisTickCount
 );
 
-
-useEffect(()=>{
-
-    const timer = setInterval(()=>{
-
-        setLocalTime(new Date());
-
-    },1000);
-
-
-    return ()=>clearInterval(timer);
-
-},[]);
-
-
-    const [analysisTickCount, setAnalysisTickCount] =
-        useState(1000);
-
-
-    const [market, setMarket] =
-        useState('R_100');
-
-
-    const ticks =
-    useAnalysisTicks(
-        market,
-        analysisTickCount
+useEffect(() => {
+    localStorage.setItem(
+        'd_circles_market',
+        market
     );
+}, [market]);
 
+const lastTick =
+    ticks[ticks.length - 1];
 
-    const lastTick =
-        ticks[ticks.length - 1];
-
-
-    const digits =
-        ticks.map(
-            tick => tick.digit
-        );
-        const analysisDigits =
+const analysisDigits =
     ticks
         .slice(-analysisTickCount)
         .map(tick => tick.digit);
@@ -56,431 +51,342 @@ const recentDigits =
         .slice(-100)
         .map(tick => tick.digit);
 
+/*
+ * DIGIT STATISTICS
+ */
 
-
-    /*
-        DIGIT STATISTICS
-    */
-
-    const digitStats =
-        Array.from(
-            { length: 10 },
-            (_, digit) => {
-
-
-                const count =
-                    analysisDigits.filter(
+const digitStats =
+    Array.from(
+        { length: 10 },
+        (_, digit) => {
+            const count =
+                analysisDigits.filter(
                     d => d === digit
-                  ).length;
+                ).length;
 
-                 const percent =
-                    analysisDigits.length
-                  ? ((count / analysisDigits.length) * 100)
-                     : 0;
+            const percent =
+                analysisDigits.length
+                    ? (
+                        (count /
+                            analysisDigits.length) *
+                        100
+                    )
+                    : 0;
 
+            return {
+                digit,
+                count,
+                percent
+            };
+        }
+    );
 
+/*
+ * DIGIT RANKING
+ *
+ * RED    = least appearing
+ * YELLOW = second least
+ * BLUE   = second most
+ * GREEN  = most appearing
+ */
 
-                return {
+const rankedDigits =
+    [...digitStats].sort(
+        (a, b) => a.count - b.count
+    );
 
-                    digit,
-                    count,
-                    percent
-
-                };
-
-            }
-        );
-
-
-
-
-    /*
-        DIGIT RANKING
-
-        RED    = least appearing
-        YELLOW = second least
-        BLUE   = second most
-        GREEN  = most appearing
-
-    */
-
-
-    const rankedDigits =
-        [...digitStats]
-            .sort(
-                (a,b)=>a.count-b.count
-            );
-
-
-
-    const leastDigit =
+const leastDigit =
     rankedDigits[0]?.digit;
-
 
 const secondLeastDigit =
     rankedDigits[1]?.digit;
 
-
 const secondMostDigit =
     rankedDigits[8]?.digit;
-
 
 const mostDigit =
     rankedDigits[9]?.digit;
 
+const getDigitClass =
+    (digit: number) => {
+        if (digit === leastDigit) {
+            return 'red';
+        }
 
+        if (digit === secondLeastDigit) {
+            return 'yellow';
+        }
 
+        if (digit === secondMostDigit) {
+            return 'blue';
+        }
 
-    const getDigitClass =
-    (digit:number)=>{
+        if (digit === mostDigit) {
+            return 'green';
+        }
 
-
-        if(digit === leastDigit)
-            return "red";
-
-
-
-        if(digit === secondLeastDigit)
-            return "yellow";
-
-
-
-        if(digit === secondMostDigit)
-            return "blue";
-
-
-
-        if(digit === mostDigit)
-            return "green";
-
-
-
-        return "neutral";
-
-
+        return 'neutral';
     };
 
-
-
-
-
 return (
+    <div className="analysis-page">
 
-<div className="analysis-page">
+        {/* HEADER */}
+
+        <header className="analysis-header">
+
+            <div className="header-left">
+
+                <div className="header-title">
+                    D CIRCLES
+                </div>
+
+                <div className="local-time">
+                    Local Time:{' '}
+                    {localTime.toLocaleTimeString()}
+                </div>
+
+            </div>
+
+            <div className="live-status">
+                <span className="live-dot" />
+                LIVE
+            </div>
+
+        </header>
 
 
-<h1>
-D CIRCLES
-</h1>
+        {/* MARKET */}
+
+        <section className="market-section">
+
+            <label>
+                Market
+            </label>
+
+            <select
+                value={market}
+                onChange={(e) =>
+                    setMarket(e.target.value)
+                }
+            >
+
+                <optgroup label="Volatility Indices">
+
+                    <option value="R_10">
+                        Volatility 10 Index
+                    </option>
+
+                    <option value="R_25">
+                        Volatility 25 Index
+                    </option>
+
+                    <option value="R_50">
+                        Volatility 50 Index
+                    </option>
+
+                    <option value="R_75">
+                        Volatility 75 Index
+                    </option>
+
+                    <option value="R_100">
+                        Volatility 100 Index
+                    </option>
+
+                </optgroup>
 
 
-<div className="top-info">
+                <optgroup label="Volatility 1s Indices">
+
+                    <option value="1HZ10V">
+                        Volatility 10 (1s)
+                    </option>
+
+                    <option value="1HZ15V">
+                        Volatility 15 (1s)
+                    </option>
+
+                    <option value="1HZ25V">
+                        Volatility 25 (1s)
+                    </option>
+
+                    <option value="1HZ30V">
+                        Volatility 30 (1s)
+                    </option>
+
+                    <option value="1HZ50V">
+                        Volatility 50 (1s)
+                    </option>
+
+                    <option value="1HZ75V">
+                        Volatility 75 (1s)
+                    </option>
+
+                    <option value="1HZ90V">
+                        Volatility 90 (1s)
+                    </option>
+
+                    <option value="1HZ100V">
+                        Volatility 100 (1s)
+                    </option>
+
+                </optgroup>
 
 
-<div>
-LOCAL TIME
+                <optgroup label="Boom & Crash">
 
-<br/>
+                    <option value="BOOM500">
+                        Boom 500
+                    </option>
 
-{
-localTime.toLocaleTimeString()
-}
+                    <option value="BOOM1000">
+                        Boom 1000
+                    </option>
 
-</div>
+                    <option value="CRASH500">
+                        Crash 500
+                    </option>
+
+                    <option value="CRASH1000">
+                        Crash 1000
+                    </option>
+
+                </optgroup>
 
 
+                <optgroup label="Jump Indices">
 
-<div>
-LAST TICK
+                    <option value="JUMP10">
+                        Jump 10
+                    </option>
 
-<br/>
+                    <option value="JUMP25">
+                        Jump 25
+                    </option>
 
-{
-lastTick ? (
+                    <option value="JUMP50">
+                        Jump 50
+                    </option>
 
-<div className="last-tick-content">
+                    <option value="JUMP75">
+                        Jump 75
+                    </option>
 
-    <div className="quote-box">
+                    <option value="JUMP100">
+                        Jump 100
+                    </option>
 
-        <span>
-            {lastTick.quote}
-        </span>
+                </optgroup>
 
-        <small>
-            QUOTE
-        </small>
+            </select>
+
+        </section>
+
+
+        {/* D CIRCLES */}
+
+        <section className="circles-section">
+
+            <div className="circles">
+
+                {digitStats.map((item) => (
+
+                    <div
+                        key={item.digit}
+                        className={`digit-unit ${getDigitClass(item.digit)}`}
+                    >
+
+                        <div className="digit-circle">
+
+                            <div className="digit-label">
+                                {item.digit}
+                            </div>
+
+                            <div className="digit-count">
+                                {item.count}
+                            </div>
+
+                            <div className="digit-percent">
+                                {item.percent.toFixed(1)}%
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                ))}
+
+            </div>
+
+        </section>
+
+
+        {/* LAST QUOTE */}
+
+        <section className="last-quote-section">
+
+            <div className="last-quote">
+
+                <div className="section-label">
+                    LAST QUOTE
+                </div>
+
+                <div className="quote-value">
+                    {lastTick
+                        ? lastTick.quote
+                        : 'Waiting...'}
+                </div>
+
+            </div>
+
+
+            <div className="last-digit">
+
+                <div className="section-label">
+                    LAST DIGIT
+                </div>
+
+                <div className="last-digit-value">
+                    {lastTick
+                        ? lastTick.digit
+                        : '-'}
+                </div>
+
+            </div>
+
+        </section>
+
+
+        {/* RECENT DIGITS */}
+
+        <section className="recent-section">
+
+            <div className="section-title">
+                RECENT DIGITS
+            </div>
+
+            <div className="history">
+
+                {recentDigits.map(
+                    (digit, index) => (
+
+                        <span
+                            key={`${digit}-${index}`}
+                            className={getDigitClass(digit)}
+                        >
+                            {digit}
+                        </span>
+
+                    )
+                )}
+
+            </div>
+
+        </section>
 
     </div>
-
-
-    <div className="digit-box">
-
-        <span>
-            {lastTick.digit}
-        </span>
-
-        <small>
-            DIGIT
-        </small>
-
-    </div>
-
-</div>
-
-)
-
-:
-
-"Waiting..."
-}
-
-</div>
-
-
-</div>
-
-
-
-
-
-<div className="market-box">
-
-<label>
-Market
-</label>
-
-
-<select
-
-value={market}
-
-onChange={
-(e)=>
-setMarket(e.target.value)
-}
-
->
-
-<option value="R_10">
-Volatility 10 Index
-</option>
-
-
-<option value="R_25">
-Volatility 25 Index
-</option>
-
-
-<option value="R_50">
-Volatility 50 Index
-</option>
-
-
-<option value="R_75">
-Volatility 75 Index
-</option>
-
-
-<option value="R_100">
-Volatility 100 Index
-</option>
-
-
-<option value="1HZ10V">
-Volatility 10 (1s)
-</option>
-
-
-<option value="1HZ25V">
-Volatility 25 (1s)
-</option>
-
-
-<option value="1HZ50V">
-Volatility 50 (1s)
-</option>
-
-
-<option value="1HZ75V">
-Volatility 75 (1s)
-</option>
-
-
-<option value="1HZ100V">
-Volatility 100 (1s)
-</option>
-
-
-<option value="BOOM500">
-Boom 500
-</option>
-
-
-<option value="BOOM1000">
-Boom 1000
-</option>
-
-
-<option value="CRASH500">
-Crash 500
-</option>
-
-
-<option value="CRASH1000">
-Crash 1000
-</option>
-
-</select>
-
-</div>
-
-
-
-
-
-
-
-<div className="d-hub">
-
-
-<div className="hub-circle">
-
-<div className="hub-letter">
-D
-</div>
-
-
-<strong>
-{
-analysisDigits.length
-}
-</strong>
-
-
-<small>
-TOTAL TICKS
-</small>
-
-
-</div>
-
-
-</div>
-
-
-
-
-
-
-
-
-<div className="circles">
-
-
-{
-digitStats.map(
-(item)=>(
-
-<div
-
-key={item.digit}
-
-className={
-`
-circle
-${getDigitClass(item.digit)}
-`
-}
-
->
-
-
-<div className="digit">
-
-{item.digit}
-
-</div>
-
-
-<div className="count">
-
-{item.count}
-
-</div>
-
-
-<div className="percent">
-
-{item.percent.toFixed(1)}%
-
-</div>
-
-
-</div>
-
-)
-
-)
-
-}
-
-
-</div>
-
-
-
-
-
-
-
-
-<h2>
-RECENT DIGITS
-</h2>
-
-
-<div className="history">
-
-
-{
-
-recentDigits.map(
-(digit,index)=>(
-
-
-<span
-
-key={index}
-
-className={
-getDigitClass(digit)
-}
-
->
-
-{digit}
-
-</span>
-
-
-)
-
-)
-
-}
-
-
-</div>
-
-
-
-</div>
-
-
 );
 
-
 };
-
 
 export default Analysis;

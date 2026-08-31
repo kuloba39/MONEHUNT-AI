@@ -159,12 +159,43 @@ export default class TicksService {
         }
     }
 
-    unsubscribeAllAndSubscribeListeners(symbol) {
-        const ohlcSubscriptions = this.subscriptions.getIn(['ohlc', symbol]);
+        unsubscribeAllAndSubscribeListeners(symbol) {
+        const tickSubscription = this.subscriptions.getIn([
+            'tick',
+            symbol,
+        ]);
 
-        const subscription = [...(ohlcSubscriptions ? Array.from(ohlcSubscriptions.values()) : [])];
+        const ohlcSubscriptions = this.subscriptions.getIn([
+            'ohlc',
+            symbol,
+        ]);
 
-        Promise.all(subscription.map(id => doUntilDone(() => api_base.api.forget(id))));
+        const subscriptionIds = [];
+
+        if (tickSubscription) {
+            subscriptionIds.push(tickSubscription);
+        }
+
+        if (ohlcSubscriptions) {
+            ohlcSubscriptions.forEach(id => {
+                if (id) {
+                    subscriptionIds.push(id);
+                }
+            });
+        }
+
+        if (subscriptionIds.length) {
+            Promise.all(
+                subscriptionIds.map(id =>
+                    doUntilDone(() => api_base.api.forget(id))
+                )
+            ).catch(error => {
+                console.log(
+                    'Error forgetting tick subscriptions',
+                    error
+                );
+            });
+        }
 
         this.subscriptions = new Map();
     }
@@ -199,13 +230,25 @@ export default class TicksService {
         if (api_base.api) {
             const subscription = api_base.api.onMessage().subscribe(({ data }) => {
                 if (data.msg_type === 'tick') {
-                    const { tick } = data;
-                    const { symbol, id } = tick;
-                    if (this.ticks.has(symbol)) {
-                        this.subscriptions = this.subscriptions.setIn(['tick', symbol], id);
-                        this.updateTicksAndCallListeners(symbol, updateTicks(this.ticks.get(symbol), parseTick(tick)));
-                    }
-                }
+    const { tick } = data;
+
+    if (!tick || !tick.symbol) {
+        return;
+    }
+
+    const { symbol, id } = tick;
+
+    if (this.ticks.has(symbol)) {
+        this.subscriptions = this.subscriptions.setIn(['tick', symbol], id);
+        this.updateTicksAndCallListeners(
+            symbol,
+            updateTicks(
+                this.ticks.get(symbol),
+                parseTick(tick)
+            )
+        );
+    }
+}
 
                 if (data.msg_type === 'ohlc') {
                     const { ohlc } = data;

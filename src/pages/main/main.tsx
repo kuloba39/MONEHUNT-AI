@@ -35,7 +35,6 @@ import {
     LabelPairedObjectsColumnCaptionRegularIcon,
     LabelPairedPuzzlePieceTwoCaptionBoldIcon,
 } from '@deriv/quill-icons/LabelPaired';
-import { LegacyGuide1pxIcon } from '@deriv/quill-icons/Legacy';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import RunPanel from '../../components/run-panel';
@@ -48,7 +47,6 @@ import RunStrategy from '../dashboard/run-strategy';
 import './main.scss';
 
 const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
-const Tutorial = lazy(() => import('../tutorials'));
 
 const AppWrapper = observer(() => {
     const { connectionStatus } = useApiBase();
@@ -90,9 +88,9 @@ const AppWrapper = observer(() => {
     'dashboard',
     'bot_builder',
     'chart',
-    'tutorial',
-    'free_bots'
-];
+    'free_bots',
+    'analysis'
+];;
     const { isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
@@ -156,9 +154,8 @@ const AppWrapper = observer(() => {
         resetUrlParamProcessing();
     }, [location.search]);
 
-    React.useEffect(() => {
+        React.useEffect(() => {
         const el_dashboard = document.getElementById('id-dbot-dashboard');
-        const el_tutorial = document.getElementById('id-tutorials');
 
         const observer_dashboard = new window.IntersectionObserver(
             ([entry]) => {
@@ -170,25 +167,17 @@ const AppWrapper = observer(() => {
             },
             {
                 root: null,
-                threshold: 0.5, // set offset 0.1 means trigger if atleast 10% of element in viewport
+                threshold: 0.5,
             }
         );
 
-        const observer_tutorial = new window.IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setRightTabShadow(false);
-                    return;
-                }
-                setRightTabShadow(true);
-            },
-            {
-                root: null,
-                threshold: 0.5, // set offset 0.1 means trigger if atleast 10% of element in viewport
-            }
-        );
-        observer_dashboard.observe(el_dashboard);
-        observer_tutorial.observe(el_tutorial);
+        if (el_dashboard) {
+            observer_dashboard.observe(el_dashboard);
+        }
+
+        return () => {
+            observer_dashboard.disconnect();
+        };
     });
 
     React.useEffect(() => {
@@ -429,30 +418,6 @@ const AppWrapper = observer(() => {
                                     <ChartWrapper show_digits_stats={false} />
                                 </Suspense>
                             </div>
-<div
-    label={
-        <>
-            <LegacyGuide1pxIcon
-                height='16px'
-                width='16px'
-                fill='var(--text-general)'
-                className='icon-general-fill-g-path'
-            />
-            <Localize i18n_default_text='Tutorials' />
-        </>
-    }
-    id='id-tutorials'
->
-    <div className='tutorials-wrapper'>
-        <Suspense
-            fallback={
-                <ChunkLoader message={localize('Please wait, loading tutorials...')} />
-            }
-        >
-            <Tutorial handleTabChange={handleTabChange} />
-        </Suspense>
-    </div>
-</div>
 
 
 {/* FREE BOTS */}

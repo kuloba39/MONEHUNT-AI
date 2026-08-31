@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 
 
@@ -133,6 +133,8 @@ let api:any = null;
 let subscription:any = null;
 
 let subscriptionId:string|null = null;
+
+const subscriptionRequestId = Date.now();
 
 let interval:any;
 
@@ -313,32 +315,66 @@ api.api
 .subscribe(({data}:any)=>{
 
 
-
 if(data.error){
 
-console.log(
-"D CIRCLES ERROR",
-data.error
-);
+    if(
+        data.echo_req?.req_id ===
+        subscriptionRequestId
+    ){
 
-return;
+        console.log(
+            "D CIRCLES ERROR",
+            data.error
+        );
 
-}
+    }
 
-
-
-if(data.subscription){
-
-subscriptionId =
-data.subscription.id;
+    return;
 
 }
 
 
+/*
+    ONLY capture the subscription ID
+    belonging to this D CIRCLES request.
+*/
 
+if(
+    data.subscription &&
+    data.echo_req?.req_id ===
+    subscriptionRequestId
+){
+
+    subscriptionId =
+        data.subscription.id;
+
+}
+
+
+/*
+    Ignore messages that are not ticks.
+*/
 
 if(!data.tick)
-return;
+    return;
+
+
+/*
+    IMPORTANT:
+    The shared Deriv API connection can receive
+    ticks for other parts of the application.
+
+    D CIRCLES must only process its own market.
+*/
+
+if(
+    data.tick.symbol !==
+    activeMarket
+){
+
+    return;
+
+}
 
 
 
@@ -471,6 +507,10 @@ return updated;
 
 
 api.api.send({
+
+req_id:
+
+subscriptionRequestId,
 
 ticks:
 
