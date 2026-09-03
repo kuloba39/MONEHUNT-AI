@@ -1610,57 +1610,32 @@ follower.profile = {
 
 
 
-        let amount =
+        const copyPercentage =
+    follower.settings?.copy_percentage ?? 100;
 
-        trade.amount *
+const maxStake =
+    follower.settings?.max_stake ?? Number.MAX_SAFE_INTEGER;
 
-        (
+let amount =
+    trade.amount *
+    (copyPercentage / 100);
 
-            follower.copy_percentage / 100
+if (
+    amount > maxStake
+) {
+    amount = maxStake;
+}
 
-        );
-
-
-
-
-
-
-        if(
-
-            amount >
-
-            follower.max_stake
-
-        ){
-
-
-            amount =
-
-            follower.max_stake;
-
-
-        }
-
-
-
-
-
-
-
-
-       const request = {
-
-
+const request = {
     amount:
-    Number(
-        amount.toFixed(2)
-    ),
-
+        Number(
+            amount.toFixed(2)
+        ),
 
     basis:
-    follower.copy_percentage
-    ? "stake"
-    : trade.basis,
+        copyPercentage
+        ? "stake"
+        : trade.basis,
 
 
     contract_type:

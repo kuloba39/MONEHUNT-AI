@@ -2,9 +2,13 @@ import { copyTradingStore } from "../../stores/copy-trading-store";
 
 
 export interface MasterRegistrationData {
-    derivAccountId: string;
-    username?: string;
-    country?: string;
+
+    derivAccountId:string;
+
+    username?:string;
+
+    country?:string;
+
 }
 
 
@@ -12,62 +16,49 @@ class MasterRegistrationService {
 
 
     async registerMasterTrader(
-        data: MasterRegistrationData
-    ) {
+        data:MasterRegistrationData
+    ){
 
-        if (!data.derivAccountId) {
+        if(
+            !data.derivAccountId
+        ){
+
             throw new Error(
                 "Deriv account ID required"
             );
+
         }
 
 
         const masterTrader = {
 
-            id:
-                crypto.randomUUID(),
-
-            derivAccountId:
+            account_id:
                 data.derivAccountId,
 
-
-            username:
+            name:
                 data.username ||
                 "Anonymous Trader",
 
-
             country:
                 data.country ||
-                "Unknown",
-
-
-            status:
-                "ACTIVE",
-
-
-            followers:
-                0,
-
-
-            createdAt:
-                Date.now()
+                "Unknown"
 
         };
 
 
-        copyTradingStore.getState()
-            .addMasterTrader(
+        const registeredMaster =
+            await copyTradingStore.registerMaster(
                 masterTrader
             );
 
 
         console.log(
             "MASTER TRADER REGISTERED",
-            masterTrader
+            registeredMaster
         );
 
 
-        return masterTrader;
+        return registeredMaster;
 
     }
 

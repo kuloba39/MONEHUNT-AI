@@ -1,7 +1,6 @@
-```typescript
 import { useEffect, useState } from 'react';
 
-type Market = {
+export type Market = {
     symbol: string;
     display_name: string;
     symbol_type?: string;
@@ -11,154 +10,73 @@ type Market = {
 };
 
 export const useActiveMarkets = () => {
-
     const [markets, setMarkets] = useState<Market[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-
         let cancelled = false;
 
         const loadMarkets = async () => {
-
             try {
+                setLoading(true);
+                setError(null);
 
-                const api =
-                    (window as any)
-                        .ApiHelpers
-                        ?.instance;
-
-                const activeSymbols =
-                    api?.active_symbols;
-
-                if (!activeSymbols) {
-
-                    console.log(
-                        'D CIRCLES ACTIVE SYMBOL SERVICE NOT READY'
-                    );
-
-                    return;
-                }
-
-                const symbols =
-                    await activeSymbols
-                        .retrieveActiveSymbols(true);
-
-                console.log(
-                    'D CIRCLES REAL SYMBOLS',
-                    symbols
+                const response = await fetch(
+                    'https://api.deriv.com/api-explorer/get_active_symbols'
                 );
 
-                if (!Array.isArray(symbols)) {
-
-                    console.log(
-                        'D CIRCLES ACTIVE SYMBOLS INVALID',
-                        symbols
+                if (!response.ok) {
+                    throw new Error(
+                        `Failed to load markets (${response.status})`
                     );
-
-                    return;
                 }
 
-                const clean: Market[] = symbols
-                    .map((item: any) => {
+                const data = await response.json();
 
-                        /*
-                         * Current Deriv API
-                         */
-                        const symbol =
-                            item.underlying_symbol ||
-                            item.symbol;
-
-                        const displayName =
-                            item.underlying_symbol_name ||
-                            item.display_name ||
-                            symbol;
-
-                        const symbolType =
-                            item.underlying_symbol_type ||
-                            item.symbol_type;
-
-                        return {
-                            symbol,
-                            display_name: displayName,
-                            symbol_type: symbolType,
-                            underlying_symbol:
-                                item.underlying_symbol,
-                            underlying_symbol_name:
-                                item.underlying_symbol_name,
-                            underlying_symbol_type:
-                                item.underlying_symbol_type,
-                        };
-
-                    })
-                    .filter(
-                        (item: Market) =>
-                            Boolean(item.symbol)
-                    );
-
-                /*
-                 * Remove duplicate symbols.
-                 */
-                const unique =
-                    Array.from(
-                        new Map(
-                            clean.map(
-                                item => [
-                                    item.symbol,
-                                    item
-                                ]
-                            )
-                        ).values()
-                    );
-
-                /*
-                 * Sort alphabetically by
-                 * display name.
-                 */
-                unique.sort(
-                    (a, b) =>
-                        a.display_name.localeCompare(
-                            b.display_name
-                        )
-                );
+                const activeMarkets: Market[] =
+                    data?.active_symbols?.map((market: any) => ({
+                        symbol: market.symbol,
+                        display_name:
+                            market.display_name ||
+                            market.market_display_name ||
+                            market.symbol,
+                        symbol_type: market.symbol_type,
+                        underlying_symbol: market.underlying_symbol,
+                        underlying_symbol_name:
+                            market.underlying_symbol_name,
+                        underlying_symbol_type:
+                            market.underlying_symbol_type,
+                    })) ?? [];
 
                 if (!cancelled) {
-
-                    setMarkets(unique);
-
-                    console.log(
-                        'D CIRCLES MARKETS LOADED',
-                        unique.length
-                    );
-
-                    console.log(
-                        'D CIRCLES MARKET LIST',
-                        unique
-                    );
-
+                    setMarkets(activeMarkets);
                 }
-
-            } catch (error) {
-
-                console.log(
-                    'D CIRCLES MARKET ERROR',
-                    error
-                );
-
+            } catch (err) {
+                if (!cancelled) {
+                    setError(
+                        err instanceof Error
+                            ? err.message
+                            : 'Failed to load markets'
+                    );
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
-
         };
 
         loadMarkets();
 
         return () => {
-
             cancelled = true;
-
         };
-
     }, []);
 
-    return markets;
-
+    return {
+        markets,
+        loading,
+        error,
+    };
 };
-```

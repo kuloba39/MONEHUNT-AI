@@ -182,29 +182,19 @@ class FollowerCopyService {
 
 
         let amount =
+    trade.stake *
+    (
+        (follower.settings?.copy_percentage ?? 100) / 100
+    );
 
-            trade.stake *
+const maxStake =
+    follower.settings?.max_stake ?? Number.MAX_SAFE_INTEGER;
 
-            (
-
-                (follower.settings?.copy_percentage ?? 100) / 100
-
-            );
-
-
-
-        if(
-
-            amount >
-
-            follower.settings?.max_stake ?? Number.MAX_SAFE_INTEGER
-
-        ){
-
-            amount =
-                follower.settings?.max_stake ?? Number.MAX_SAFE_INTEGER;
-
-        }
+if (
+    amount > maxStake
+) {
+    amount = maxStake;
+}
 
 
 
