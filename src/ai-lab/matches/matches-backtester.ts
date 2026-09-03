@@ -588,6 +588,8 @@ export class MatchesBacktester {
 
                 price:
                     input.price,
+                entryIndex:
+                    input.index,
 
                 entryDigit:
                     entry.entryDigit,

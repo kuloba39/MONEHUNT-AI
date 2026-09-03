@@ -46,6 +46,8 @@ export interface MatchesSignal {
 
     price: number;
 
+    entryIndex: number;
+
     entryDigit: number;
 
     barrierDigit: number;

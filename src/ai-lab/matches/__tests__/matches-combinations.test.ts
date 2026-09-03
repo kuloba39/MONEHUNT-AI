@@ -12,6 +12,7 @@ function createSignal(
         timestamp: Date.now(),
         symbol: 'R_100',
         price: 100.123,
+        entryIndex: 0,
         entryDigit,
         barrierDigit,
         barrierScore: 80,

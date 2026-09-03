@@ -18,3 +18,4 @@ function-calls.txt
 module-500-context.txt
 module-500-full.txt
 socket-auth-flow.txt
+coverage/
