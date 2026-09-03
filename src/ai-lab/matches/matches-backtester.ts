@@ -8,6 +8,15 @@ import {
 import {
     detectRegime
 } from './regime-engine';
+import {
+    MatchesSignal
+} from './types';
+import {
+    OutcomeRecorder
+} from './outcome-recorder';
+import {
+    AdaptiveLearning
+} from './adaptive-learning';
 
 
 export interface BacktestTickInput {
@@ -30,39 +39,7 @@ export type BacktestOutcomeResult =
 
 export interface PendingMatchesSignal {
 
-    entryTimestamp: number;
-
-    entryIndex: number;
-
-    symbol: string;
-
-    entryDigit: number;
-
-    barrierDigit: number;
-
-    barrierScore: number;
-
-    barrierConfidence: number;
-
-    entryScore: number;
-
-    relationshipScore: number;
-
-    fibLevel: number;
-
-    fibPrice: number;
-
-    fibDistance: number;
-
-    trend: ReturnType<typeof calculatePriceContext>['trend'];
-
-    regime: ReturnType<typeof detectRegime>['regime'];
-
-    regimeConfidence: number;
-
-    confluenceScore: number;
-
-    qualityScore: number;
+    signal: MatchesSignal;
 
     futureTicks: BacktestTickInput[];
 
@@ -104,26 +81,20 @@ export class MatchesBacktester {
         PendingMatchesSignal[] = [];
 
 
-    /*
-     * Matches outcome window.
-     *
-     * After the entry digit appears,
-     * the engine MUST collect all 3 future ticks
-     * before deciding WIN or LOSS.
-     */
-
-    private readonly OUTCOME_TICKS =
-        3;
+    private completedOutcomes:
+        CompletedMatchesOutcome[] = [];
 
 
-    /*
-     * Extract the final decimal digit from the
-     * price representation.
-     *
-     * We intentionally use the string representation
-     * rather than arithmetic rounding so that decimal
-     * quotes can preserve their final displayed digit.
-     */
+    private outcomeRecorder =
+        new OutcomeRecorder();
+
+
+    private adaptiveLearning =
+        new AdaptiveLearning();
+
+
+    private readonly OUTCOME_TICKS = 3;
+
 
     private extractLastDigit(
         price: number
@@ -134,10 +105,7 @@ export class MatchesBacktester {
 
 
         const digitsOnly =
-            priceString.replace(
-                /\D/g,
-                ''
-            );
+            priceString.replace(/\D/g, '');
 
 
         if (
@@ -158,36 +126,24 @@ export class MatchesBacktester {
     }
 
 
-    /*
-     * Process one historical tick.
-     *
-     * IMPORTANT:
-     *
-     * 1. Existing pending signals are evaluated
-     *    against this tick as a FUTURE tick.
-     *
-     * 2. The prediction context for a NEW signal
-     *    is calculated BEFORE the current tick is
-     *    added to historical data.
-     *
-     * 3. A new signal is created only when the
-     *    current digit matches the proposed entry digit.
-     *
-     * 4. A pending signal is NEVER decided early.
-     *    Exactly 3 future ticks are collected first.
-     */
-
     processTick(
         input: BacktestTickInput
     ) {
 
-        const history =
-            this.processor.get100();
-
-
         /*
-         * Extract the current tick digit.
+         * ---------------------------------------------------------
+         * STEP 1
+         *
+         * The current tick becomes a FUTURE tick for signals
+         * that were created on previous ticks.
+         *
+         * This is intentionally done BEFORE creating a new
+         * signal from the current tick.
+         *
+         * Therefore the entry tick can NEVER count as T+1.
+         * ---------------------------------------------------------
          */
+
 
         const digit =
             this.extractLastDigit(
@@ -195,29 +151,16 @@ export class MatchesBacktester {
             );
 
 
-        /*
-         * Completed outcomes produced by
-         * pending signals during this tick.
-         */
-
         const completedOutcomes:
             CompletedMatchesOutcome[] = [];
 
 
-        /*
-         * --------------------------------------------------
-         * STEP 1
-         * --------------------------------------------------
-         *
-         * The current tick is a FUTURE tick for every
-         * signal that was created before this tick.
-         *
-         * Add it to every pending signal.
-         */
-
         for (
-            let i = this.pendingSignals.length - 1;
+            let i =
+                this.pendingSignals.length - 1;
+
             i >= 0;
+
             i--
         ) {
 
@@ -236,10 +179,12 @@ export class MatchesBacktester {
 
 
             /*
-             * IMPORTANT:
+             * Wait until ALL THREE future ticks
+             * have been collected.
              *
-             * We do NOT decide WIN/LOSS until
-             * all 3 future ticks have been collected.
+             * We intentionally do NOT settle the
+             * signal early if the barrier appears
+             * on T+1 or T+2.
              */
 
             if (
@@ -253,20 +198,22 @@ export class MatchesBacktester {
 
 
             /*
-             * --------------------------------------------------
-             * STEP 2
-             * --------------------------------------------------
+             * -----------------------------------------------------
+             * FINAL OUTCOME CHECK
              *
-             * All 3 future ticks are now available.
+             * WIN:
+             * barrier appears at least once in T+1/T+2/T+3
              *
-             * Check the COMPLETE 3-tick window.
+             * LOSS:
+             * barrier never appears in all three ticks
+             * -----------------------------------------------------
              */
 
             const barrierFound =
                 pending.futureDigits.some(
                     futureDigit =>
                         futureDigit ===
-                        pending.barrierDigit
+                        pending.signal.barrierDigit
                 );
 
 
@@ -277,38 +224,82 @@ export class MatchesBacktester {
                         : 'LOSS';
 
 
-            completedOutcomes.push({
+            const completedOutcome:
+                CompletedMatchesOutcome = {
 
                 entryTimestamp:
-                    pending.entryTimestamp,
+                    pending.signal.timestamp,
 
                 entryIndex:
-                    pending.entryIndex,
+                    input.index -
+                    (
+                        pending.futureTicks.length - 1
+                    ),
 
                 symbol:
-                    pending.symbol,
+                    pending.signal.symbol,
 
                 entryDigit:
-                    pending.entryDigit,
+                    pending.signal.entryDigit,
 
                 barrierDigit:
-                    pending.barrierDigit,
+                    pending.signal.barrierDigit,
 
                 futureTicks:
-                    [...pending.futureTicks],
+                    [
+                        ...pending.futureTicks
+                    ],
 
                 futureDigits:
-                    [...pending.futureDigits],
+                    [
+                        ...pending.futureDigits
+                    ],
 
                 barrierFound,
 
                 result
 
-            });
+            };
+
+
+            completedOutcomes.push(
+                completedOutcome
+            );
+
+
+            this.completedOutcomes.push(
+                completedOutcome
+            );
 
 
             /*
-             * Remove the completed signal.
+             * -----------------------------------------------------
+             * RECORD THE FINAL OUTCOME
+             * -----------------------------------------------------
+             */
+
+            const recordedOutcome =
+                this.outcomeRecorder.record(
+                    pending.signal,
+                    result
+                );
+
+
+            /*
+             * -----------------------------------------------------
+             * FEED THE RESULT INTO ADAPTIVE LEARNING
+             * -----------------------------------------------------
+             */
+
+            this.adaptiveLearning.addOutcome(
+                recordedOutcome
+            );
+
+
+            /*
+             * Remove the pending signal only AFTER
+             * its complete three-tick outcome has been
+             * recorded.
              */
 
             this.pendingSignals.splice(
@@ -320,44 +311,53 @@ export class MatchesBacktester {
 
 
         /*
-         * --------------------------------------------------
-         * STEP 3
-         * --------------------------------------------------
+         * ---------------------------------------------------------
+         * STEP 2
          *
-         * Calculate a NEW prediction using history ONLY.
+         * Prediction uses ONLY the history that existed BEFORE
+         * the current tick.
          *
-         * The current tick has NOT been added yet.
-         *
-         * This prevents look-ahead bias.
+         * This prevents look-ahead bias during backtesting.
+         * ---------------------------------------------------------
          */
+
+
+        const history =
+            this.processor.get100();
+
 
         const predictionHistory =
             history;
 
 
-        let scores: ReturnType<
-            typeof calculateDigitScores
-        > = [];
+        let scores:
+            ReturnType<
+                typeof calculateDigitScores
+            > = [];
 
 
         let barrier:
-            ReturnType<typeof findBarrier> |
-            null = null;
+            ReturnType<
+                typeof findBarrier
+            > | null = null;
 
 
         let entry:
-            ReturnType<typeof findEntryDigit> |
-            null = null;
+            ReturnType<
+                typeof findEntryDigit
+            > | null = null;
 
 
         let priceContext:
-            ReturnType<typeof calculatePriceContext> |
-            null = null;
+            ReturnType<
+                typeof calculatePriceContext
+            > | null = null;
 
 
         let regime:
-            ReturnType<typeof detectRegime> |
-            null = null;
+            ReturnType<
+                typeof detectRegime
+            > | null = null;
 
 
         if (
@@ -399,13 +399,15 @@ export class MatchesBacktester {
 
 
         /*
-         * --------------------------------------------------
-         * STEP 4
-         * --------------------------------------------------
+         * ---------------------------------------------------------
+         * STEP 3
          *
-         * Add the current tick to historical data
-         * AFTER prediction calculation.
+         * Add the current tick to history AFTER prediction.
+         *
+         * This preserves proper chronological backtesting.
+         * ---------------------------------------------------------
          */
+
 
         this.processor.addTick({
 
@@ -427,46 +429,58 @@ export class MatchesBacktester {
 
 
         /*
-         * --------------------------------------------------
-         * STEP 5
-         * --------------------------------------------------
+         * ---------------------------------------------------------
+         * STEP 4
          *
-         * Check whether the CURRENT digit is the
-         * proposed ENTRY digit.
-         *
-         * If yes, create a PENDING signal.
+         * If the current digit is the predicted entry digit,
+         * create a PENDING MatchesSignal.
          *
          * IMPORTANT:
          *
-         * The entry tick itself is NOT one of the
-         * three outcome ticks.
+         * The signal is NOT immediately WIN or LOSS.
          *
-         * The next three ticks will be:
-         *
-         * T+1
-         * T+2
-         * T+3
+         * It remains PENDING until three future ticks
+         * have been collected.
+         * ---------------------------------------------------------
          */
 
+
         let pendingSignal:
-            PendingMatchesSignal |
-            null = null;
+            PendingMatchesSignal | null =
+                null;
 
 
         if (
+
             entry &&
+
             barrier &&
+
             priceContext &&
+
             regime &&
+
             entry.ready &&
+
             entry.entryDigit >= 0 &&
+
             barrier.barrierDigit >= 0 &&
+
             digit === entry.entryDigit
+
         ) {
+
+            /*
+             * -----------------------------------------------------
+             * FIBONACCI CONFLUENCE SCORE
+             * -----------------------------------------------------
+             */
 
             const fibScore =
                 priceContext.fibDistance <= 0
+
                     ? 100
+
                     : Math.max(
                         0,
                         Math.min(
@@ -483,22 +497,48 @@ export class MatchesBacktester {
                     );
 
 
+            /*
+             * -----------------------------------------------------
+             * DIGIT BARRIER SCORE
+             * -----------------------------------------------------
+             */
+
             const digitScore =
                 barrier.topScore > 0
+
                     ? Math.min(
                         100,
                         barrier.topScore
                     )
+
                     : 0;
 
+
+            /*
+             * -----------------------------------------------------
+             * TREND SCORE
+             * -----------------------------------------------------
+             */
 
             const trendScore =
                 priceContext.trendStrength;
 
 
+            /*
+             * -----------------------------------------------------
+             * REGIME SCORE
+             * -----------------------------------------------------
+             */
+
             const regimeScore =
                 regime.confidence;
 
+
+            /*
+             * -----------------------------------------------------
+             * CONFLUENCE
+             * -----------------------------------------------------
+             */
 
             const confluenceScore =
                 (
@@ -510,6 +550,12 @@ export class MatchesBacktester {
                 ) / 5;
 
 
+            /*
+             * -----------------------------------------------------
+             * QUALITY SCORE
+             * -----------------------------------------------------
+             */
+
             const qualityScore =
                 (
                     confluenceScore * 0.50
@@ -520,16 +566,28 @@ export class MatchesBacktester {
                 );
 
 
-            pendingSignal = {
+            /*
+             * -----------------------------------------------------
+             * CREATE THE ACTUAL MATCHES SIGNAL
+             *
+             * It starts as PENDING.
+             *
+             * OutcomeRecorder will receive this same signal
+             * when T+3 completes.
+             * -----------------------------------------------------
+             */
 
-                entryTimestamp:
+            const signal:
+                MatchesSignal = {
+
+                timestamp:
                     input.timestamp,
-
-                entryIndex:
-                    input.index,
 
                 symbol:
                     input.symbol,
+
+                price:
+                    input.price,
 
                 entryDigit:
                     entry.entryDigit,
@@ -571,6 +629,22 @@ export class MatchesBacktester {
 
                 qualityScore,
 
+                confidence:
+                    qualityScore,
+
+                ready:
+                    entry.ready,
+
+                result:
+                    'PENDING'
+
+            };
+
+
+            pendingSignal = {
+
+                signal,
+
                 futureTicks: [],
 
                 futureDigits: []
@@ -584,6 +658,12 @@ export class MatchesBacktester {
 
         }
 
+
+        /*
+         * ---------------------------------------------------------
+         * RETURN BACKTEST STATE
+         * ---------------------------------------------------------
+         */
 
         return {
 
@@ -617,6 +697,12 @@ export class MatchesBacktester {
     }
 
 
+    /*
+     * -------------------------------------------------------------
+     * HISTORY
+     * -------------------------------------------------------------
+     */
+
     getHistory() {
 
         return this.processor.get100();
@@ -624,19 +710,33 @@ export class MatchesBacktester {
     }
 
 
+    /*
+     * -------------------------------------------------------------
+     * PENDING SIGNALS
+     * -------------------------------------------------------------
+     *
+     * Returns defensive copies so callers cannot accidentally
+     * modify the internal pending state.
+     * -------------------------------------------------------------
+     */
+
     getPendingSignals():
         PendingMatchesSignal[] {
 
         return this.pendingSignals.map(
-            signal => ({
+            pending => ({
 
-                ...signal,
+                signal: {
+                    ...pending.signal
+                },
 
-                futureTicks:
-                    [...signal.futureTicks],
+                futureTicks: [
+                    ...pending.futureTicks
+                ],
 
-                futureDigits:
-                    [...signal.futureDigits]
+                futureDigits: [
+                    ...pending.futureDigits
+                ]
 
             })
         );
@@ -644,12 +744,143 @@ export class MatchesBacktester {
     }
 
 
-    getPendingCount(): number {
+    getPendingCount():
+        number {
 
         return this.pendingSignals.length;
 
     }
 
+
+    /*
+     * -------------------------------------------------------------
+     * COMPLETED OUTCOMES
+     * -------------------------------------------------------------
+     */
+
+    getCompletedOutcomes():
+        CompletedMatchesOutcome[] {
+
+        return [
+            ...this.completedOutcomes
+        ];
+
+    }
+
+
+    getTotalCompletedOutcomes():
+        number {
+
+        return this.completedOutcomes.length;
+
+    }
+
+
+    /*
+     * -------------------------------------------------------------
+     * OUTCOME RECORDER ACCESS
+     * -------------------------------------------------------------
+     */
+
+    getOutcomes() {
+
+        return this.outcomeRecorder.getAll();
+
+    }
+
+
+    getWins() {
+
+        return this.outcomeRecorder.getWins();
+
+    }
+
+
+    getLosses() {
+
+        return this.outcomeRecorder.getLosses();
+
+    }
+
+
+    getTotalOutcomes():
+        number {
+
+        return this.outcomeRecorder.getTotal();
+
+    }
+
+
+    getWinRate():
+        number {
+
+        return this.outcomeRecorder.getWinRate();
+
+    }
+
+
+    /*
+     * -------------------------------------------------------------
+     * ADAPTIVE LEARNING ACCESS
+     * -------------------------------------------------------------
+     */
+
+    getLearningStats() {
+
+        return this.adaptiveLearning.analyze();
+
+    }
+
+
+    getBestCombinations(
+        minimumTrades = 10
+    ) {
+
+        return this.adaptiveLearning
+            .getBestCombinations(
+                minimumTrades
+            );
+
+    }
+
+
+    getReliableCombinations(
+        minimumTrades = 30,
+        minimumWinRate = 55
+    ) {
+
+        return this.adaptiveLearning
+            .getReliableCombinations(
+                minimumTrades,
+                minimumWinRate
+            );
+
+    }
+
+
+    getTotalLearningOutcomes():
+        number {
+
+        return this.adaptiveLearning
+            .getTotalOutcomes();
+
+    }
+
+
+    /*
+     * -------------------------------------------------------------
+     * CLEAR EVERYTHING
+     * -------------------------------------------------------------
+     *
+     * Clears:
+     *
+     * - tick history
+     * - pending signals
+     * - completed outcomes
+     * - recorded outcomes
+     * - adaptive learning data
+     * -------------------------------------------------------------
+     */
 
     clear(): void {
 
@@ -658,6 +889,15 @@ export class MatchesBacktester {
 
 
         this.pendingSignals = [];
+
+
+        this.completedOutcomes = [];
+
+
+        this.outcomeRecorder.clear();
+
+
+        this.adaptiveLearning.clear();
 
     }
 
