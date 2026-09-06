@@ -25,7 +25,6 @@ const menuItems = [
     },
 ];
 
-
 export const MenuItems = observer(() => {
     return (
         <nav className="dc-menu">
@@ -40,22 +39,27 @@ export const MenuItems = observer(() => {
                 </Link>
             ))}
 
+            <a
+                href="https://www.tradingview.com/chart/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="dc-menu__item"
+            >
+                TradingView
+            </a>
+
         </nav>
     );
 });
-
 
 export const TradershubLink = observer(() => {
     return null;
 });
 
-
 type MenuItemsType = typeof MenuItems & {
     TradershubLink: typeof TradershubLink;
 };
 
-
 (MenuItems as MenuItemsType).TradershubLink = TradershubLink;
-
 
 export default MenuItems as MenuItemsType;
