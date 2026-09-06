@@ -1,8 +1,46 @@
-.app-header__menu {
-    gap: 0.8rem;
-    padding: 1.25rem 1.25rem 1.25rem 1.5rem;
+@use 'components/shared/styles/mixins' as *;
 
-    &:hover {
-        background-color: transparent;
+.dc-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 100%;
+    padding: 0 0.8rem;
+
+    &__item {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 0.8rem 1rem;
+
+        color: var(--text-general);
+        font-size: 1.4rem;
+        font-weight: 500;
+        line-height: 1;
+        text-decoration: none;
+        white-space: nowrap;
+
+        border-radius: 0.6rem;
+        transition:
+            background-color 0.15s ease,
+            color 0.15s ease;
+
+        &:hover {
+            background-color: var(--general-section-1);
+            color: var(--text-prominent);
+            text-decoration: none;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--button-primary-default);
+            outline-offset: 2px;
+        }
+    }
+}
+
+@include mobile-or-tablet-screen {
+    .dc-menu {
+        display: none;
     }
 }

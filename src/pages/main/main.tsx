@@ -11,6 +11,7 @@ import MobileWrapper from '@/components/shared_ui/mobile-wrapper';
 import Tabs from '@/components/shared_ui/tabs/tabs';
 import TradeTypeConfirmationModal from '@/components/trade-type-confirmation-modal';
 import TradingViewModal from '@/components/trading-view-chart/trading-view-modal';
+import TradingViewComponent from '@/components/trading-view-chart/trading-view';
 import { DBOT_TABS, TAB_IDS } from '@/constants/bot-contents';
 import { api_base, updateWorkspaceName } from '@/external/bot-skeleton';
 import { CONNECTION_STATUS } from '@/external/bot-skeleton/services/api/observables/connection-status-stream';
@@ -43,6 +44,7 @@ import Dashboard from '../dashboard';
 import FreeBots from '../free-bots';
 import Analysis from '../analysis';
 import CopyTrading from '../copy-trading';
+import AiLab from '../ai-lab';
 import RunStrategy from '../dashboard/run-strategy';
 import './main.scss';
 
@@ -77,11 +79,13 @@ const AppWrapper = observer(() => {
         [key: string]: string;
     };
     const { clear } = summary_card;
-    const { 
-    DASHBOARD, 
-    BOT_BUILDER, 
+    const {
+    DASHBOARD,
+    BOT_BUILDER,
     FREE_BOTS,
-    ANALYSIS
+    ANALYSIS,
+    COPY_TRADING,
+    AI_LAB
 } = DBOT_TABS;
     const init_render = React.useRef(true);
     const hash = [
@@ -89,8 +93,10 @@ const AppWrapper = observer(() => {
     'bot_builder',
     'chart',
     'free_bots',
-    'analysis'
-];;
+    'analysis',
+    'copy_trading',
+    'ai_lab'
+];
     const { isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
@@ -395,29 +401,31 @@ const AppWrapper = observer(() => {
                                 }
                                 id='id-bot-builder'
                             />
-                            <div
-                                label={
-                                    <>
-                                        <LabelPairedChartLineCaptionRegularIcon
-                                            height='24px'
-                                            width='24px'
-                                            fill='var(--text-general)'
-                                        />
-                                        <Localize i18n_default_text='Charts' />
-                                    </>
-                                }
-                                id={
-                                    is_chart_modal_visible || is_trading_view_modal_visible
-                                        ? 'id-charts--disabled'
-                                        : 'id-charts'
-                                }
-                            >
-                                <Suspense
-                                    fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}
-                                >
-                                    <ChartWrapper show_digits_stats={false} />
-                                </Suspense>
-                            </div>
+                           <div
+    label={
+        <>
+            <LabelPairedChartLineCaptionRegularIcon
+                height='24px'
+                width='24px'
+                fill='var(--text-general)'
+            />
+            <Localize i18n_default_text='Charts' />
+        </>
+    }
+    id='id-charts'
+>
+    <div
+        style={{
+            width: '100%',
+            height: 'calc(100vh - 110px)',
+            minHeight: '600px',
+            overflow: 'hidden',
+            backgroundColor: 'var(--general-main-1)',
+        }}
+    >
+        <TradingViewComponent />
+    </div>
+</div>
 
 
 {/* FREE BOTS */}
@@ -460,8 +468,38 @@ const AppWrapper = observer(() => {
 >
     <CopyTrading />
 </div>
-
-
+{/* AI LAB */}
+<div
+    label={
+        <>
+            <span>AI Lab</span>
+        </>
+    }
+    id='id-ai-lab'
+>
+    <AiLab />
+</div>
+{/* TRADINGVIEW */}
+<div
+    label={
+        <div
+            onClick={() => handleTabChange(DBOT_TABS.CHART)}
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                color: 'inherit',
+                textDecoration: 'none',
+                width: '100%',
+                height: '100%',
+                cursor: 'pointer',
+            }}
+        >
+            <span>📈 TradingView</span>
+        </div>
+    }
+    id='id-tradingview'
+/>
 </Tabs>
                         {!isDesktop && right_tab_shadow && <span className='tabs-shadow tabs-shadow--right' />}{' '}
                     </div>
