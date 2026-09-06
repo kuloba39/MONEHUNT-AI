@@ -27,6 +27,8 @@ export interface BacktestTickInput {
 
     price: number;
 
+    digit?: number;
+
     index: number;
 
 }
@@ -145,10 +147,11 @@ export class MatchesBacktester {
          */
 
 
-        const digit =
-            this.extractLastDigit(
-                input.price
-            );
+       const digit =
+    input.digit ??
+    this.extractLastDigit(
+        input.price
+    );
 
 
         const completedOutcomes:
