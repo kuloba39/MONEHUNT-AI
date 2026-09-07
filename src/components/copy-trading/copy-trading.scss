@@ -1,650 +1,1829 @@
-﻿.copy-trading-premium {
-min-height: 100%;
-padding: 32px;
-color: #f4f7fb;
+﻿/* =========================================================
+MONEHUNT AI
+COPY TRADING
+AI LAB COMMAND CENTER VISUAL SYSTEM
+========================================================= */
+
+.copy-trading-premium {
+/* =====================================================
+MONEHUNT AI BRAND
+===================================================== */
+--monehunt-green: #08a86b;
+--monehunt-green-bright: #19d982;
+--monehunt-green-light: #4ff3a4;
+--monehunt-green-deep: #056b49;
+
+--monehunt-glow: rgba(8, 168, 107, 0.28);
+--monehunt-glow-strong: rgba(25, 217, 130, 0.42);
+--monehunt-grid: rgba(8, 168, 107, 0.055);
+
+/* =====================================================
+   COMMAND CENTER COLORS
+   ===================================================== */
+
+--copy-accent: #08a86b;
+--copy-accent-strong: #19d982;
+--copy-accent-soft: rgba(8, 168, 107, 0.12);
+
+--copy-success: #39d98a;
+--copy-success-soft: rgba(57, 217, 138, 0.12);
+
+--copy-warning: #f3b83f;
+--copy-warning-soft: rgba(243, 184, 63, 0.12);
+
+--copy-danger: #ff6464;
+--copy-danger-soft: rgba(255, 100, 100, 0.12);
+
+/* =====================================================
+   PANEL SYSTEM
+   ===================================================== */
+
+--copy-panel:
+    color-mix(
+        in srgb,
+        var(--general-section-1) 94%,
+        var(--monehunt-green) 6%
+    );
+
+--copy-panel-raised:
+    color-mix(
+        in srgb,
+        var(--general-main-2) 91%,
+        var(--monehunt-green) 9%
+    );
+
+--copy-border:
+    color-mix(
+        in srgb,
+        var(--border-normal) 65%,
+        var(--monehunt-green) 35%
+    );
+
+--copy-border-soft:
+    color-mix(
+        in srgb,
+        var(--border-normal) 55%,
+        transparent
+    );
+
+/* =====================================================
+   TEXT
+   ===================================================== */
+
+--copy-text-primary: #ffffff;
+--copy-text-secondary: #d9e5df;
+--copy-text-muted: #a7b8b0;
+--copy-text-dim: #82958c;
+
+/* =====================================================
+   PAGE
+   ===================================================== */
+
+position: relative;
+
+width: 100%;
+min-height: 100vh;
+height: auto;
+
+padding: 24px;
+
+display: flex;
+flex-direction: column;
+gap: 18px;
+
+box-sizing: border-box;
+
+overflow-x: hidden;
+overflow-y: auto;
+
+color: #ffffff;
+
 background:
-radial-gradient(
-circle at 80% 0%,
-rgba(70, 105, 255, 0.12),
-transparent 34%
-),
-radial-gradient(
-circle at 10% 20%,
-rgba(0, 220, 170, 0.07),
-transparent 30%
-);
+    radial-gradient(
+        circle at 50% -15%,
+        rgba(8, 168, 107, 0.16),
+        transparent 38%
+    ),
+    radial-gradient(
+        circle at 0% 50%,
+        rgba(25, 217, 130, 0.055),
+        transparent 30%
+    ),
+    radial-gradient(
+        circle at 100% 50%,
+        rgba(8, 168, 107, 0.055),
+        transparent 30%
+    ),
+    var(--general-main-1);
+
+overscroll-behavior-y: auto;
+-webkit-overflow-scrolling: touch;
 }
 
-.copy-trading-hero {
-display: flex;
-align-items: center;
-justify-content: space-between;
-gap: 32px;
-padding: 34px;
-margin-bottom: 24px;
-border: 1px solid rgba(255,255,255,0.08);
-border-radius: 24px;
-background: rgba(18, 22, 31, 0.82);
-box-shadow: 0 24px 70px rgba(0,0,0,0.22);
+/* =========================================================
+DIGITAL AI LAB GRID
+========================================================= */
+
+.copy-trading-premium::before {
+content: "";
+position: absolute;
+inset: 0;
+
+pointer-events: none;
+z-index: 0;
+
+background-image:
+    linear-gradient(
+        rgba(8, 168, 107, 0.035) 1px,
+        transparent 1px
+    ),
+    linear-gradient(
+        90deg,
+        rgba(8, 168, 107, 0.035) 1px,
+        transparent 1px
+    );
+
+background-size: 42px 42px;
+
+mask-image:
+    linear-gradient(
+        to bottom,
+        black,
+        transparent 92%
+    );
+
+-webkit-mask-image:
+    linear-gradient(
+        to bottom,
+        black,
+        transparent 92%
+    );
+
+opacity: 0.7;
 }
+
+/* =========================================================
+AI SCANNING BEAM
+========================================================= */
+
+.copy-trading-premium::after {
+content: "";
+position: absolute;
+
+top: -20%;
+left: -20%;
+
+width: 140%;
+height: 1px;
+
+pointer-events: none;
+z-index: 0;
+
+background:
+    linear-gradient(
+        90deg,
+        transparent,
+        rgba(25, 217, 130, 0),
+        rgba(25, 217, 130, 0.30),
+        rgba(25, 217, 130, 0),
+        transparent
+    );
+
+box-shadow:
+    0 0 30px rgba(25, 217, 130, 0.20);
+
+animation:
+    monehuntCopyScan 10s linear infinite;
+}
+
+/* =========================================================
+CONTENT ABOVE ATMOSPHERE
+========================================================= */
+
+.copy-trading-premium > * {
+position: relative;
+z-index: 1;
+}
+
+/* =========================================================
+HERO COMMAND CENTER
+========================================================= */
+
+.copy-trading-hero {
+position: relative;
+width: 100%;
+
+padding: 24px;
+
+box-sizing: border-box;
+
+border:
+    1px solid rgba(25, 217, 130, 0.26);
+
+border-radius: 16px;
+
+background:
+    radial-gradient(
+        circle at 85% 0%,
+        rgba(25, 217, 130, 0.12),
+        transparent 34%
+    ),
+    radial-gradient(
+        circle at 20% 100%,
+        rgba(8, 168, 107, 0.07),
+        transparent 36%
+    ),
+    var(--copy-panel);
+
+box-shadow:
+    0 14px 45px rgba(0, 0, 0, 0.10),
+    0 0 35px rgba(8, 168, 107, 0.055),
+    inset 0 1px 0 rgba(25, 217, 130, 0.08);
+
+overflow: hidden;
+}
+
+.copy-trading-hero::before {
+content: "";
+position: absolute;
+
+top: 0;
+left: 0;
+
+width: 100%;
+height: 2px;
+
+background:
+    linear-gradient(
+        90deg,
+        transparent,
+        var(--monehunt-green),
+        var(--monehunt-green-bright),
+        transparent
+    );
+
+opacity: 0.65;
+}
+
+.copy-trading-hero::after {
+content: "";
+position: absolute;
+
+width: 180px;
+height: 180px;
+
+right: -80px;
+top: -100px;
+
+border-radius: 50%;
+
+background:
+    radial-gradient(
+        circle,
+        rgba(25, 217, 130, 0.14),
+        transparent 68%
+    );
+
+pointer-events: none;
+}
+
+/* =========================================================
+EYEBROWS
+========================================================= */
 
 .copy-trading-eyebrow,
 .section-eyebrow,
 .modal-eyebrow {
+display: flex;
+align-items: center;
+gap: 8px;
+
+margin-bottom: 8px;
+
+color: var(--monehunt-green-bright);
+
 font-size: 11px;
 font-weight: 800;
-letter-spacing: 0.16em;
-color: #7f8ca4;
-margin-bottom: 10px;
+
+letter-spacing: 0.14em;
+text-transform: uppercase;
+}
+
+.copy-trading-eyebrow::before,
+.section-eyebrow::before,
+.modal-eyebrow::before {
+content: "";
+width: 7px;
+height: 7px;
+
+flex: 0 0 auto;
+
+border-radius: 50%;
+
+background:
+    var(--monehunt-green-bright);
+
+box-shadow:
+    0 0 8px var(--monehunt-green-bright),
+    0 0 16px rgba(25, 217, 130, 0.45);
+
+animation:
+    monehuntCopyPulse 2s ease-in-out infinite;
+}
+
+/* =========================================================
+HEADINGS
+========================================================= */
+
+.copy-trading-premium h1,
+.copy-trading-premium h2,
+.copy-trading-premium h3,
+.copy-trading-premium h4,
+.copy-trading-premium h5,
+.copy-trading-premium h6 {
+color: #ffffff;
 }
 
 .copy-trading-hero h1 {
 margin: 0;
-font-size: clamp(32px, 4vw, 54px);
-line-height: 1.02;
-letter-spacing: -0.04em;
-}
+font-size: clamp(25px, 3vw, 38px);
+line-height: 1.1;
 
-.copy-trading-hero h1 span {
-display: block;
-background: linear-gradient(
-90deg,
-#ffffff,
-#7d9cff
-);
+font-weight: 800;
+
+letter-spacing: -0.025em;
+
+background:
+    linear-gradient(
+        90deg,
+        var(--monehunt-green),
+        var(--monehunt-green-bright),
+        var(--monehunt-green-light)
+    );
+
 -webkit-background-clip: text;
 background-clip: text;
-color: transparent;
+
+-webkit-text-fill-color: transparent;
+
+text-shadow:
+    0 0 28px rgba(25, 217, 130, 0.16);
 }
 
 .copy-trading-hero p {
-max-width: 640px;
-margin: 18px 0 0;
-color: #8d98ab;
-line-height: 1.65;
-font-size: 14px;
+color: #d9e5df;
+line-height: 1.6;
 }
 
-.premium-connect-button,
-.secondary-connect-button,
-.verify-token-button {
-border: 0;
-cursor: pointer;
-font-weight: 800;
-transition:
-transform 0.2s ease,
-box-shadow 0.2s ease,
-opacity 0.2s ease;
-}
+/* =========================================================
+LIVE STATUS
+========================================================= */
 
-.premium-connect-button {
-flex-shrink: 0;
-display: flex;
+.copy-trading-premium .live-status {
+display: inline-flex;
 align-items: center;
-gap: 10px;
-padding: 15px 20px;
-border-radius: 14px;
-color: #081018;
-background: linear-gradient(
-135deg,
-#ffffff,
-#a9bfff
-);
-box-shadow: 0 12px 32px rgba(92, 122, 255, 0.2);
-}
+gap: 8px;
 
-.premium-connect-button span {
-font-size: 22px;
-line-height: 1;
-}
+padding: 6px 10px;
 
-.premium-connect-button:hover,
-.verify-token-button:hover,
-.secondary-connect-button:hover {
-transform: translateY(-2px);
-}
+border:
+    1px solid rgba(25, 217, 130, 0.20);
 
-.copy-trading-message {
-display: flex;
-align-items: center;
-gap: 10px;
-padding: 14px 18px;
-margin-bottom: 20px;
-border-radius: 14px;
-font-size: 13px;
+border-radius: 999px;
+
+background:
+    rgba(8, 168, 107, 0.08);
+
+color: #ffffff;
+
+font-size: 11px;
 font-weight: 700;
+
+letter-spacing: 0.08em;
+text-transform: uppercase;
 }
 
-.copy-trading-message.success {
-color: #b8ffe9;
-background: rgba(0, 214, 159, 0.08);
-border: 1px solid rgba(0, 214, 159, 0.18);
+.copy-trading-premium .live-status::before {
+content: "";
+width: 7px;
+height: 7px;
+
+border-radius: 50%;
+
+background:
+    var(--monehunt-green-bright);
+
+box-shadow:
+    0 0 8px var(--monehunt-green-bright);
+
+animation:
+    monehuntCopyPulse 1.8s ease-in-out infinite;
 }
 
-.copy-trading-message.error {
-color: #ffbcbc;
-background: rgba(255, 70, 70, 0.08);
-border: 1px solid rgba(255, 70, 70, 0.18);
-}
+/* =========================================================
+STAT AREA
+========================================================= */
 
 .copy-trading-stats {
 display: grid;
-grid-template-columns: repeat(4, 1fr);
-gap: 16px;
-margin-bottom: 42px;
+grid-template-columns:
+    repeat(
+        auto-fit,
+        minmax(180px, 1fr)
+    );
+
+gap: 14px;
 }
 
+/* =========================================================
+STAT CARDS
+========================================================= */
+
 .copy-stat-card {
-padding: 22px;
-border-radius: 18px;
-border: 1px solid rgba(255,255,255,0.07);
-background: rgba(18, 22, 31, 0.72);
+position: relative;
+min-height: 110px;
+
+padding: 18px;
+
+box-sizing: border-box;
+
+border:
+    1px solid rgba(8, 168, 107, 0.20);
+
+border-radius: 16px;
+
+background:
+    radial-gradient(
+        circle at 100% 0%,
+        rgba(25, 217, 130, 0.065),
+        transparent 45%
+    ),
+    var(--copy-panel);
+
+box-shadow:
+    0 10px 35px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+
+overflow: hidden;
+
+transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.copy-stat-card::before {
+content: "";
+position: absolute;
+
+left: 0;
+top: 0;
+
+width: 3px;
+height: 100%;
+
+background:
+    linear-gradient(
+        to bottom,
+        var(--monehunt-green-bright),
+        transparent
+    );
+
+opacity: 0.7;
+}
+
+.copy-stat-card::after {
+content: "";
+position: absolute;
+
+top: 16px;
+right: 16px;
+
+width: 5px;
+height: 5px;
+
+border-radius: 50%;
+
+background:
+    var(--monehunt-green-bright);
+
+box-shadow:
+    0 0 8px rgba(25, 217, 130, 0.55);
+
+animation:
+    monehuntCopyPulse 2.4s ease-in-out infinite;
+}
+
+.copy-stat-card:hover {
+transform: translateY(-2px);
+border-color:
+    rgba(25, 217, 130, 0.38);
+
+box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.11),
+    0 0 25px rgba(8, 168, 107, 0.07);
 }
 
 .copy-stat-label {
 display: block;
-color: #78849a;
+margin-bottom: 8px;
+
+color: #b7c8c0;
+
 font-size: 11px;
-font-weight: 800;
+font-weight: 700;
+
 text-transform: uppercase;
-letter-spacing: 0.08em;
+letter-spacing: 0.10em;
 }
 
-.copy-stat-card strong {
-display: block;
-margin-top: 12px;
-font-size: 28px;
-letter-spacing: -0.03em;
+.copy-stat-card strong,
+.copy-stat-value {
+color: #ffffff;
+font-size: 25px;
+font-weight: 800;
+
+text-shadow:
+    0 0 18px rgba(25, 217, 130, 0.12);
 }
 
-.copy-stat-card small {
-display: block;
-margin-top: 5px;
-color: #667187;
-}
-
-.connected-accounts {
-padding-bottom: 40px;
-}
+/* =========================================================
+SECTION HEADINGS
+========================================================= */
 
 .section-heading {
 display: flex;
 align-items: center;
-justify-content: space-between;
-margin-bottom: 20px;
+gap: 12px;
+
+margin: 0 0 14px;
+
+color: #ffffff;
+
+font-size: 18px;
+font-weight: 800;
+
+letter-spacing: -0.01em;
 }
 
-.section-heading h2 {
-margin: 0;
-font-size: 24px;
-letter-spacing: -0.025em;
+.section-heading::after {
+content: "";
+flex: 1;
+
+height: 1px;
+
+max-width: 180px;
+
+background:
+    linear-gradient(
+        90deg,
+        rgba(25, 217, 130, 0.24),
+        transparent
+    );
 }
 
-.secondary-connect-button {
-padding: 11px 15px;
-border-radius: 11px;
-color: #dce5ff;
-background: rgba(92, 122, 255, 0.12);
-border: 1px solid rgba(92, 122, 255, 0.22);
+/* =========================================================
+CONNECTED ACCOUNTS
+========================================================= */
+
+.connected-accounts {
+position: relative;
+padding: 20px;
+
+border:
+    1px solid rgba(8, 168, 107, 0.20);
+
+border-radius: 16px;
+
+background:
+    radial-gradient(
+        circle at 50% 0%,
+        rgba(25, 217, 130, 0.055),
+        transparent 45%
+    ),
+    var(--copy-panel);
+
+box-shadow:
+    0 10px 35px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
+
+.connected-accounts::after {
+content: "";
+position: absolute;
+
+top: 16px;
+right: 16px;
+
+width: 5px;
+height: 5px;
+
+border-radius: 50%;
+
+background:
+    var(--monehunt-green-bright);
+
+box-shadow:
+    0 0 8px rgba(25, 217, 130, 0.55);
+
+animation:
+    monehuntCopyPulse 2.4s ease-in-out infinite;
+}
+
+/* =========================================================
+FOLLOWER GRID
+========================================================= */
 
 .follower-grid {
 display: grid;
-grid-template-columns: repeat(2, minmax(0, 1fr));
-gap: 18px;
+grid-template-columns:
+    repeat(
+        auto-fit,
+        minmax(250px, 1fr)
+    );
+
+gap: 14px;
 }
 
+/* =========================================================
+FOLLOWER CARDS
+========================================================= */
+
 .follower-card {
-padding: 22px;
-border-radius: 20px;
-border: 1px solid rgba(255,255,255,0.07);
-background: rgba(18, 22, 31, 0.75);
+position: relative;
+padding: 18px;
+
+border:
+    1px solid rgba(8, 168, 107, 0.20);
+
+border-radius: 16px;
+
+background:
+    linear-gradient(
+        145deg,
+        rgba(8, 168, 107, 0.055),
+        transparent 45%
+    ),
+    var(--copy-panel-raised);
+
+box-shadow:
+    0 10px 35px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+
+overflow: hidden;
+
 transition:
-border-color 0.2s ease,
-transform 0.2s ease;
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.follower-card::before {
+content: "";
+position: absolute;
+
+left: 0;
+right: 0;
+top: 0;
+
+height: 1px;
+
+background:
+    linear-gradient(
+        90deg,
+        transparent,
+        rgba(25, 217, 130, 0.45),
+        transparent
+    );
+}
+
+.follower-card::after {
+content: "";
+position: absolute;
+
+top: 16px;
+right: 16px;
+
+width: 5px;
+height: 5px;
+
+border-radius: 50%;
+
+background:
+    var(--monehunt-green-bright);
+
+box-shadow:
+    0 0 8px rgba(25, 217, 130, 0.55);
+
+animation:
+    monehuntCopyPulse 2.4s ease-in-out infinite;
 }
 
 .follower-card:hover {
 transform: translateY(-2px);
-border-color: rgba(126, 153, 255, 0.24);
+border-color:
+    rgba(25, 217, 130, 0.38);
+
+box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.12),
+    0 0 28px rgba(8, 168, 107, 0.06);
 }
 
-.follower-card-top {
-display: flex;
-align-items: center;
-gap: 13px;
-}
+/* =========================================================
+ACCOUNT AVATAR
+========================================================= */
 
-.account-avatar,
-.modal-icon,
-.empty-icon {
+.account-avatar {
+width: 44px;
+height: 44px;
 display: flex;
 align-items: center;
 justify-content: center;
-flex-shrink: 0;
-width: 46px;
-height: 46px;
-border-radius: 14px;
-color: #dce5ff;
-font-weight: 900;
-background: linear-gradient(
-135deg,
-#536dff,
-#8d6bff
-);
+
+flex: 0 0 auto;
+
+border:
+    1px solid rgba(25, 217, 130, 0.32);
+
+border-radius: 12px;
+
+background:
+    linear-gradient(
+        145deg,
+        rgba(8, 168, 107, 0.30),
+        rgba(5, 107, 73, 0.24)
+    );
+
+color: #ffffff;
+
+box-shadow:
+    0 0 20px rgba(8, 168, 107, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-.follower-card-top h3 {
-margin: 0 0 4px;
-font-size: 15px;
+/* =========================================================
+ACCOUNT DETAILS
+========================================================= */
+
+.account-details {
+color: #d9e5df;
 }
 
-.follower-card-top span {
-color: #68748a;
-font-size: 12px;
+.account-details strong,
+.account-details h3,
+.account-details h4 {
+color: #ffffff;
 }
+
+.account-details p,
+.account-details span {
+color: #d9e5df;
+}
+
+/* =========================================================
+ACCOUNT STATUS
+========================================================= */
 
 .account-status {
-margin-left: auto;
-padding: 6px 9px;
+display: inline-flex;
+align-items: center;
+gap: 6px;
+
+padding: 5px 9px;
+
 border-radius: 999px;
+
 font-size: 10px;
 font-weight: 800;
+
+letter-spacing: 0.08em;
+
 text-transform: uppercase;
+}
+
+.account-status::before {
+content: "";
+width: 6px;
+height: 6px;
+
+border-radius: 50%;
 }
 
 .account-status.verified {
-color: #6dffd0;
-background: rgba(0, 220, 170, 0.08);
+border:
+1px solid rgba(57, 217, 138, 0.26);
+background:
+    rgba(57, 217, 138, 0.09);
+
+color: #ffffff;
+}
+
+.account-status.verified::before {
+background:
+var(--copy-success);
+box-shadow:
+    0 0 8px var(--copy-success);
 }
 
 .account-status.pending {
-color: #ffd783;
-background: rgba(255, 190, 70, 0.08);
+border:
+1px solid rgba(243, 184, 63, 0.28);
+background:
+    rgba(243, 184, 63, 0.08);
+
+color: #ffffff;
 }
 
-.account-details {
-display: grid;
-grid-template-columns: repeat(3, 1fr);
-gap: 10px;
-margin: 22px 0;
+.account-status.pending::before {
+background:
+var(--copy-warning);
+box-shadow:
+    0 0 8px var(--copy-warning);
 }
 
-.account-details > div {
-padding: 12px;
-border-radius: 12px;
-background: rgba(255,255,255,0.025);
-}
-
-.account-details span {
-display: block;
-color: #68748a;
-font-size: 10px;
-margin-bottom: 6px;
-text-transform: uppercase;
-}
-
-.account-details strong {
-font-size: 13px;
-}
+/* =========================================================
+FOLLOWER ACTIONS
+========================================================= */
 
 .follower-actions {
 display: flex;
-gap: 9px;
+flex-wrap: wrap;
+gap: 8px;
+
+margin-top: 14px;
 }
 
-.follower-actions button {
-flex: 1;
-padding: 10px 12px;
+/* =========================================================
+PRIMARY BUTTONS
+========================================================= */
+
+.premium-connect-button,
+.activate-button,
+.verify-token-button {
+position: relative;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+
+gap: 8px;
+
+min-height: 42px;
+
+padding: 10px 16px;
+
+border:
+    1px solid rgba(25, 217, 130, 0.36);
+
 border-radius: 10px;
-cursor: pointer;
+
+background:
+    linear-gradient(
+        135deg,
+        #087f55,
+        #08a86b
+    );
+
+color: #ffffff !important;
+
 font-weight: 800;
-border: 1px solid rgba(255,255,255,0.08);
-color: #dce4f4;
-background: rgba(255,255,255,0.04);
+
+cursor: pointer;
+
+box-shadow:
+    0 8px 24px rgba(8, 168, 107, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
-.follower-actions button:disabled {
-opacity: 0.4;
-cursor: not-allowed;
+.premium-connect-button:hover,
+.activate-button:hover,
+.verify-token-button:hover {
+transform: translateY(-1px);
+border-color:
+    rgba(79, 243, 164, 0.62);
+
+box-shadow:
+    0 12px 30px rgba(8, 168, 107, 0.22),
+    0 0 22px rgba(25, 217, 130, 0.08);
 }
 
-.activate-button {
-background: rgba(0, 220, 170, 0.08) !important;
-border-color: rgba(0, 220, 170, 0.16) !important;
+.premium-connect-button:active,
+.activate-button:active,
+.verify-token-button:active {
+transform: translateY(0);
 }
+
+/* =========================================================
+SECONDARY BUTTON
+========================================================= */
+
+.secondary-connect-button {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+
+min-height: 42px;
+
+padding: 10px 16px;
+
+border:
+    1px solid rgba(25, 217, 130, 0.22);
+
+border-radius: 10px;
+
+background:
+    rgba(8, 168, 107, 0.055);
+
+color: #ffffff !important;
+
+font-weight: 700;
+
+cursor: pointer;
+
+transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.secondary-connect-button:hover {
+transform: translateY(-1px);
+border-color:
+    rgba(25, 217, 130, 0.40);
+
+background:
+    rgba(8, 168, 107, 0.10);
+}
+
+/* =========================================================
+EMPTY STATE
+========================================================= */
 
 .empty-copy-state {
+position: relative;
+padding: 36px 24px;
+
 text-align: center;
-padding: 70px 24px;
-border: 1px dashed rgba(255,255,255,0.1);
-border-radius: 22px;
-background: rgba(18, 22, 31, 0.45);
+
+border:
+    1px dashed rgba(25, 217, 130, 0.24);
+
+border-radius: 16px;
+
+background:
+    radial-gradient(
+        circle at 50% 0%,
+        rgba(25, 217, 130, 0.06),
+        transparent 50%
+    ),
+    var(--copy-panel);
 }
 
-.empty-icon {
-margin: 0 auto 18px;
-}
-
-.empty-copy-state h3 {
-margin: 0 0 8px;
+.empty-copy-state h3,
+.empty-copy-state strong {
+color: #ffffff;
 }
 
 .empty-copy-state p {
-margin: 0 auto 20px;
-max-width: 430px;
-color: #748096;
+color: #d9e5df;
 line-height: 1.6;
 }
 
-.empty-copy-state button {
-padding: 12px 18px;
-border: 0;
-border-radius: 11px;
-cursor: pointer;
-font-weight: 800;
-color: #091019;
-background: #ffffff;
+.empty-icon {
+width: 56px;
+height: 56px;
+display: flex;
+align-items: center;
+justify-content: center;
+
+margin: 0 auto 14px;
+
+border:
+    1px solid rgba(25, 217, 130, 0.25);
+
+border-radius: 14px;
+
+background:
+    rgba(8, 168, 107, 0.08);
+
+color:
+    var(--monehunt-green-bright);
+
+box-shadow:
+    0 0 25px rgba(8, 168, 107, 0.08);
 }
+
+/* =========================================================
+COPY TRADING MESSAGES
+========================================================= */
+
+.copy-trading-message {
+padding: 12px 14px;
+border-radius: 10px;
+
+font-size: 13px;
+
+line-height: 1.5;
+}
+
+.copy-trading-message.success {
+border:
+1px solid rgba(57, 217, 138, 0.25);
+background:
+    rgba(57, 217, 138, 0.08);
+
+color: #ffffff;
+}
+
+.copy-trading-message.error {
+border:
+1px solid rgba(255, 100, 100, 0.25);
+background:
+    rgba(255, 100, 100, 0.08);
+
+color: #ffffff;
+}
+
+/* =========================================================
+CONNECTION MODAL OVERLAY
+========================================================= */
 
 .copy-connect-overlay {
 position: fixed;
 inset: 0;
+
 z-index: 9999;
+
 display: flex;
 align-items: center;
 justify-content: center;
-padding: 24px;
-background: rgba(3, 6, 12, 0.78);
-backdrop-filter: blur(14px);
+
+padding: 20px;
+
+box-sizing: border-box;
+
+background:
+    rgba(1, 12, 8, 0.76);
+
+backdrop-filter:
+    blur(10px);
+
+-webkit-backdrop-filter:
+    blur(10px);
 }
 
+/* =========================================================
+CONNECTION MODAL
+========================================================= */
+
 .copy-connect-modal {
+position: relative;
 width: min(560px, 100%);
-max-height: calc(100vh - 48px);
+
+max-height: calc(100vh - 40px);
+
 overflow-y: auto;
-padding: 28px;
-border: 1px solid rgba(255,255,255,0.1);
-border-radius: 24px;
+
+border:
+    1px solid rgba(25, 217, 130, 0.28);
+
+border-radius: 16px;
+
 background:
-radial-gradient(
-circle at 100% 0%,
-rgba(91, 120, 255, 0.13),
-transparent 35%
-),
-#11151e;
-box-shadow: 0 40px 100px rgba(0,0,0,0.55);
+    radial-gradient(
+        circle at 50% 0%,
+        rgba(25, 217, 130, 0.10),
+        transparent 45%
+    ),
+    #07120e;
+
+box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.40),
+    0 0 45px rgba(8, 168, 107, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+color: #ffffff;
+
+animation:
+    monehuntCopyModalIn 0.22s ease-out;
 }
+
+.copy-connect-modal::before {
+content: "";
+position: absolute;
+
+top: 0;
+left: 0;
+right: 0;
+
+height: 2px;
+
+border-radius: 16px 16px 0 0;
+
+background:
+    linear-gradient(
+        90deg,
+        transparent,
+        var(--monehunt-green),
+        var(--monehunt-green-bright),
+        transparent
+    );
+}
+
+/* =========================================================
+MODAL HEADER
+========================================================= */
 
 .modal-header {
 display: flex;
+align-items: flex-start;
 justify-content: space-between;
-gap: 18px;
-margin-bottom: 24px;
+gap: 16px;
+
+padding: 22px 22px 16px;
+
+border-bottom:
+    1px solid rgba(25, 217, 130, 0.12);
 }
 
-.modal-header > div:first-child {
-display: flex;
-align-items: center;
-gap: 13px;
-}
-
-.modal-icon {
-width: 42px;
-height: 42px;
-}
-
-.modal-header h2 {
+.modal-header h2,
+.modal-header h3 {
 margin: 0;
-font-size: 22px;
+color: #ffffff;
+
+font-size: 20px;
+font-weight: 800;
 }
+
+.modal-header p {
+color: #d9e5df;
+}
+
+/* =========================================================
+MODAL CLOSE
+========================================================= */
 
 .modal-close {
 width: 34px;
 height: 34px;
-border: 0;
-border-radius: 9px;
-cursor: pointer;
-color: #8b96a9;
-background: rgba(255,255,255,0.05);
-font-size: 20px;
-}
-
-.token-security-banner {
-display: flex;
-gap: 12px;
-padding: 15px;
-margin-bottom: 22px;
-border-radius: 14px;
-border: 1px solid rgba(0, 220, 170, 0.14);
-background: rgba(0, 220, 170, 0.05);
-}
-
-.security-icon {
-width: 26px;
-height: 26px;
 display: flex;
 align-items: center;
 justify-content: center;
-border-radius: 50%;
-color: #091019;
-background: #5effc7;
-font-weight: 900;
+
+flex: 0 0 auto;
+
+border:
+    1px solid rgba(25, 217, 130, 0.16);
+
+border-radius: 9px;
+
+background:
+    rgba(8, 168, 107, 0.06);
+
+color: #ffffff;
+
+cursor: pointer;
+
+transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.token-security-banner strong {
-display: block;
-font-size: 12px;
-margin-bottom: 4px;
+.modal-close:hover {
+border-color:
+rgba(25, 217, 130, 0.38);
+background:
+    rgba(8, 168, 107, 0.12);
+}
+
+/* =========================================================
+MODAL ICON
+========================================================= */
+
+.modal-icon {
+width: 46px;
+height: 46px;
+display: flex;
+align-items: center;
+justify-content: center;
+
+margin-bottom: 10px;
+
+border:
+    1px solid rgba(25, 217, 130, 0.24);
+
+border-radius: 12px;
+
+background:
+    rgba(8, 168, 107, 0.08);
+
+color:
+    var(--monehunt-green-bright);
+
+box-shadow:
+    0 0 22px rgba(8, 168, 107, 0.08);
+}
+
+/* =========================================================
+TOKEN SECURITY
+========================================================= */
+
+.token-security-banner {
+display: flex;
+align-items: flex-start;
+gap: 12px;
+
+margin: 18px 22px;
+
+padding: 14px;
+
+border:
+    1px solid rgba(25, 217, 130, 0.18);
+
+border-radius: 12px;
+
+background:
+    rgba(8, 168, 107, 0.055);
+}
+
+.token-security-banner strong,
+.token-security-banner h4 {
+color: #ffffff;
 }
 
 .token-security-banner p {
-margin: 0;
-color: #718096;
-font-size: 11px;
+margin: 4px 0 0;
+color: #d9e5df;
+
+font-size: 12px;
+
 line-height: 1.5;
 }
 
-.premium-field {
-display: block;
-margin-bottom: 18px;
-}
-
-.premium-field > span {
-display: block;
-margin-bottom: 8px;
-color: #c5cedd;
-font-size: 12px;
-font-weight: 800;
-}
-
-.premium-field > input,
-.token-input-wrapper input {
-width: 100%;
-box-sizing: border-box;
-border: 1px solid rgba(255,255,255,0.09);
-border-radius: 12px;
-outline: none;
-color: #edf2fa;
-background: rgba(255,255,255,0.035);
-transition: border-color 0.2s ease;
-}
-
-.premium-field > input {
-padding: 13px 14px;
-}
-
-.token-input-wrapper {
+.security-icon {
+width: 34px;
+height: 34px;
 display: flex;
 align-items: center;
-border: 1px solid rgba(255,255,255,0.09);
-border-radius: 12px;
-background: rgba(255,255,255,0.035);
-overflow: hidden;
+justify-content: center;
+
+flex: 0 0 auto;
+
+border:
+    1px solid rgba(25, 217, 130, 0.20);
+
+border-radius: 9px;
+
+background:
+    rgba(25, 217, 130, 0.08);
+
+color:
+    var(--monehunt-green-bright);
 }
 
-.token-input-wrapper input {
-border: 0;
-border-radius: 0;
-background: transparent;
-padding: 14px;
+/* =========================================================
+FORM FIELDS
+========================================================= */
+
+.premium-field {
+margin: 0 22px 16px;
 }
 
-.premium-field > input:focus,
-.token-input-wrapper:focus-within {
-border-color: rgba(110, 140, 255, 0.6);
+.premium-field label {
+display: block;
+margin-bottom: 7px;
+
+color: #ffffff;
+
+font-size: 12px;
+font-weight: 700;
+
+letter-spacing: 0.04em;
 }
 
 .premium-field small {
 display: block;
-margin-top: 7px;
-color: #69758a;
-font-size: 10px;
-}
+margin-top: 6px;
 
-.token-visibility {
-flex-shrink: 0;
-margin-right: 7px;
-padding: 8px 10px;
-border: 0;
-border-radius: 8px;
-cursor: pointer;
-color: #9aa8c0;
-background: rgba(255,255,255,0.06);
-font-size: 10px;
-font-weight: 800;
-}
+color: #a7b8b0;
 
-.token-steps {
-display: grid;
-gap: 10px;
-margin: 22px 0;
-}
-
-.token-step {
-display: flex;
-gap: 11px;
-padding: 11px;
-border-radius: 12px;
-background: rgba(255,255,255,0.025);
-}
-
-.token-step > span {
-display: flex;
-align-items: center;
-justify-content: center;
-flex-shrink: 0;
-width: 24px;
-height: 24px;
-border-radius: 50%;
-color: #dbe4ff;
-background: rgba(100, 126, 255, 0.16);
-font-size: 10px;
-font-weight: 900;
-}
-
-.token-step strong {
 font-size: 11px;
 }
 
-.token-step p {
-margin: 3px 0 0;
-color: #69758a;
-font-size: 10px;
-line-height: 1.45;
+.token-input-wrapper {
+position: relative;
+display: flex;
+align-items: center;
 }
 
-.verify-token-button {
+.token-input-wrapper input,
+.premium-field input {
 width: 100%;
+min-height: 44px;
+
+padding: 11px 44px 11px 13px;
+
+box-sizing: border-box;
+
+border:
+    1px solid rgba(25, 217, 130, 0.20);
+
+border-radius: 10px;
+
+outline: none;
+
+background:
+    rgba(0, 0, 0, 0.18);
+
+color: #ffffff;
+
+font-size: 14px;
+
+transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.token-input-wrapper input::placeholder,
+.premium-field input::placeholder {
+color: #81948b;
+}
+
+.token-input-wrapper input:focus,
+.premium-field input:focus {
+border-color:
+rgba(25, 217, 130, 0.55);
+background:
+    rgba(8, 168, 107, 0.035);
+
+box-shadow:
+    0 0 0 3px rgba(8, 168, 107, 0.08),
+    0 0 20px rgba(8, 168, 107, 0.05);
+}
+
+.token-visibility {
+position: absolute;
+right: 8px;
+
+width: 32px;
+height: 32px;
+
 display: flex;
 align-items: center;
 justify-content: center;
-gap: 10px;
-padding: 14px;
-border-radius: 12px;
-color: #081018;
-background: linear-gradient(
-135deg,
-#ffffff,
-#9fb4ff
-);
+
+border: 0;
+
+border-radius: 8px;
+
+background: transparent;
+
+color: #ffffff;
+
+cursor: pointer;
 }
 
-.verify-token-button:disabled {
-opacity: 0.45;
-cursor: not-allowed;
-transform: none;
+.token-visibility:hover {
+background:
+rgba(8, 168, 107, 0.10);
 }
+
+/* =========================================================
+TOKEN STEPS
+========================================================= */
+
+.token-steps {
+display: flex;
+flex-direction: column;
+gap: 10px;
+
+margin: 18px 22px;
+}
+
+.token-step {
+position: relative;
+display: flex;
+align-items: flex-start;
+
+gap: 11px;
+
+padding: 12px;
+
+border:
+    1px solid rgba(25, 217, 130, 0.13);
+
+border-radius: 10px;
+
+background:
+    rgba(8, 168, 107, 0.035);
+}
+
+.token-step strong,
+.token-step h4 {
+color: #ffffff;
+}
+
+.token-step p,
+.token-step span {
+color: #d9e5df;
+font-size: 12px;
+
+line-height: 1.45;
+}
+
+/* =========================================================
+TOKEN STEP NUMBER
+========================================================= */
+
+.token-step-number {
+width: 25px;
+height: 25px;
+display: flex;
+align-items: center;
+justify-content: center;
+
+flex: 0 0 auto;
+
+border:
+    1px solid rgba(25, 217, 130, 0.25);
+
+border-radius: 50%;
+
+background:
+    rgba(8, 168, 107, 0.09);
+
+color: #ffffff;
+
+font-size: 11px;
+font-weight: 800;
+}
+
+/* =========================================================
+MODAL DISCLAIMER
+========================================================= */
+
+.modal-disclaimer {
+margin: 0 22px 20px;
+color: #a7b8b0;
+
+font-size: 11px;
+
+line-height: 1.5;
+
+text-align: center;
+}
+
+/* =========================================================
+BUTTON SPINNER
+========================================================= */
 
 .button-spinner {
 width: 15px;
 height: 15px;
-border: 2px solid rgba(0,0,0,0.2);
-border-top-color: #111827;
+border:
+    2px solid rgba(255, 255, 255, 0.30);
+
+border-top-color:
+    #ffffff;
+
 border-radius: 50%;
-animation: copy-spin 0.7s linear infinite;
+
+animation:
+    monehuntCopySpin 0.7s linear infinite;
+}
+
+/* =========================================================
+GENERAL TEXT
+========================================================= */
+
+.copy-trading-premium p {
+color: #d9e5df;
+}
+
+.copy-trading-premium label {
+color: #ffffff;
+}
+
+.copy-trading-premium strong {
+color: #ffffff;
+}
+
+.copy-trading-premium a {
+color:
+var(--monehunt-green-bright);
+text-decoration-color:
+    rgba(25, 217, 130, 0.35);
+
+text-underline-offset: 3px;
+}
+
+.copy-trading-premium a:hover {
+color:
+var(--monehunt-green-light);
+}
+
+/* =========================================================
+DIVIDERS
+========================================================= */
+
+.copy-trading-premium hr {
+height: 1px;
+margin: 16px 0;
+
+border: 0;
+
+background:
+    linear-gradient(
+        90deg,
+        transparent,
+        rgba(25, 217, 130, 0.22),
+        transparent
+    );
+}
+
+/* =========================================================
+DISABLED
+========================================================= */
+
+.copy-trading-premium button:disabled,
+.copy-trading-premium input:disabled {
+opacity: 0.55;
+cursor: not-allowed;
+}
+
+/* =========================================================
+DARK MODE
+========================================================= */
+
+@media (prefers-color-scheme: dark) {
+.copy-trading-premium {
+--copy-panel:
+color-mix(
+in srgb,
+#07120e 92%,
+var(--monehunt-green) 8%
+);
+--copy-panel-raised:
+        color-mix(
+            in srgb,
+            #091a14 90%,
+            var(--monehunt-green) 10%
+        );
+
+    --copy-border:
+        rgba(25, 217, 130, 0.22);
+
+    --copy-border-soft:
+        rgba(25, 217, 130, 0.13);
+
+    background:
+        radial-gradient(
+            circle at 50% -15%,
+            rgba(8, 168, 107, 0.18),
+            transparent 38%
+        ),
+        radial-gradient(
+            circle at 0% 40%,
+            rgba(25, 217, 130, 0.045),
+            transparent 30%
+        ),
+        #07120e;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.copy-stat-card,
+.follower-card,
+.connected-accounts,
+.empty-copy-state {
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+}
+
+/* =========================================================
+LIGHT MODE
+MONEHUNT DARK COMMAND CENTER
+========================================================= */
+
+@media (prefers-color-scheme: light) {
+.copy-trading-premium {
+--copy-panel: #10231c;
+--copy-panel-raised: #122a21;
+--copy-border:
+        rgba(8, 168, 107, 0.24);
+
+    --copy-border-soft:
+        rgba(8, 168, 107, 0.14);
+
+    --copy-text-primary: #ffffff;
+    --copy-text-secondary: #d9e5df;
+    --copy-text-muted: #b4c6be;
+    --copy-text-dim: #91a79d;
+
+    background:
+        radial-gradient(
+            circle at 50% -15%,
+            rgba(8, 168, 107, 0.16),
+            transparent 38%
+        ),
+        radial-gradient(
+            circle at 0% 50%,
+            rgba(25, 217, 130, 0.06),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 100% 50%,
+            rgba(8, 168, 107, 0.055),
+            transparent 30%
+        ),
+        #0a1712;
+}
+
+.copy-trading-hero,
+.copy-stat-card,
+.connected-accounts,
+.follower-card,
+.empty-copy-state {
+    background:
+        radial-gradient(
+            circle at 100% 0%,
+            rgba(25, 217, 130, 0.075),
+            transparent 40%
+        ),
+        var(--copy-panel);
+}
+}
+
+/* =========================================================
+RESPONSIVE
+========================================================= */
+
+@media (max-width: 900px) {
+.copy-trading-premium {
+padding: 18px;
+gap: 14px;
+}
+.copy-trading-hero {
+    padding: 20px;
+}
+
+.copy-trading-stats {
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+}
+}
+
+@media (max-width: 640px) {
+.copy-trading-premium {
+padding: 14px;
+gap: 12px;
+}
+.copy-trading-hero {
+    padding: 18px;
+    border-radius: 14px;
+}
+
+.copy-trading-hero h1 {
+    font-size: 25px;
+}
+
+.copy-trading-stats {
+    grid-template-columns: 1fr;
+}
+
+.follower-grid {
+    grid-template-columns: 1fr;
+}
+
+.connected-accounts {
+    padding: 15px;
+}
+
+.follower-card {
+    padding: 15px;
+}
+
+.copy-connect-overlay {
+    padding: 10px;
+}
+
+.copy-connect-modal {
+    max-height: calc(100vh - 20px);
+    border-radius: 14px;
+}
+
+.modal-header {
+    padding: 18px 16px 14px;
+}
+
+.token-security-banner,
+.premium-field,
+.token-steps {
+    margin-left: 16px;
+    margin-right: 16px;
 }
 
 .modal-disclaimer {
-margin: 14px 0 0;
-text-align: center;
-color: #59667b;
-font-size: 10px;
-line-height: 1.5;
+    margin-left: 16px;
+    margin-right: 16px;
+}
 }
 
-@keyframes copy-spin {
+/* =========================================================
+REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+.copy-trading-premium::after,
+.copy-trading-premium *,
+.copy-trading-premium *::before,
+.copy-trading-premium *::after {
+animation-duration: 0.001ms !important;
+animation-iteration-count: 1 !important;
+transition-duration: 0.001ms !important;
+}
+}
+
+/* =========================================================
+ANIMATIONS
+========================================================= */
+
+@keyframes monehuntCopyPulse {
+0%,
+100% {
+opacity: 0.65;
+transform: scale(0.90);
+}
+50% {
+    opacity: 1;
+    transform: scale(1.08);
+}
+}
+
+@keyframes monehuntCopyScan {
+0% {
+transform: translateY(0);
+opacity: 0;
+}
+10% {
+    opacity: 1;
+}
+
+90% {
+    opacity: 1;
+}
+
+100% {
+    transform: translateY(110vh);
+    opacity: 0;
+}
+}
+
+@keyframes monehuntCopySpin {
 to {
 transform: rotate(360deg);
 }
 }
 
-@media (max-width: 900px) {
-.copy-trading-stats {
-    grid-template-columns: repeat(2, 1fr);
+@keyframes monehuntCopyModalIn {
+from {
+opacity: 0;
+transform: translateY(10px) scale(0.985);
 }
-
-.follower-grid {
-    grid-template-columns: 1fr;
-}
-
-.copy-trading-hero {
-    align-items: flex-start;
-    flex-direction: column;
+to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
 }
 }
 
-@media (max-width: 600px) {
+/* =========================================================
+FINAL SCROLL SAFETY
+========================================================= */
+
 .copy-trading-premium {
-    padding: 16px;
-}
+min-height: 100vh;
+height: auto;
+max-height: none;
+overflow-x: hidden;
+overflow-y: auto;
 
-.copy-trading-hero {
-    padding: 24px;
-}
+box-sizing: border-box;
 
-.copy-trading-stats {
-    grid-template-columns: 1fr;
-}
+overscroll-behavior-y: auto;
 
-.section-heading {
-    align-items: flex-start;
-    gap: 14px;
-    flex-direction: column;
+-webkit-overflow-scrolling: touch;
 }
-
-.secondary-connect-button {
-    width: 100%;
-}
-
-.copy-connect-overlay {
-    padding: 12px;
-}
-
-.copy-connect-modal {
-    padding: 20px;
-    border-radius: 18px;
-}
-}
-
 

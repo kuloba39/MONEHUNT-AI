@@ -1,0 +1,2364 @@
+scss
+/* =========================================================
+   MONEHUNT AI LAB
+   AI MISSION CONTROL
+   Premium MONEHUNT Gold / Emerald / AI interface
+   Adaptive Light + Dark Mode
+   ========================================================= */
+
+.ai-lab-page {
+    /* =====================================================
+       MONEHUNT SIGNATURE COLORS
+       ===================================================== */
+
+    --ai-accent: #08a86b;
+    --ai-accent-strong: #19d982;
+    --ai-accent-soft: rgba(8, 168, 107, 0.12);
+
+    --ai-gold: #10bd76;
+    --ai-gold-glow: rgba(16, 189, 118, 0.24);
+
+    --ai-intelligence: #19d982;
+    --ai-intelligence-soft: rgba(25, 217, 130, 0.10);
+
+    --ai-success: #20b26b;
+    --ai-success-soft: rgba(32, 178, 107, 0.11);
+
+    --ai-warning: #e6a51c;
+    --ai-warning-soft: rgba(230, 165, 28, 0.11);
+
+    --ai-danger: #e05252;
+    --ai-danger-soft: rgba(224, 82, 82, 0.11);
+
+    --ai-panel:
+        color-mix(
+            in srgb,
+            var(--general-section-1) 95%,
+            var(--ai-accent) 5%
+        );
+
+    --ai-panel-raised:
+        color-mix(
+            in srgb,
+            var(--general-main-2) 93%,
+            var(--ai-accent) 7%
+        );
+
+    --ai-border:
+        color-mix(
+            in srgb,
+            var(--border-normal) 72%,
+            var(--ai-accent) 28%
+        );
+
+    --ai-border-soft:
+        color-mix(
+            in srgb,
+            var(--border-normal) 58%,
+            transparent
+        );
+
+    width: 100%;
+    min-height: 100vh;
+
+    padding: 24px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+
+    background:
+        radial-gradient(
+            circle at 50% -12%,
+            rgba(8, 168, 107, 0.10),
+            transparent 34%
+        ),
+        radial-gradient(
+            circle at 100% 25%,
+            rgba(25, 217, 130, 0.045),
+            transparent 28%
+        ),
+        var(--general-main-1);
+
+    color: var(--text-prominent);
+
+    box-sizing: border-box;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.ai-lab-header {
+    min-height: 64px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 0 4px;
+}
+
+.ai-lab-title {
+    font-size: 27px;
+    font-weight: 900;
+
+    letter-spacing: -0.045em;
+    line-height: 1;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--text-prominent) 25%,
+            var(--ai-accent-strong) 100%
+        );
+
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    -webkit-text-fill-color: transparent;
+}
+
+.ai-lab-subtitle {
+    margin-top: 7px;
+
+    color: var(--text-less-prominent);
+
+    font-size: 11px;
+    font-weight: 600;
+
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.ai-lab-live {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 9px;
+
+    min-height: 34px;
+
+    padding: 0 13px;
+
+    border: 1px solid var(--ai-success-soft);
+    border-radius: 999px;
+
+    background: var(--ai-success-soft);
+
+    color: var(--ai-success);
+
+    font-size: 11px;
+    font-weight: 800;
+
+    letter-spacing: 0.08em;
+
+    box-shadow:
+        0 0 18px var(--ai-success-soft);
+}
+
+.ai-lab-live-dot {
+    width: 7px;
+    height: 7px;
+
+    flex: 0 0 7px;
+
+    border-radius: 50%;
+
+    background: var(--ai-success);
+
+    box-shadow:
+        0 0 0 4px var(--ai-success-soft),
+        0 0 12px rgba(32, 178, 107, 0.45);
+}
+
+/* =========================================================
+   COMMON PANELS
+   ========================================================= */
+
+.ai-lab-market,
+.ai-lab-panel,
+.ai-lab-signal,
+.ai-lab-performance,
+.ai-lab-learning,
+.ai-lab-volatility {
+    position: relative;
+
+    border: 1px solid var(--ai-border);
+    border-radius: 16px;
+
+    background: var(--ai-panel);
+
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.035);
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+
+    box-sizing: border-box;
+}
+
+.ai-lab-market:hover,
+.ai-lab-panel:hover,
+.ai-lab-signal:hover,
+.ai-lab-performance:hover,
+.ai-lab-learning:hover,
+.ai-lab-volatility:hover {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ai-accent) 40%,
+            var(--ai-border)
+        );
+
+    box-shadow:
+        0 12px 34px rgba(0, 0, 0, 0.055),
+        0 0 24px rgba(212, 167, 44, 0.035);
+}
+
+/* =========================================================
+   MARKET COMMAND
+   ========================================================= */
+
+.ai-lab-market {
+    display: grid;
+
+    grid-template-columns:
+        minmax(170px, 0.7fr)
+        minmax(240px, 1fr)
+        minmax(280px, 1.2fr);
+
+    align-items: center;
+
+    gap: 22px;
+
+    padding: 18px 20px;
+}
+
+.ai-lab-market label {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: var(--text-less-prominent);
+
+    font-size: 10px;
+    font-weight: 800;
+
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.ai-lab-market select {
+    width: 100%;
+
+    min-height: 44px;
+
+    padding: 0 14px;
+
+    border: 1px solid var(--ai-border);
+    border-radius: 10px;
+
+    outline: none;
+
+    background: var(--general-main-1);
+    color: var(--text-prominent);
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.ai-lab-market select:hover,
+.ai-lab-market select:focus {
+    border-color: var(--ai-accent);
+
+    background:
+        color-mix(
+            in srgb,
+            var(--general-main-1) 96%,
+            var(--ai-accent) 4%
+        );
+
+    box-shadow:
+        0 0 0 3px var(--ai-accent-soft),
+        0 0 18px rgba(212, 167, 44, 0.05);
+}
+
+.ai-lab-tick-info {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 8px;
+
+    min-width: 0;
+}
+
+.ai-lab-tick-info span {
+    min-height: 42px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 11px;
+
+    border: 1px solid var(--ai-border-soft);
+    border-radius: 9px;
+
+    background: var(--ai-panel-raised);
+
+    color: var(--text-less-prominent);
+
+    font-size: 11px;
+    font-weight: 600;
+
+    overflow: hidden;
+}
+
+.ai-lab-tick-info span strong {
+    color: var(--text-prominent);
+}
+
+/* =========================================================
+   MARKET DETAILS
+   ========================================================= */
+
+.market-command {
+    min-width: 0;
+}
+
+.market-command-symbol {
+    margin-top: 2px;
+
+    font-size: 25px;
+    font-weight: 900;
+
+    letter-spacing: -0.04em;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--text-prominent) 20%,
+            var(--ai-accent-strong) 100%
+        );
+
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    -webkit-text-fill-color: transparent;
+}
+
+.market-command-status {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 7px;
+
+    margin-top: 5px;
+
+    color: var(--ai-success);
+
+    font-size: 9px;
+    font-weight: 800;
+
+    letter-spacing: 0.1em;
+}
+
+.market-command-status .ai-lab-live-dot {
+    width: 6px;
+    height: 6px;
+
+    flex: 0 0 6px;
+
+    box-shadow: none;
+}
+
+.market-selector {
+    min-width: 0;
+}
+
+/* =========================================================
+   SECTION HEADINGS
+   ========================================================= */
+
+.section-heading {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 16px;
+
+    color: var(--text-prominent);
+
+    font-size: 12px;
+    font-weight: 900;
+
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.section-heading::before {
+    content: '';
+
+    width: 4px;
+    height: 15px;
+
+    flex: 0 0 4px;
+
+    border-radius: 999px;
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--ai-accent-strong),
+            var(--ai-accent)
+        );
+
+    box-shadow:
+        0 0 10px var(--ai-gold-glow);
+}
+
+/* =========================================================
+   VOLATILITY SCANNER
+   ========================================================= */
+
+.ai-lab-volatility {
+    padding: 20px;
+}
+
+.volatility-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+
+    flex-wrap: wrap;
+
+    margin-top: 4px;
+}
+
+.volatility-control button {
+    min-height: 40px;
+
+    padding: 0 18px;
+
+    border: 1px solid var(--ai-accent);
+    border-radius: 9px;
+
+    outline: none;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--ai-accent),
+            var(--ai-accent-strong)
+        );
+
+    color: #fff;
+
+    font-size: 11px;
+    font-weight: 900;
+
+    letter-spacing: 0.06em;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 7px 20px var(--ai-gold-glow);
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        opacity 0.18s ease;
+}
+
+.volatility-control button:hover:not(:disabled) {
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 10px 27px var(--ai-gold-glow);
+}
+
+.volatility-control button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.volatility-control button:disabled {
+    opacity: 0.55;
+
+    cursor: not-allowed;
+}
+
+.volatility-summary {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    flex-wrap: wrap;
+}
+
+.volatility-summary span {
+    padding: 7px 10px;
+
+    border: 1px solid var(--ai-border-soft);
+    border-radius: 8px;
+
+    background: var(--ai-panel-raised);
+
+    color: var(--text-less-prominent);
+
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.volatility-error {
+    margin-top: 14px;
+
+    padding: 11px 13px;
+
+    border: 1px solid var(--ai-danger-soft);
+    border-radius: 9px;
+
+    background: var(--ai-danger-soft);
+
+    color: var(--ai-danger);
+
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* =========================================================
+   SELECTED MARKET
+   ========================================================= */
+
+.volatility-selected {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 10px;
+
+    margin-top: 16px;
+}
+
+.volatility-selected > div {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+
+    padding: 13px;
+
+    border: 1px solid var(--ai-border-soft);
+    border-radius: 10px;
+
+    background: var(--ai-panel-raised);
+}
+
+.volatility-selected span {
+    color: var(--text-less-prominent);
+
+    font-size: 9px;
+    font-weight: 800;
+
+    letter-spacing: 0.09em;
+}
+
+.volatility-selected strong {
+    overflow: hidden;
+
+    color: var(--text-prominent);
+
+    font-size: 14px;
+    font-weight: 900;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.volatility-selected > div:nth-child(1) strong {
+    color: var(--ai-accent-strong);
+}
+
+.volatility-selected > div:nth-child(2) strong {
+    color: var(--ai-intelligence);
+}
+
+.volatility-selected > div:nth-child(3) strong {
+    color: var(--ai-accent-strong);
+}
+
+/* =========================================================
+   VOLATILITY RANKING
+   ========================================================= */
+
+.volatility-ranking {
+    width: 100%;
+
+    margin-top: 14px;
+
+    overflow-x: auto;
+    overflow-y: visible;
+
+    scrollbar-width: thin;
+
+    box-sizing: border-box;
+}
+
+.volatility-ranking-header,
+.volatility-ranking-row {
+    display: grid;
+
+    /*
+       10 GRID COLUMNS
+
+       1  Rank
+       2  Market
+       3  Score
+       4  Volatility
+       5  Stability
+       6  Trend
+       7  Pattern
+       8  Decision
+       9  Information
+       10 Action
+    */
+
+    grid-template-columns:
+        36px
+        minmax(90px, 1.15fr)
+        minmax(70px, 0.8fr)
+        minmax(90px, 1fr)
+        minmax(90px, 1fr)
+        minmax(80px, 1fr)
+        minmax(90px, 1fr)
+        minmax(90px, 1fr)
+        minmax(90px, 0.8fr)
+        82px;
+
+    align-items: center;
+
+    gap: 9px;
+
+    min-width: 930px;
+
+    box-sizing: border-box;
+}
+
+.volatility-ranking-header {
+    padding: 8px 11px;
+
+    color: var(--text-less-prominent);
+
+    font-size: 8px;
+    font-weight: 900;
+
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.volatility-ranking-row {
+    position: relative;
+
+    min-height: 50px;
+
+    padding: 7px 11px;
+
+    border-top: 1px solid var(--ai-border-soft);
+
+    color: var(--text-less-prominent);
+
+    font-size: 10px;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease;
+}
+
+.volatility-ranking-row:hover {
+    background:
+        linear-gradient(
+            90deg,
+            var(--ai-accent-soft),
+            transparent 70%
+        );
+}
+
+.volatility-ranking-row strong {
+    color: var(--text-prominent);
+
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.volatility-ranking-row.selected-market {
+    background:
+        linear-gradient(
+            90deg,
+            var(--ai-accent-soft),
+            transparent 75%
+        );
+
+    border-top-color:
+        color-mix(
+            in srgb,
+            var(--ai-accent) 45%,
+            var(--ai-border-soft)
+        );
+
+    box-shadow:
+        inset 3px 0 0 var(--ai-accent);
+}
+
+/* Score */
+.volatility-ranking-row > span:nth-child(3) {
+    color: var(--ai-accent-strong);
+
+    font-weight: 900;
+}
+
+/* Decision */
+.volatility-ranking-row > span:nth-child(8) {
+    font-weight: 800;
+}
+
+/* =========================================================
+   SELECT BUTTON
+   ========================================================= */
+
+.market-select-button {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 82px;
+    min-width: 82px;
+
+    min-height: 30px;
+
+    padding: 0 10px;
+
+    border: 1px solid var(--ai-accent);
+    border-radius: 7px;
+
+    outline: none;
+
+    background:
+        var(--ai-accent-soft);
+
+    color: var(--ai-accent);
+
+    font-family: inherit;
+
+    font-size: 9px;
+    font-weight: 900;
+
+    letter-spacing: 0.06em;
+
+    line-height: 1;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    appearance: none;
+    -webkit-appearance: none;
+
+    opacity: 1;
+    visibility: visible;
+
+    box-sizing: border-box;
+
+    position: relative;
+    z-index: 5;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.market-select-button:hover {
+    border-color: var(--ai-accent-strong);
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--ai-accent),
+            var(--ai-accent-strong)
+        );
+
+    color: #fff;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 5px 18px var(--ai-gold-glow);
+}
+
+.market-select-button:active {
+    transform: translateY(0);
+}
+
+.market-select-button:focus-visible {
+    border-color: var(--ai-accent-strong);
+
+    box-shadow:
+        0 0 0 3px var(--ai-accent-soft);
+}
+
+.market-select-button.selected {
+    border-color: var(--ai-success);
+
+    background: var(--ai-success-soft);
+
+    color: var(--ai-success);
+
+    box-shadow:
+        0 0 0 1px var(--ai-success-soft);
+}
+
+.market-select-button.selected:hover {
+    background: var(--ai-success);
+
+    color: #fff;
+}
+
+/* =========================================================
+   AI PICK
+   ========================================================= */
+
+.scanner-recommended {
+    position: absolute;
+
+    right: 94px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 4px 7px;
+
+    border: 1px solid var(--ai-accent-soft);
+    border-radius: 5px;
+
+    background: var(--ai-accent-soft);
+
+    color: var(--ai-accent);
+
+    font-size: 8px;
+    font-weight: 900;
+
+    letter-spacing: 0.08em;
+
+    line-height: 1;
+
+    pointer-events: none;
+
+    white-space: nowrap;
+
+    z-index: 4;
+
+    box-shadow:
+        0 0 12px var(--ai-accent-soft);
+}
+
+/* =========================================================
+   CURRENT SIGNAL
+   ========================================================= */
+
+.ai-lab-signal {
+    padding: 20px;
+}
+
+.signal-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 10px;
+}
+
+.signal-card {
+    min-height: 88px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    gap: 7px;
+
+    padding: 15px;
+
+    border: 1px solid var(--ai-border-soft);
+    border-radius: 11px;
+
+    background: var(--ai-panel-raised);
+
+    transition:
+        transform 0.18s ease,
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.signal-card:hover {
+    transform: translateY(-2px);
+
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ai-accent) 40%,
+            var(--ai-border)
+        );
+
+    box-shadow:
+        0 8px 22px var(--ai-accent-soft);
+}
+
+.signal-card span {
+    color: var(--text-less-prominent);
+
+    font-size: 9px;
+    font-weight: 800;
+
+    letter-spacing: 0.08em;
+}
+
+.signal-card strong {
+    color: var(--text-prominent);
+
+    font-size: 25px;
+    font-weight: 900;
+
+    letter-spacing: -0.03em;
+
+    transition:
+        color 0.18s ease,
+        text-shadow 0.18s ease;
+}
+
+.signal-card:hover strong {
+    color: var(--ai-accent-strong);
+}
+
+/* Confidence = MONEHUNT gold */
+.signal-confidence-card {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ai-accent) 35%,
+            var(--ai-border-soft)
+        );
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--ai-accent-soft),
+            var(--ai-panel-raised)
+        );
+}
+
+.signal-confidence-card strong {
+    color: var(--ai-accent-strong);
+
+    text-shadow:
+        0 0 18px var(--ai-gold-glow);
+}
+
+/* =========================================================
+   ENGINE + SIGNAL STATUS
+   ========================================================= */
+
+.ai-lab-grid {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        minmax(0, 1fr);
+
+    gap: 18px;
+}
+
+.ai-lab-panel {
+    padding: 20px;
+}
+
+.engine-row,
+.status-row {
+    min-height: 43px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    border-bottom: 1px solid var(--ai-border-soft);
+}
+
+.engine-row:last-child,
+.status-row:last-child {
+    border-bottom: none;
+}
+
+.engine-row span,
+.status-row span {
+    color: var(--text-less-prominent);
+
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.engine-row strong,
+.status-row strong {
+    color: var(--text-prominent);
+
+    font-size: 12px;
+    font-weight: 800;
+
+    text-align: right;
+}
+
+.status-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 70px;
+
+    margin-bottom: 10px;
+
+    border: 1px solid var(--ai-border-soft);
+    border-radius: 11px;
+
+    background: var(--ai-panel-raised);
+}
+
+.status-ready,
+.status-waiting {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 8px;
+
+    font-size: 13px;
+    font-weight: 900;
+
+    letter-spacing: 0.08em;
+}
+
+.status-ready {
+    color: var(--ai-success);
+}
+
+.status-waiting {
+    color: var(--ai-warning);
+}
+
+.status-ready::before,
+.status-waiting::before {
+    content: '';
+
+    width: 7px;
+    height: 7px;
+
+    flex: 0 0 7px;
+
+    border-radius: 50%;
+}
+
+.status-ready::before {
+    background: var(--ai-success);
+
+    box-shadow:
+        0 0 0 4px var(--ai-success-soft);
+}
+
+.status-waiting::before {
+    background: var(--ai-warning);
+
+    box-shadow:
+        0 0 0 4px var(--ai-warning-soft);
+}
+
+/* =========================================================
+   PERFORMANCE
+   ========================================================= */
+
+.ai-lab-performance {
+    padding: 20px;
+
+    overflow: hidden;
+}
+
+.performance-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 10px;
+}
+
+.performance-grid > div {
+    min-height: 82px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    gap: 6px;
+
+    padding: 14px;
+
+    border: 1px solid var(--ai-border-soft);
+    border-radius: 11px;
+
+    background: var(--ai-panel-raised);
+}
+
+.performance-grid span {
+    color: var(--text-less-prominent);
+
+    font-size: 9px;
+    font-weight: 800;
+
+    letter-spacing: 0.08em;
+}
+
+.performance-grid strong {
+    color: var(--text-prominent);
+
+    font-size: 24px;
+    font-weight: 900;
+
+    letter-spacing: -0.03em;
+}
+
+.performance-grid > div:last-child strong {
+    color: var(--ai-success);
+}
+
+/* =========================================================
+   ADAPTIVE LEARNING
+   ========================================================= */
+
+.ai-lab-learning {
+    padding: 20px;
+}
+
+.learning-empty {
+    min-height: 70px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px dashed var(--ai-border);
+
+    border-radius: 11px;
+
+    color: var(--text-less-prominent);
+
+    font-size: 11px;
+}
+
+.learning-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 7px;
+}
+
+.learning-row {
+    display: grid;
+
+    grid-template-columns:
+        1.4fr
+        1.5fr
+        1fr
+        0.7fr;
+
+    align-items: center;
+
+    gap: 12px;
+
+    min-height: 42px;
+
+    padding: 7px 11px;
+
+    border: 1px solid var(--ai-border-soft);
+    border-radius: 9px;
+
+    background: var(--ai-panel-raised);
+
+    color: var(--text-less-prominent);
+
+    font-size: 10px;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease;
+}
+
+.learning-row:hover {
+    background: var(--ai-accent-soft);
+
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ai-accent) 25%,
+            var(--ai-border-soft)
+        );
+}
+
+.learning-row strong {
+    color: var(--ai-accent-strong);
+
+    font-size: 12px;
+
+    text-align: right;
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 1100px) {
+    .ai-lab-market {
+        grid-template-columns:
+            1fr
+            1fr;
+    }
+
+    .ai-lab-tick-info {
+        grid-column: 1 / -1;
+    }
+
+    .volatility-selected {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* =========================================================
+   SMALL TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+    .ai-lab-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .signal-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .performance-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+    .ai-lab-page {
+        padding: 15px;
+
+        gap: 14px;
+    }
+
+    .ai-lab-header {
+        align-items: flex-start;
+    }
+
+    .ai-lab-title {
+        font-size: 23px;
+    }
+
+    .ai-lab-subtitle {
+        font-size: 9px;
+    }
+
+    .ai-lab-market {
+        grid-template-columns: 1fr;
+
+        padding: 16px;
+    }
+
+    .ai-lab-tick-info {
+        grid-column: auto;
+
+        grid-template-columns: 1fr;
+    }
+
+    .signal-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .volatility-selected {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .volatility-control {
+        align-items: stretch;
+
+        flex-direction: column;
+    }
+
+    .volatility-control button {
+        width: 100%;
+    }
+
+    .volatility-summary {
+        justify-content: flex-start;
+    }
+}
+
+/* =========================================================
+   SMALL PHONE
+   ========================================================= */
+
+@media (max-width: 480px) {
+    .ai-lab-header {
+        flex-direction: column;
+    }
+
+    .ai-lab-live {
+        align-self: flex-start;
+    }
+
+    .signal-grid,
+    .performance-grid,
+    .volatility-selected {
+        grid-template-columns: 1fr;
+    }
+
+    .learning-row {
+        grid-template-columns:
+            1fr
+            1fr;
+
+        gap: 7px;
+    }
+
+    .learning-row strong {
+        text-align: left;
+    }
+}
+
+/* =========================================================
+   DARK MODE
+   MONEHUNT GOLD / BLACK TERMINAL
+   ========================================================= */
+
+@media (prefers-color-scheme: dark) {
+    .ai-lab-page {
+        --ai-accent: #10bd76;
+        --ai-accent-strong: #ffd95c;
+        --ai-accent-soft: rgba(224, 180, 59, 0.13);
+
+        --ai-gold: #e8bd45;
+        --ai-gold-glow: rgba(224, 180, 59, 0.30);
+
+        --ai-intelligence: #8b92ff;
+        --ai-intelligence-soft: rgba(139, 146, 255, 0.11);
+
+        --ai-success: #39d98a;
+        --ai-success-soft: rgba(57, 217, 138, 0.12);
+
+        --ai-warning: #f3b83f;
+        --ai-warning-soft: rgba(243, 184, 63, 0.12);
+
+        --ai-danger: #ff6464;
+        --ai-danger-soft: rgba(255, 100, 100, 0.12);
+
+        background:
+            radial-gradient(
+                circle at 50% -12%,
+                rgba(224, 180, 59, 0.13),
+                transparent 35%
+            ),
+            radial-gradient(
+                circle at 100% 25%,
+                rgba(139, 146, 255, 0.055),
+                transparent 30%
+            ),
+            var(--general-main-1);
+
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    }
+
+    .ai-lab-market,
+    .ai-lab-panel,
+    .ai-lab-signal,
+    .ai-lab-performance,
+    .ai-lab-learning,
+    .ai-lab-volatility {
+        box-shadow:
+            0 14px 45px rgba(0, 0, 0, 0.20),
+            0 0 35px rgba(224, 180, 59, 0.025);
+    }
+
+    .ai-lab-market:hover,
+    .ai-lab-panel:hover,
+    .ai-lab-signal:hover,
+    .ai-lab-performance:hover,
+    .ai-lab-learning:hover,
+    .ai-lab-volatility:hover {
+        box-shadow:
+            0 16px 48px rgba(0, 0, 0, 0.24),
+            0 0 28px rgba(224, 180, 59, 0.045);
+    }
+
+    .market-select-button {
+        background:
+            rgba(224, 180, 59, 0.10);
+    }
+
+    .market-select-button:hover {
+        background:
+            linear-gradient(
+                135deg,
+                var(--ai-accent),
+                var(--ai-accent-strong)
+            );
+
+        color: #111;
+    }
+
+    .scanner-recommended {
+        background:
+            rgba(224, 180, 59, 0.10);
+
+        border-color:
+            rgba(224, 180, 59, 0.22);
+    }
+
+    .signal-confidence-card {
+        background:
+            linear-gradient(
+                135deg,
+                rgba(224, 180, 59, 0.12),
+                var(--ai-panel-raised)
+            );
+    }
+}
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .ai-lab-page *,
+    .ai-lab-page *::before,
+    .ai-lab-page *::after {
+        scroll-behavior: auto !important;
+
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* =========================================================
+   MONEHUNT AI — BRAND ILLUSION LAYER
+   Emerald Intelligence / Growth / Command Center
+   ========================================================= */
+
+.ai-lab-page {
+
+    --monehunt-green: #08a86b;
+    --monehunt-green-bright: #19d982;
+    --monehunt-green-light: #4ff3a4;
+    --monehunt-green-deep: #056b49;
+
+    --monehunt-glow:
+        rgba(8, 168, 107, 0.28);
+
+    --monehunt-glow-strong:
+        rgba(25, 217, 130, 0.42);
+
+    --monehunt-grid:
+        rgba(8, 168, 107, 0.055);
+
+    position: relative;
+
+    /*
+       IMPORTANT:
+       Allow the complete AI LAB to scroll vertically
+       while preventing horizontal overflow.
+    */
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    /*
+       Keep the page tall enough for all AI LAB sections.
+    */
+    min-height: 100vh;
+
+    background:
+        radial-gradient(
+            circle at 50% -15%,
+            rgba(8, 168, 107, 0.16),
+            transparent 38%
+        ),
+        radial-gradient(
+            circle at 0% 50%,
+            rgba(25, 217, 130, 0.055),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 100% 50%,
+            rgba(8, 168, 107, 0.055),
+            transparent 30%
+        ),
+        var(--general-main-1);
+
+}
+
+/* =========================================================
+   DIGITAL GRID
+   ========================================================= */
+
+.ai-lab-page::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    z-index: 0;
+
+    background-image:
+        linear-gradient(
+            rgba(8, 168, 107, 0.035) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(8, 168, 107, 0.035) 1px,
+            transparent 1px
+        );
+
+    background-size:
+        42px 42px;
+
+    mask-image:
+        linear-gradient(
+            to bottom,
+            black,
+            transparent 92%
+        );
+
+    opacity: 0.7;
+
+}
+
+/* =========================================================
+   SCANNING LIGHT
+   ========================================================= */
+
+.ai-lab-page::after {
+
+    content: "";
+
+    position: absolute;
+
+    top: -20%;
+
+    left: -20%;
+
+    width: 140%;
+
+    height: 1px;
+
+    pointer-events: none;
+
+    z-index: 0;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(25, 217, 130, 0.0),
+            rgba(25, 217, 130, 0.30),
+            rgba(25, 217, 130, 0.0),
+            transparent
+        );
+
+    box-shadow:
+        0 0 30px rgba(25, 217, 130, 0.20);
+
+    animation:
+        monehuntScan 10s linear infinite;
+
+}
+
+/* =========================================================
+   KEEP ACTUAL CONTENT ABOVE THE ILLUSION
+   ========================================================= */
+
+.ai-lab-page > * {
+
+    position: relative;
+
+    z-index: 1;
+
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.ai-lab-header {
+
+    border-bottom:
+        1px solid rgba(8, 168, 107, 0.16);
+
+    padding-bottom: 18px;
+
+}
+
+.ai-lab-title {
+
+    background:
+        linear-gradient(
+            90deg,
+            var(--monehunt-green),
+            var(--monehunt-green-bright),
+            var(--monehunt-green-light)
+        );
+
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    -webkit-text-fill-color: transparent;
+
+    text-shadow:
+        0 0 28px rgba(25, 217, 130, 0.16);
+
+    letter-spacing: 0.08em;
+
+}
+
+.ai-lab-subtitle {
+
+    color:
+        color-mix(
+            in srgb,
+            var(--text-general) 72%,
+            var(--monehunt-green) 28%
+        );
+
+    letter-spacing: 0.12em;
+
+}
+
+/* =========================================================
+   LIVE INDICATOR
+   ========================================================= */
+
+.ai-lab-live {
+
+    border:
+        1px solid rgba(25, 217, 130, 0.24);
+
+    background:
+        rgba(8, 168, 107, 0.055);
+
+    box-shadow:
+        0 0 20px rgba(8, 168, 107, 0.08);
+
+}
+
+.ai-lab-live-dot {
+
+    background:
+        var(--monehunt-green-bright);
+
+    box-shadow:
+        0 0 8px var(--monehunt-green-bright),
+        0 0 18px rgba(25, 217, 130, 0.55);
+
+    animation:
+        monehuntPulse 1.8s ease-in-out infinite;
+
+}
+
+/* =========================================================
+   ALL COMMAND PANELS
+   ========================================================= */
+
+.ai-lab-market,
+.ai-lab-panel,
+.ai-lab-signal,
+.ai-lab-performance,
+.ai-lab-learning,
+.ai-lab-volatility {
+
+    border-color:
+        rgba(8, 168, 107, 0.20);
+
+    box-shadow:
+        0 10px 35px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.025);
+
+    transition:
+        border-color 220ms ease,
+        box-shadow 220ms ease,
+        transform 220ms ease;
+
+}
+
+.ai-lab-market:hover,
+.ai-lab-panel:hover,
+.ai-lab-signal:hover,
+.ai-lab-performance:hover,
+.ai-lab-learning:hover,
+.ai-lab-volatility:hover {
+
+    border-color:
+        rgba(25, 217, 130, 0.38);
+
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.12),
+        0 0 25px rgba(8, 168, 107, 0.055);
+
+}
+
+/* =========================================================
+   SECTION HEADINGS
+   ========================================================= */
+
+.section-heading {
+
+    color:
+        var(--monehunt-green-bright);
+
+    letter-spacing:
+        0.12em;
+
+}
+
+.section-heading::before {
+
+    background:
+        linear-gradient(
+            to bottom,
+            var(--monehunt-green-bright),
+            var(--monehunt-green)
+        );
+
+    box-shadow:
+        0 0 12px rgba(25, 217, 130, 0.40);
+
+}
+
+/* =========================================================
+   MARKET COMMAND DECK
+   ========================================================= */
+
+.ai-lab-market {
+
+    background:
+        linear-gradient(
+            135deg,
+            color-mix(
+                in srgb,
+                var(--ai-panel) 94%,
+                var(--monehunt-green) 6%
+            ),
+            var(--ai-panel)
+        );
+
+}
+
+.market-command-symbol {
+
+    color:
+        var(--monehunt-green-bright);
+
+    text-shadow:
+        0 0 18px rgba(25, 217, 130, 0.22);
+
+}
+
+.market-command-status {
+
+    color:
+        var(--monehunt-green-bright);
+
+}
+
+.market-selector select {
+
+    border-color:
+        rgba(8, 168, 107, 0.28);
+
+}
+
+.market-selector select:focus {
+
+    border-color:
+        var(--monehunt-green-bright);
+
+    box-shadow:
+        0 0 0 3px rgba(25, 217, 130, 0.10),
+        0 0 18px rgba(25, 217, 130, 0.10);
+
+}
+
+/* =========================================================
+   VOLATILITY SCANNER
+   ========================================================= */
+
+.ai-lab-volatility {
+
+    background:
+        linear-gradient(
+            135deg,
+            color-mix(
+                in srgb,
+                var(--ai-panel) 96%,
+                var(--monehunt-green) 4%
+            ),
+            var(--ai-panel)
+        );
+
+}
+
+.volatility-control button {
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--monehunt-green-deep),
+            var(--monehunt-green),
+            var(--monehunt-green-bright)
+        );
+
+    border:
+        1px solid rgba(25, 217, 130, 0.42);
+
+    box-shadow:
+        0 5px 20px rgba(8, 168, 107, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+}
+
+.volatility-control button:hover {
+
+    box-shadow:
+        0 7px 28px rgba(8, 168, 107, 0.30),
+        0 0 20px rgba(25, 217, 130, 0.12);
+
+    transform:
+        translateY(-1px);
+
+}
+
+.volatility-control button:disabled {
+
+    animation:
+        monehuntScanner 1.4s ease-in-out infinite;
+
+}
+
+/* =========================================================
+   AI CORE — MAIN INTELLIGENCE NODE
+   ========================================================= */
+
+.ai-lab-signal {
+
+    border-color:
+        rgba(25, 217, 130, 0.32);
+
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(25, 217, 130, 0.085),
+            transparent 45%
+        ),
+        var(--ai-panel);
+
+    box-shadow:
+        0 14px 45px rgba(0, 0, 0, 0.10),
+        0 0 35px rgba(8, 168, 107, 0.055),
+        inset 0 1px 0 rgba(25, 217, 130, 0.08);
+
+}
+
+.ai-lab-signal::before {
+
+    content: "";
+
+    position: absolute;
+
+    top: 14px;
+
+    right: 18px;
+
+    width: 8px;
+
+    height: 8px;
+
+    border-radius: 50%;
+
+    background:
+        var(--monehunt-green-bright);
+
+    box-shadow:
+        0 0 8px var(--monehunt-green-bright),
+        0 0 22px rgba(25, 217, 130, 0.50);
+
+    animation:
+        monehuntPulse 2s ease-in-out infinite;
+
+}
+
+.signal-card {
+
+    border-color:
+        rgba(8, 168, 107, 0.18);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(8, 168, 107, 0.035),
+            transparent
+        );
+
+}
+
+.signal-card strong {
+
+    color:
+        var(--monehunt-green-bright);
+
+    text-shadow:
+        0 0 18px rgba(25, 217, 130, 0.15);
+
+}
+
+.signal-confidence-card {
+
+    border-color:
+        rgba(25, 217, 130, 0.34);
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(25, 217, 130, 0.10),
+            transparent 70%
+        );
+
+    box-shadow:
+        inset 0 0 25px rgba(25, 217, 130, 0.045),
+        0 0 25px rgba(25, 217, 130, 0.045);
+
+}
+
+/* =========================================================
+   ENGINE INTELLIGENCE
+   ========================================================= */
+
+.engine-row {
+
+    border-bottom-color:
+        rgba(8, 168, 107, 0.10);
+
+}
+
+.engine-row strong {
+
+    color:
+        var(--monehunt-green-bright);
+
+}
+
+.engine-row::before {
+
+    content: "";
+
+    width: 5px;
+
+    height: 5px;
+
+    flex: 0 0 5px;
+
+    border-radius: 50%;
+
+    background:
+        var(--monehunt-green);
+
+    box-shadow:
+        0 0 7px rgba(25, 217, 130, 0.40);
+
+}
+
+/* =========================================================
+   READY STATE
+   ========================================================= */
+
+.status-ready {
+
+    color:
+        var(--monehunt-green-bright) !important;
+
+    border-color:
+        rgba(25, 217, 130, 0.35) !important;
+
+    background:
+        rgba(25, 217, 130, 0.08) !important;
+
+    box-shadow:
+        0 0 20px rgba(25, 217, 130, 0.10);
+
+}
+
+.status-ready::before {
+
+    box-shadow:
+        0 0 8px var(--monehunt-green-bright),
+        0 0 18px rgba(25, 217, 130, 0.45);
+
+}
+
+/* =========================================================
+   PERFORMANCE
+   ========================================================= */
+
+.performance-grid > div {
+
+    border-color:
+        rgba(8, 168, 107, 0.16);
+
+}
+
+.performance-grid strong {
+
+    color:
+        var(--monehunt-green-bright);
+
+    text-shadow:
+        0 0 16px rgba(25, 217, 130, 0.12);
+
+}
+
+/* =========================================================
+   LEARNING SYSTEM
+   ========================================================= */
+
+.learning-row {
+
+    border-color:
+        rgba(8, 168, 107, 0.10);
+
+}
+
+.learning-row:hover {
+
+    border-color:
+        rgba(25, 217, 130, 0.25);
+
+    background:
+        rgba(8, 168, 107, 0.035);
+
+}
+
+.learning-row strong {
+
+    color:
+        var(--monehunt-green-bright);
+
+}
+
+/* =========================================================
+   SELECTED MARKET
+   ========================================================= */
+
+.volatility-ranking-row.selected-market {
+
+    border-color:
+        rgba(25, 217, 130, 0.42);
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(8, 168, 107, 0.10),
+            rgba(25, 217, 130, 0.025)
+        );
+
+    box-shadow:
+        inset 3px 0 0 var(--monehunt-green-bright),
+        0 0 20px rgba(8, 168, 107, 0.06);
+
+}
+
+.market-select-button.selected {
+
+    border-color:
+        rgba(25, 217, 130, 0.45);
+
+    color:
+        var(--monehunt-green-bright);
+
+    background:
+        rgba(25, 217, 130, 0.09);
+
+}
+
+/* =========================================================
+   AI PICK
+   ========================================================= */
+
+.scanner-recommended {
+
+    color:
+        var(--monehunt-green-bright);
+
+    border-color:
+        rgba(25, 217, 130, 0.30);
+
+    background:
+        rgba(25, 217, 130, 0.07);
+
+    box-shadow:
+        0 0 14px rgba(25, 217, 130, 0.08);
+
+    animation:
+        monehuntPick 2.4s ease-in-out infinite;
+
+}
+
+/* =========================================================
+   MONEHUNT AI ANIMATIONS
+   ========================================================= */
+
+@keyframes monehuntPulse {
+
+    0%,
+    100% {
+
+        opacity: 0.65;
+
+        transform:
+            scale(0.90);
+
+    }
+
+    50% {
+
+        opacity: 1;
+
+        transform:
+            scale(1.08);
+
+    }
+
+}
+
+@keyframes monehuntScan {
+
+    0% {
+
+        transform:
+            translateY(0);
+
+        opacity: 0;
+
+    }
+
+    10% {
+
+        opacity: 1;
+
+    }
+
+    90% {
+
+        opacity: 1;
+
+    }
+
+    100% {
+
+        transform:
+            translateY(110vh);
+
+        opacity: 0;
+
+    }
+
+}
+
+@keyframes monehuntScanner {
+
+    0%,
+    100% {
+
+        box-shadow:
+            0 5px 20px rgba(8, 168, 107, 0.16);
+
+    }
+
+    50% {
+
+        box-shadow:
+            0 5px 28px rgba(25, 217, 130, 0.38),
+            0 0 25px rgba(25, 217, 130, 0.12);
+
+    }
+
+}
+
+@keyframes monehuntPick {
+
+    0%,
+    100% {
+
+        opacity: 0.72;
+
+    }
+
+    50% {
+
+        opacity: 1;
+
+    }
+
+}
+
+/* =========================================================
+   DARK MODE BRAND BOOST
+   ========================================================= */
+
+@media (prefers-color-scheme: dark) {
+
+    .ai-lab-page {
+
+        background:
+            radial-gradient(
+                circle at 50% -15%,
+                rgba(8, 168, 107, 0.18),
+                transparent 38%
+            ),
+            radial-gradient(
+                circle at 0% 40%,
+                rgba(25, 217, 130, 0.045),
+                transparent 30%
+            ),
+            #07120e;
+
+    }
+
+    .ai-lab-market,
+    .ai-lab-panel,
+    .ai-lab-signal,
+    .ai-lab-performance,
+    .ai-lab-learning,
+    .ai-lab-volatility {
+
+        box-shadow:
+            0 14px 45px rgba(0, 0, 0, 0.30),
+            inset 0 1px 0 rgba(25, 217, 130, 0.035);
+
+    }
+
+}
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .ai-lab-page::after,
+    .ai-lab-live-dot,
+    .ai-lab-signal::before,
+    .scanner-recommended,
+    .volatility-control button:disabled {
+
+        animation:
+            none !important;
+
+    }
+
+}
+
+/* =========================================================
+   FINAL SCROLL SAFETY
+   MONEHUNT AI LAB
+   ========================================================= */
+
+/*
+   The AI LAB contains more content than a single viewport.
+   These rules make sure the page can always be reached
+   from top to bottom without clipping the lower sections.
+*/
+
+.ai-lab-page {
+    min-height: 100vh;
+    height: auto;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    box-sizing: border-box;
+
+    overscroll-behavior-y: auto;
+
+    -webkit-overflow-scrolling: touch;
+}
+
+.ai-lab-page::before,
+.ai-lab-page::after {
+    pointer-events: none;
+}
+
+@media (max-width: 700px) {
+
+    .ai-lab-page {
+        min-height: 100vh;
+        height: auto;
+
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+}
+
