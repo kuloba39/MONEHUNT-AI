@@ -1,4 +1,8 @@
 ﻿import { useEffect, useRef, useState } from 'react';
+import { DBOT_TABS } from '@/constants/bot-contents';
+import { useStore } from '@/hooks/useStore';
+import { load, save_types } from '@/external/bot-skeleton';
+import { FREE_BOTS } from '@/constants/free-bots';
 import './ai-lab.scss';
 import { useAnalysisTicks } from '../analysis/use-analysis-ticks';
 import {
@@ -21,6 +25,11 @@ type AiLabMarket = {
 };
 
 const AiLab = () => {
+    const { dashboard, load_modal, blockly_store } = useStore();
+
+    const { setActiveTab } = dashboard;
+    const { setSelectedStrategyId } = load_modal;
+    const { setLoading } = blockly_store;
     const [markets, setMarkets] =
     useState<AiLabMarket[]>([]);
 
@@ -278,10 +287,219 @@ const [
 ] = useState<any>(null);
 
 
-    const [
+       const [
     currentSignal,
     setCurrentSignal
 ] = useState<any>(null);
+
+
+    const applySignalToBot = async () => {
+        const signal = currentSignal;
+
+        if (!signal?.ready) {
+            console.warn('AI LAB: No READY signal available');
+            return;
+        }
+
+        const bot = FREE_BOTS.find(
+            item => item.id === 'matches-signal'
+        );
+
+        if (!bot?.xml) {
+            console.error(
+                'AI LAB: MATCHES SIGNAL BOT XML NOT FOUND'
+            );
+            return;
+        }
+
+        const entryDigit = Number(signal.entryDigit);
+        const barrierDigit = Number(signal.barrierDigit);
+
+        if (
+            !Number.isInteger(entryDigit) ||
+            entryDigit < 0 ||
+            entryDigit > 9 ||
+            !Number.isInteger(barrierDigit) ||
+            barrierDigit < 0 ||
+            barrierDigit > 9
+        ) {
+            console.error(
+                'AI LAB: INVALID MATCHES SIGNAL',
+                signal
+            );
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const workspace =
+                window.Blockly?.derivWorkspace;
+
+            if (!workspace) {
+                throw new Error(
+                    'Blockly workspace is not ready'
+                );
+            }
+
+            console.log(
+                'AI LAB → MATCHES SIGNAL BOT',
+                {
+                    market,
+                    entryDigit,
+                    barrierDigit
+                }
+            );
+
+            await load({
+                block_string: bot.xml,
+                file_name: bot.name,
+                strategy_id: bot.id,
+                from: save_types.LOCAL,
+                workspace,
+                drop_event: null,
+                showIncompatibleStrategyDialog: null,
+                show_snackbar: true,
+            });
+
+            const blocks =
+    workspace.getAllBlocks() as any[];
+
+            const marketBlock =
+                blocks.find(
+                    block =>
+                        block.type ===
+                        'trade_definition_market'
+                );
+
+            if (marketBlock) {
+                const symbolField =
+                    marketBlock.getField(
+                        'SYMBOL_LIST'
+                    );
+
+                if (symbolField) {
+                    symbolField.setValue(market);
+                }
+            }
+
+            const predictionBlock =
+                blocks.find(block => {
+                    if (
+                        block.type !==
+                        'variables_set'
+                    ) {
+                        return false;
+                    }
+
+                    const variableField =
+                        block.getField('VAR');
+
+                    return (
+                        variableField?.getText() ===
+                        'Prediction'
+                    );
+                });
+
+            if (predictionBlock) {
+                const numberBlock =
+                    predictionBlock
+                        .getInputTargetBlock(
+                            'VALUE'
+                        );
+
+                numberBlock
+                    ?.getField('NUM')
+                    ?.setValue(
+                        String(barrierDigit)
+                    );
+            }
+
+            const entryBlock =
+                blocks.find(block => {
+                    if (
+                        block.type !==
+                        'variables_set'
+                    ) {
+                        return false;
+                    }
+
+                    const variableField =
+                        block.getField('VAR');
+
+                    return (
+                        variableField?.getText() ===
+                        'entry point'
+                    );
+                });
+
+            if (entryBlock) {
+                const numberBlock =
+                    entryBlock
+                        .getInputTargetBlock(
+                            'VALUE'
+                        );
+
+                numberBlock
+                    ?.getField('NUM')
+                    ?.setValue(
+                        String(entryDigit)
+                    );
+            }
+
+            const tradingModeBlock =
+                blocks.find(block => {
+                    if (
+                        block.type !==
+                        'variables_set'
+                    ) {
+                        return false;
+                    }
+
+                    const variableField =
+                        block.getField('VAR');
+
+                    return (
+                        variableField?.getText() ===
+                        'trading mode'
+                    );
+                });
+
+            if (tradingModeBlock) {
+                const numberBlock =
+                    tradingModeBlock
+                        .getInputTargetBlock(
+                            'VALUE'
+                        );
+
+                numberBlock
+                    ?.getField('NUM')
+                    ?.setValue('0');
+            }
+
+            workspace.render();
+
+            setSelectedStrategyId(
+                bot.id
+            );
+
+            setActiveTab(
+                DBOT_TABS.BOT_BUILDER
+            );
+
+            console.log(
+                'AI LAB: SIGNAL APPLIED SUCCESSFULLY'
+            );
+
+        } catch (error) {
+            console.error(
+                'AI LAB: APPLY TO BOT ERROR',
+                error
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
 
 
     const [
@@ -979,7 +1197,7 @@ useEffect(() => {
 </div>
 
 
-                <div className="signal-grid">
+                                <div className="signal-grid">
 
                     <div className="signal-card">
 
@@ -1037,6 +1255,21 @@ useEffect(() => {
                     </div>
 
                 </div>
+
+
+                <div className="signal-action">
+
+                    <button
+                        type="button"
+                        onClick={applySignalToBot}
+                        disabled={!signal?.ready}
+                        className="apply-signal-button"
+                    >
+                        APPLY TO BOT
+                    </button>
+
+                </div>
+
 
             </section>
 
