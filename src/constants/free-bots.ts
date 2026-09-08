@@ -4,6 +4,7 @@ import manager5xml from './MANAGER 5.xml';
 import manager1xml from './MANAGER 1.xml';
 import lastDefenderxml from './last-defender.xml';
 import matchesSignalxml from './Matches_Signal_Bot.xml';
+import over2Signalxml from './Over2_Signal_Bot.xml';
 import overUnderSignalxml from './OverUnder_Signal_Bot.xml';
 import over6RecoveryOver3xml from './Over6_Recovery_Over3.xml';
 
@@ -81,6 +82,18 @@ export const FREE_BOTS = [
         color: '#00BCD4',
         tag: 'SIGNAL',
         xml: matchesSignalxml,
+        timestamp: Date.now(),
+        save_type: 'local',
+        free: true,
+    },
+    {
+        id: 'over2-signal',
+        name: '🚀 OVER 2 SIGNAL BOT',
+        description: 'Over 2 signal strategy with least-digit confirmation',
+        icon: '🚀',
+        color: '#00C853',
+        tag: 'SIGNAL',
+        xml: over2Signalxml,
         timestamp: Date.now(),
         save_type: 'local',
         free: true,

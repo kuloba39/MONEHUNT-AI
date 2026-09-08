@@ -8,6 +8,9 @@ import { useAnalysisTicks } from '../analysis/use-analysis-ticks';
 import {
     MatchesUIAdapter
 } from '@/ai-lab/matches/matches-ui-adapter';
+import {
+    Over2UIAdapter
+} from '@/ai-lab/over2/over2-ui-adapter';
 
 import {
     VolatilityScannerController,
@@ -274,6 +277,24 @@ const AiLab = () => {
 
     const adapterRef =
         useRef<MatchesUIAdapter | null>(null);
+const over2AdapterRef =
+    useRef<Over2UIAdapter | null>(null);
+
+const over2InitializedRef =
+    useRef(false);
+
+const over2LastProcessedTickRef =
+    useRef<string | null>(null);
+
+const [
+    over2State,
+    setOver2State
+] = useState<any>(null);
+
+const [
+    over2Signal,
+    setOver2Signal
+] = useState<any>(null);
 
 
     const initializedRef =
@@ -500,6 +521,345 @@ const [
             setLoading(false);
         }
     };
+const applyOver2SignalToBot = async () => {
+
+    const signal = over2Signal;
+
+    if (
+        !signal?.ready ||
+        signal.leastDigit === null
+    ) {
+        console.warn(
+            'AI LAB: No READY OVER 2 signal available'
+        );
+        return;
+    }
+
+
+    const bot = FREE_BOTS.find(
+        item => item.id === 'over2-signal'
+    );
+
+
+    if (!bot?.xml) {
+
+        console.error(
+            'AI LAB: OVER 2 SIGNAL BOT XML NOT FOUND'
+        );
+
+        return;
+    }
+
+
+    const leastDigit =
+        Number(signal.leastDigit);
+
+
+    if (
+        !Number.isInteger(leastDigit) ||
+        leastDigit < 0 ||
+        leastDigit > 2
+    ) {
+
+        console.error(
+            'AI LAB: INVALID OVER 2 LEAST DIGIT',
+            signal
+        );
+
+        return;
+    }
+
+
+    setLoading(true);
+
+
+    try {
+
+        const workspace =
+            window.Blockly?.derivWorkspace;
+
+
+        if (!workspace) {
+
+            throw new Error(
+                'Blockly workspace is not ready'
+            );
+
+        }
+
+
+        console.log(
+            'AI LAB → OVER 2 SIGNAL BOT',
+            {
+                market,
+                leastDigit,
+                prediction: 2
+            }
+        );
+
+
+        await load({
+
+            block_string: bot.xml,
+
+            file_name: bot.name,
+
+            strategy_id: bot.id,
+
+            from: save_types.LOCAL,
+
+            workspace,
+
+            drop_event: null,
+
+            showIncompatibleStrategyDialog: null,
+
+            show_snackbar: true,
+
+        });
+
+
+        const blocks =
+            workspace.getAllBlocks() as any[];
+
+
+        /*
+         * Apply selected market.
+         */
+
+        const marketBlock =
+            blocks.find(
+                block =>
+                    block.type ===
+                    'trade_definition_market'
+            );
+
+
+        if (marketBlock) {
+
+            const symbolField =
+                marketBlock.getField(
+                    'SYMBOL_LIST'
+                );
+
+
+            if (symbolField) {
+
+                symbolField.setValue(
+                    market
+                );
+
+            }
+
+        }
+
+
+        /*
+         * Apply AI LAB leastDigit.
+         *
+         * This is the ONLY signal value
+         * passed from AI LAB into the
+         * OVER 2 bot.
+         */
+
+        const leastDigitBlock =
+            blocks.find(block => {
+
+                if (
+                    block.type !==
+                    'variables_set'
+                ) {
+                    return false;
+                }
+
+
+                const variableField =
+                    block.getField('VAR');
+
+
+                return (
+                    variableField?.getText() ===
+                    'leastDigit'
+                );
+
+            });
+
+
+        if (leastDigitBlock) {
+
+            const numberBlock =
+                leastDigitBlock
+                    .getInputTargetBlock(
+                        'VALUE'
+                    );
+
+
+            numberBlock
+                ?.getField('NUM')
+                ?.setValue(
+                    String(leastDigit)
+                );
+
+        } else {
+
+            console.warn(
+                'AI LAB: leastDigit variable block not found'
+            );
+
+        }
+
+
+        /*
+         * Prediction is permanently OVER 2.
+         *
+         * Do NOT take this from MATCHES.
+         */
+
+        const predictionBlock =
+            blocks.find(
+                block =>
+                    block.id ===
+                    'o2_prediction'
+            );
+
+
+        if (predictionBlock) {
+
+    predictionBlock
+        .getField('NUM')
+        ?.setValue('2');
+
+}
+
+/*
+ * Always start the OVER 2 bot in
+         * WAITING mode.
+         *
+         * 0 = waiting for leastDigit
+         */
+
+        const tradingModeBlock =
+            blocks.find(block => {
+
+                if (
+                    block.type !==
+                    'variables_set'
+                ) {
+                    return false;
+                }
+
+
+                const variableField =
+                    block.getField('VAR');
+
+
+                return (
+                    variableField?.getText() ===
+                    'trading mode'
+                );
+
+            });
+
+
+        if (tradingModeBlock) {
+
+            const numberBlock =
+                tradingModeBlock
+                    .getInputTargetBlock(
+                        'VALUE'
+                    );
+
+
+            numberBlock
+                ?.getField('NUM')
+                ?.setValue('0');
+
+        }
+
+
+        /*
+         * Make absolutely sure the bot is
+         * NOT waiting on an old confirmation.
+         *
+         * 0 = not armed
+         */
+
+        const armedBlock =
+            blocks.find(block => {
+
+                if (
+                    block.type !==
+                    'variables_set'
+                ) {
+                    return false;
+                }
+
+
+                const variableField =
+                    block.getField('VAR');
+
+
+                return (
+                    variableField?.getText() ===
+                    'entry armed'
+                );
+
+            });
+
+
+        if (armedBlock) {
+
+            const numberBlock =
+                armedBlock
+                    .getInputTargetBlock(
+                        'VALUE'
+                    );
+
+
+            numberBlock
+                ?.getField('NUM')
+                ?.setValue('0');
+
+        }
+
+
+        workspace.render();
+
+
+        setSelectedStrategyId(
+            bot.id
+        );
+
+
+        setActiveTab(
+            DBOT_TABS.BOT_BUILDER
+        );
+
+
+        console.log(
+            'AI LAB: OVER 2 SIGNAL APPLIED SUCCESSFULLY',
+            {
+                market,
+                leastDigit,
+                prediction: 2
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            'AI LAB: OVER 2 APPLY TO BOT ERROR',
+            error
+        );
+
+    } finally {
+
+        setLoading(false);
+
+    }
+
+};
 
 
     const [
@@ -626,29 +986,51 @@ const selectScannedMarket = (symbol: string) => {
 
     useEffect(() => {
 
-        adapterRef.current =
-    new MatchesUIAdapter();
+    /*
+     * MATCHES ENGINE
+     */
 
-initializedRef.current =
-    false;
+    adapterRef.current =
+        new MatchesUIAdapter();
 
-lastProcessedTickRef.current =
-    null;
+    initializedRef.current =
+        false;
 
-        setEngineState(null);
+    lastProcessedTickRef.current =
+        null;
 
-setCurrentSignal(null);
+    setEngineState(null);
+    setCurrentSignal(null);
 
-setStats({
-            total: 0,
-            wins: 0,
-            losses: 0,
-            winRate: 0
-        });
+    setStats({
+        total: 0,
+        wins: 0,
+        losses: 0,
+        winRate: 0
+    });
 
-        setLearningStats([]);
+    setLearningStats([]);
 
-    }, [market]);
+
+    /*
+     * OVER 2 ENGINE
+     *
+     * Completely independent from MATCHES.
+     */
+
+    over2AdapterRef.current =
+        new Over2UIAdapter();
+
+    over2InitializedRef.current =
+        false;
+
+    over2LastProcessedTickRef.current =
+        null;
+
+    setOver2State(null);
+    setOver2Signal(null);
+
+}, [market]);
 
 
     /*
@@ -817,6 +1199,106 @@ useEffect(() => {
         adapter.getLearningStats()
     );
 
+
+}, [ticks]);
+/*
+ * Feed the same live D Circles ticks
+ * into the independent OVER 2 engine.
+ *
+ * OVER 2 owns its own 1000-tick window.
+ */
+
+useEffect(() => {
+
+    const adapter =
+        over2AdapterRef.current;
+
+    if (
+        !adapter ||
+        ticks.length === 0
+    ) {
+        return;
+    }
+
+
+    /*
+     * Process historical ticks once.
+     */
+
+    if (!over2InitializedRef.current) {
+
+        adapter.processTicks(
+            ticks
+        );
+
+        over2InitializedRef.current =
+            true;
+
+        const lastTick =
+            ticks[ticks.length - 1];
+
+        over2LastProcessedTickRef.current =
+            [
+                lastTick.epoch,
+                lastTick.quote,
+                lastTick.digit
+            ].join('|');
+
+        const state =
+            adapter.getState();
+
+        setOver2State(state);
+        setOver2Signal(
+            state?.signal ?? null
+        );
+
+        return;
+    }
+
+
+    /*
+     * Process only the newest live tick.
+     */
+
+    const lastTick =
+        ticks[ticks.length - 1];
+
+    const tickKey =
+        [
+            lastTick.epoch,
+            lastTick.quote,
+            lastTick.digit
+        ].join('|');
+
+
+    if (
+        tickKey ===
+        over2LastProcessedTickRef.current
+    ) {
+        return;
+    }
+
+
+    const result =
+        adapter.processTick({
+            digit: lastTick.digit,
+            quote: lastTick.quote,
+            epoch: lastTick.epoch,
+            market: lastTick.market
+        });
+
+
+    over2LastProcessedTickRef.current =
+        tickKey;
+
+
+    setOver2State(
+        result
+    );
+
+    setOver2Signal(
+        result?.signal ?? null
+    );
 
 }, [ticks]);
 
@@ -1199,76 +1681,112 @@ useEffect(() => {
 
                                 <div className="signal-grid">
 
-                    <div className="signal-card">
+    {over2Signal?.ready ? (
 
-                        <span>
-                            ENTRY
-                        </span>
+        <>
+            <div className="signal-card">
+                <span>0</span>
+                <strong>
+                    {over2Signal.percentages?.[0] !== undefined
+                        ? `${over2Signal.percentages[0].toFixed(1)}%`
+                        : '--'}
+                </strong>
+            </div>
 
-                        <strong>
-                            {signal?.entryDigit ?? '--'}
-                        </strong>
+            <div className="signal-card">
+                <span>1</span>
+                <strong>
+                    {over2Signal.percentages?.[1] !== undefined
+                        ? `${over2Signal.percentages[1].toFixed(1)}%`
+                        : '--'}
+                </strong>
+            </div>
 
-                    </div>
+            <div className="signal-card">
+                <span>2</span>
+                <strong>
+                    {over2Signal.percentages?.[2] !== undefined
+                        ? `${over2Signal.percentages[2].toFixed(1)}%`
+                        : '--'}
+                </strong>
+            </div>
 
+            <div className="signal-card">
+                <span>LEAST DIGIT</span>
+                <strong>
+                    {over2Signal.leastDigit ?? '--'}
+                </strong>
+            </div>
+        </>
 
-                    <div className="signal-card">
+    ) : (
 
-                        <span>
-                            BARRIER
-                        </span>
+        <>
+            <div className="signal-card">
+                <span>ENTRY</span>
+                <strong>
+                    {signal?.entryDigit ?? '--'}
+                </strong>
+            </div>
 
-                        <strong>
-                            {signal?.barrierDigit ?? '--'}
-                        </strong>
+            <div className="signal-card">
+                <span>BARRIER</span>
+                <strong>
+                    {signal?.barrierDigit ?? '--'}
+                </strong>
+            </div>
 
-                    </div>
+            <div className="signal-card signal-confidence-card">
+                <span>CONFIDENCE</span>
+                <strong>
+                    {signal
+                        ? `${signal.confidence.toFixed(1)}%`
+                        : '--'}
+                </strong>
+            </div>
 
+            <div className="signal-card">
+                <span>QUALITY SCORE</span>
+                <strong>
+                    {signal
+                        ? `${signal.qualityScore.toFixed(1)}`
+                        : '--'}
+                </strong>
+            </div>
+        </>
 
-                    <div className="signal-card signal-confidence-card">
+    )}
 
-                        <span>
-                            CONFIDENCE
-                        </span>
-
-                        <strong>
-                            {signal
-                                ? `${signal.confidence.toFixed(1)}%`
-                                : '--'}
-                        </strong>
-
-                    </div>
-
-
-                    <div className="signal-card">
-
-                        <span>
-                            QUALITY SCORE
-                        </span>
-
-                        <strong>
-                            {signal
-                                ? `${signal.qualityScore.toFixed(1)}`
-                                : '--'}
-                        </strong>
-
-                    </div>
-
-                </div>
+</div>
 
 
                 <div className="signal-action">
 
-                    <button
-                        type="button"
-                        onClick={applySignalToBot}
-                        disabled={!signal?.ready}
-                        className="apply-signal-button"
-                    >
-                        APPLY TO BOT
-                    </button>
+    {over2Signal?.ready ? (
 
-                </div>
+        <button
+            type="button"
+            onClick={applyOver2SignalToBot}
+            disabled={over2Signal.leastDigit === null}
+            className="apply-signal-button"
+        >
+            APPLY OVER 2 BOT
+        </button>
+
+    ) : (
+
+        <button
+            type="button"
+            onClick={applySignalToBot}
+            disabled={!signal?.ready}
+            className="apply-signal-button"
+        >
+            APPLY TO BOT
+        </button>
+
+    )}
+
+</div>
 
 
             </section>
@@ -1279,204 +1797,396 @@ useEffect(() => {
                 <div className="ai-lab-panel">
 
                     <div className="section-heading">
-                        ENGINE BREAKDOWN
-                    </div>
+    {over2Signal?.ready || over2State
+        ? 'OVER 2 INTELLIGENCE'
+        : 'ENGINE BREAKDOWN'}
+</div>
 
+{over2Signal?.ready || over2State ? (
 
-                    <div className="engine-row">
+    <>
+        <div className="engine-row">
 
-                        <span>
-                            Digit Engine
-                        </span>
+            <span>
+                WINDOW
+            </span>
 
-                        <strong>
-                            {engineState?.scores?.[0]
-                                ? engineState.scores[0].digit
-                                : '--'}
-                        </strong>
+            <strong>
+                {over2State?.tickCount ?? 0} / 1000
+            </strong>
 
-                    </div>
+        </div>
 
+        <div className="engine-row">
 
-                    <div className="engine-row">
+            <span>
+                DIGIT 0
+            </span>
 
-                        <span>
-                            Barrier Engine
-                        </span>
+            <strong>
+                {over2Signal?.percentages?.[0] !== undefined
+                    ? `${over2Signal.percentages[0].toFixed(1)}%`
+                    : '--'}
+            </strong>
 
-                        <strong>
-                            {engineState?.barrier?.barrierDigit ??
-                                '--'}
-                        </strong>
+        </div>
 
-                    </div>
+        <div className="engine-row">
 
+            <span>
+                DIGIT 1
+            </span>
 
-                    <div className="engine-row">
+            <strong>
+                {over2Signal?.percentages?.[1] !== undefined
+                    ? `${over2Signal.percentages[1].toFixed(1)}%`
+                    : '--'}
+            </strong>
 
-                        <span>
-                            Entry Engine
-                        </span>
+        </div>
 
-                        <strong>
-                            {engineState?.entry?.entryDigit ??
-                                '--'}
-                        </strong>
+        <div className="engine-row">
 
-                    </div>
+            <span>
+                DIGIT 2
+            </span>
 
+            <strong>
+                {over2Signal?.percentages?.[2] !== undefined
+                    ? `${over2Signal.percentages[2].toFixed(1)}%`
+                    : '--'}
+            </strong>
 
-                    <div className="engine-row">
+        </div>
 
-                        <span>
-                            Fibonacci
-                        </span>
+        <div className="engine-row">
 
-                        <strong>
-                            {signal?.fibLevel ?? '--'}
-                        </strong>
+            <span>
+                LEAST DIGIT
+            </span>
 
-                    </div>
+            <strong>
+                {over2Signal?.leastDigit ?? '--'}
+            </strong>
 
+        </div>
 
-                    <div className="engine-row">
+        <div className="engine-row">
 
-                        <span>
-                            Regime
-                        </span>
+            <span>
+                QUALIFICATION
+            </span>
 
-                        <strong>
-                            {engineState?.regime?.regime ??
-                                '--'}
-                        </strong>
+            <strong>
+                {over2Signal?.qualifying
+                    ? 'QUALIFIED'
+                    : 'SCANNING'}
+            </strong>
 
-                    </div>
+        </div>
 
+        <div className="engine-row">
 
-                    <div className="engine-row">
+            <span>
+                LATEST DIGIT
+            </span>
 
-                        <span>
-                            Confluence
-                        </span>
+            <strong>
+                {over2State?.latestDigit ?? '--'}
+            </strong>
 
-                        <strong>
-                            {signal
-                                ? signal.confluenceScore.toFixed(1)
-                                : '--'}
-                        </strong>
+        </div>
+    </>
 
-                    </div>
+) : (
 
+    <>
+        <div className="engine-row">
 
-                    <div className="engine-row">
+            <span>
+                Digit Engine
+            </span>
 
-                        <span>
-                            Quality
-                        </span>
+            <strong>
+                {engineState?.scores?.[0]
+                    ? engineState.scores[0].digit
+                    : '--'}
+            </strong>
 
-                        <strong>
-                            {signal
-                                ? signal.qualityScore.toFixed(1)
-                                : '--'}
-                        </strong>
+        </div>
 
-                    </div>
+        <div className="engine-row">
+
+            <span>
+                Barrier Engine
+            </span>
+
+            <strong>
+                {engineState?.barrier?.barrierDigit ?? '--'}
+            </strong>
+
+        </div>
+
+        <div className="engine-row">
+
+            <span>
+                Entry Engine
+            </span>
+
+            <strong>
+                {engineState?.entry?.entryDigit ?? '--'}
+            </strong>
+
+        </div>
+
+        <div className="engine-row">
+
+            <span>
+                Fibonacci
+            </span>
+
+            <strong>
+                {signal?.fibLevel ?? '--'}
+            </strong>
+
+        </div>
+
+        <div className="engine-row">
+
+            <span>
+                Regime
+            </span>
+
+            <strong>
+                {engineState?.regime?.regime ?? '--'}
+            </strong>
+
+        </div>
+
+        <div className="engine-row">
+
+            <span>
+                Confluence
+            </span>
+
+            <strong>
+                {signal
+                    ? signal.confluenceScore.toFixed(1)
+                    : '--'}
+            </strong>
+
+        </div>
+
+        <div className="engine-row">
+
+            <span>
+                Quality
+            </span>
+
+            <strong>
+                {signal
+                    ? signal.qualityScore.toFixed(1)
+                    : '--'}
+            </strong>
+
+        </div>
+    </>
+)}
 
                 </div>
 
 
-                <div className="ai-lab-panel">
+                    <div className="ai-lab-panel">
 
-                    <div className="section-heading">
-                        SIGNAL STATUS
-                    </div>
-
-
-                    <div className="status-main">
-
-                        <span
-                            className={
-                                signal?.ready
-                                    ? 'status-ready'
-                                    : 'status-waiting'
-                            }
-                        >
-                            {signal?.ready
-                                ? 'READY'
-                                : 'WAITING'}
-                        </span>
-
-                    </div>
+    <div className="section-heading">
+        {over2State
+            ? 'OVER 2 SIGNAL STATUS'
+            : 'SIGNAL STATUS'}
+    </div>
 
 
-                    <div className="status-row">
+    {over2State ? (
 
-                        <span>
-                            Entry
-                        </span>
+        <>
 
-                        <strong>
-                            {signal?.entryDigit ?? '--'}
-                        </strong>
+            <div className="status-main">
 
-                    </div>
+                <span
+                    className={
+                        over2Signal?.ready
+                            ? 'status-ready'
+                            : 'status-waiting'
+                    }
+                >
+                    {over2Signal?.ready
+                        ? 'READY'
+                        : 'SCANNING'}
+                </span>
 
-
-                    <div className="status-row">
-
-                        <span>
-                            Barrier
-                        </span>
-
-                        <strong>
-                            {signal?.barrierDigit ?? '--'}
-                        </strong>
-
-                    </div>
+            </div>
 
 
-                    <div className="status-row">
+            <div className="status-row">
 
-                        <span>
-                            Relationship
-                        </span>
+                <span>
+                    Window
+                </span>
 
-                        <strong>
-                            {signal
-                                ? signal.relationshipScore.toFixed(1)
-                                : '--'}
-                        </strong>
+                <strong>
+                    {over2State.tickCount ?? 0} / 1000
+                </strong>
 
-                    </div>
+            </div>
 
 
-                    <div className="status-row">
+            <div className="status-row">
 
-                        <span>
-                            Regime
-                        </span>
+                <span>
+                    Least Digit
+                </span>
 
-                        <strong>
-                            {signal?.regime ?? '--'}
-                        </strong>
+                <strong>
+                    {over2Signal?.leastDigit ?? '--'}
+                </strong>
 
-                    </div>
+            </div>
 
 
-                    <div className="status-row">
+            <div className="status-row">
 
-                        <span>
-                            Pending Signals
-                        </span>
+                <span>
+                    Qualification
+                </span>
 
-                        <strong>
-                            {adapterRef.current
-                                ?.getPendingCount() ?? 0}
-                        </strong>
+                <strong>
+                    {over2Signal?.qualifying
+                        ? 'QUALIFIED'
+                        : 'NOT READY'}
+                </strong>
 
-                    </div>
+            </div>
 
-                </div>
+
+            <div className="status-row">
+
+                <span>
+                    Latest Digit
+                </span>
+
+                <strong>
+                    {over2State.latestDigit ?? '--'}
+                </strong>
+
+            </div>
+
+
+            <div className="status-row">
+
+                <span>
+                    Strategy
+                </span>
+
+                <strong>
+                    DIGIT OVER 2
+                </strong>
+
+            </div>
+
+        </>
+
+    ) : (
+
+        <>
+
+            <div className="status-main">
+
+                <span
+                    className={
+                        signal?.ready
+                            ? 'status-ready'
+                            : 'status-waiting'
+                    }
+                >
+                    {signal?.ready
+                        ? 'READY'
+                        : 'WAITING'}
+                </span>
+
+            </div>
+
+
+            <div className="status-row">
+
+                <span>
+                    Entry
+                </span>
+
+                <strong>
+                    {signal?.entryDigit ?? '--'}
+                </strong>
+
+            </div>
+
+
+            <div className="status-row">
+
+                <span>
+                    Barrier
+                </span>
+
+                <strong>
+                    {signal?.barrierDigit ?? '--'}
+                </strong>
+
+            </div>
+
+
+            <div className="status-row">
+
+                <span>
+                    Relationship
+                </span>
+
+                <strong>
+                    {signal
+                        ? signal.relationshipScore.toFixed(1)
+                        : '--'}
+                </strong>
+
+            </div>
+
+
+            <div className="status-row">
+
+                <span>
+                    Regime
+                </span>
+
+                <strong>
+                    {signal?.regime ?? '--'}
+                </strong>
+
+            </div>
+
+
+            <div className="status-row">
+
+                <span>
+                    Pending Signals
+                </span>
+
+                <strong>
+                    {adapterRef.current
+                        ?.getPendingCount() ?? 0}
+                </strong>
+
+            </div>
+
+        </>
+
+    )}
+
+</div>
 
             </section>
 
