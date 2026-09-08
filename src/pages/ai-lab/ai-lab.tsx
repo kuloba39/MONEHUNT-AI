@@ -8,9 +8,11 @@ import { useAnalysisTicks } from '../analysis/use-analysis-ticks';
 import {
     MatchesUIAdapter
 } from '@/ai-lab/matches/matches-ui-adapter';
+
 import {
-    Over2UIAdapter
-} from '@/ai-lab/over2/over2-ui-adapter';
+    Over2MarketScanner,
+    Over2ScannerState
+} from '@/ai-lab/over2/over2-market-scanner';
 
 import {
     VolatilityScannerController,
@@ -277,24 +279,41 @@ const AiLab = () => {
 
     const adapterRef =
         useRef<MatchesUIAdapter | null>(null);
-const over2AdapterRef =
-    useRef<Over2UIAdapter | null>(null);
+/*
+ * OVER 2 MULTI-MARKET SCANNER
+ *
+ * Independent from MATCHES and D CIRCLES.
+ *
+ * Every market gets its own 1000-tick
+ * Over2Engine.
+ */
 
-const over2InitializedRef =
-    useRef(false);
+const over2ScannerRef =
+    useRef<Over2MarketScanner | null>(null);
 
-const over2LastProcessedTickRef =
-    useRef<string | null>(null);
+const [
+    over2ScannerState,
+    setOver2ScannerState
+] =
+    useState<Over2ScannerState | null>(null);
 
 const [
     over2State,
     setOver2State
-] = useState<any>(null);
+] =
+    useState<any>(null);
 
 const [
     over2Signal,
     setOver2Signal
-] = useState<any>(null);
+] =
+    useState<any>(null);
+
+const [
+    over2BestMarket,
+    setOver2BestMarket
+] =
+    useState<any>(null);
 
 
     const initializedRef =
@@ -523,12 +542,17 @@ const [
     };
 const applyOver2SignalToBot = async () => {
 
-    const signal = over2Signal;
+    const bestMarket =
+        over2BestMarket;
+
+    const signal =
+        bestMarket?.signal;
 
     if (
-        !signal?.ready ||
-        signal.leastDigit === null
-    ) {
+    !bestMarket ||
+    !signal?.ready ||
+    signal.leastDigit === null
+) {
         console.warn(
             'AI LAB: No READY OVER 2 signal available'
         );
@@ -553,6 +577,8 @@ const applyOver2SignalToBot = async () => {
 
     const leastDigit =
         Number(signal.leastDigit);
+const signalMarket =
+    bestMarket.symbol;
 
 
     if (
@@ -589,13 +615,24 @@ const applyOver2SignalToBot = async () => {
 
 
         console.log(
-            'AI LAB → OVER 2 SIGNAL BOT',
-            {
-                market,
-                leastDigit,
-                prediction: 2
-            }
-        );
+    'AI LAB → OVER 2 SIGNAL BOT',
+    {
+        market:
+            signalMarket,
+
+        leastDigit,
+
+        prediction: 2,
+
+        scanner:
+            'ALL MARKETS',
+
+        qualifyingMarkets:
+            over2ScannerState
+                ?.qualifyingMarkets
+                ?.length ?? 0
+    }
+);
 
 
         await load({
@@ -646,8 +683,8 @@ const applyOver2SignalToBot = async () => {
             if (symbolField) {
 
                 symbolField.setValue(
-                    market
-                );
+    signalMarket
+);
 
             }
 
@@ -1012,23 +1049,25 @@ const selectScannedMarket = (symbol: string) => {
     setLearningStats([]);
 
 
-    /*
-     * OVER 2 ENGINE
-     *
-     * Completely independent from MATCHES.
-     */
+   /*
+ * OVER 2 MULTI-MARKET SCANNER
+ *
+ * The scanner does NOT follow the selected
+ * AI LAB market.
+ *
+ * It scans every active market.
+ */
 
-    over2AdapterRef.current =
-        new Over2UIAdapter();
+if (
+    over2ScannerRef.current
+) {
+    over2ScannerRef.current.stop();
+}
 
-    over2InitializedRef.current =
-        false;
-
-    over2LastProcessedTickRef.current =
-        null;
-
-    setOver2State(null);
-    setOver2Signal(null);
+setOver2ScannerState(null);
+setOver2State(null);
+setOver2Signal(null);
+setOver2BestMarket(null);
 
 }, [market]);
 
@@ -1202,105 +1241,181 @@ useEffect(() => {
 
 }, [ticks]);
 /*
- * Feed the same live D Circles ticks
- * into the independent OVER 2 engine.
+ * OVER 2 MULTI-MARKET SCANNER
  *
- * OVER 2 owns its own 1000-tick window.
+ * Scan ALL active AI LAB markets simultaneously.
+ *
+ * Each market has:
+ *
+ *     1000 historical ticks
+ *          +
+ *     continuous live ticks
+ *          +
+ *     independent Over2Engine
+ *
+ * Jump indices are included automatically
+ * because the scanner receives the complete
+ * AI LAB active-symbol list.
  */
 
 useEffect(() => {
 
-    const adapter =
-        over2AdapterRef.current;
-
     if (
-        !adapter ||
-        ticks.length === 0
+        !markets ||
+        markets.length === 0
     ) {
         return;
     }
 
-
     /*
-     * Process historical ticks once.
+     * Stop the previous scanner before
+     * creating a new one.
      */
-
-    if (!over2InitializedRef.current) {
-
-        adapter.processTicks(
-            ticks
-        );
-
-        over2InitializedRef.current =
-            true;
-
-        const lastTick =
-            ticks[ticks.length - 1];
-
-        over2LastProcessedTickRef.current =
-            [
-                lastTick.epoch,
-                lastTick.quote,
-                lastTick.digit
-            ].join('|');
-
-        const state =
-            adapter.getState();
-
-        setOver2State(state);
-        setOver2Signal(
-            state?.signal ?? null
-        );
-
-        return;
-    }
-
-
-    /*
-     * Process only the newest live tick.
-     */
-
-    const lastTick =
-        ticks[ticks.length - 1];
-
-    const tickKey =
-        [
-            lastTick.epoch,
-            lastTick.quote,
-            lastTick.digit
-        ].join('|');
-
 
     if (
-        tickKey ===
-        over2LastProcessedTickRef.current
+        over2ScannerRef.current
     ) {
-        return;
+        over2ScannerRef.current.stop();
     }
 
+    const scanner =
+        new Over2MarketScanner();
 
-    const result =
-        adapter.processTick({
-            digit: lastTick.digit,
-            quote: lastTick.quote,
-            epoch: lastTick.epoch,
-            market: lastTick.market
-        });
+    over2ScannerRef.current =
+        scanner;
 
+    /*
+     * Receive scanner updates.
+     */
 
-    over2LastProcessedTickRef.current =
-        tickKey;
+    const unsubscribe =
+        scanner.subscribe(
+            state => {
 
+                setOver2ScannerState(
+                    state
+                );
 
-    setOver2State(
-        result
+                /*
+                 * Best qualifying market.
+                 */
+
+                const best =
+                    state.bestMarket;
+
+                setOver2BestMarket(
+                    best
+                );
+
+                /*
+                 * Preserve the existing
+                 * OVER 2 signal shape.
+                 */
+
+                setOver2State(
+                    best?.state ??
+                    null
+                );
+
+                setOver2Signal(
+                    best?.signal ??
+                    null
+                );
+
+                if (best) {
+
+                    console.log(
+                        'AI LAB OVER 2 BEST MARKET',
+                        {
+                            symbol:
+                                best.symbol,
+
+                            name:
+                                best.name,
+
+                            leastDigit:
+                                best.signal
+                                    ?.leastDigit,
+
+                            percentages:
+                                best.signal
+                                    ?.percentages,
+
+                            tickCount:
+                                best.state
+                                    ?.tickCount
+                        }
+                    );
+
+                }
+
+            }
+        );
+
+    /*
+     * Convert the AI LAB market list into
+     * scanner markets.
+     *
+     * NO symbol filtering here.
+     *
+     * This deliberately includes:
+     *
+     * R_*
+     * 1HZ*
+     * Jump indices
+     * and other active synthetic markets
+     * supplied by Deriv.
+     */
+
+    const scanMarkets =
+        markets.map(item => ({
+
+            symbol:
+                item.symbol,
+
+            name:
+                item.name,
+
+            market:
+                item.market
+
+        }));
+
+    console.log(
+        'AI LAB OVER 2 SCANNING ALL MARKETS',
+        {
+            total:
+                scanMarkets.length,
+
+            markets:
+                scanMarkets.map(
+                    item =>
+                        item.symbol
+                )
+        }
     );
 
-    setOver2Signal(
-        result?.signal ?? null
+    scanner.start(
+        scanMarkets
     );
 
-}, [ticks]);
+    return () => {
+
+        unsubscribe();
+
+        scanner.stop();
+
+        if (
+            over2ScannerRef.current ===
+            scanner
+        ) {
+            over2ScannerRef.current =
+                null;
+        }
+
+    };
+
+}, [markets]);
 
 
     useEffect(() => {
