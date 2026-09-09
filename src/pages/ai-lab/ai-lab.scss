@@ -2251,3 +2251,832 @@
     visibility: visible;
     opacity: 1;
 }
+/* =========================================================
+   MONEHUNT AI CORE — FINAL COMMAND CENTER
+   AI CORE ONLY
+   ========================================================= */
+
+.ai-lab-signal {
+
+    position: relative;
+
+    padding: 24px;
+
+    border: 1px solid rgba(25, 217, 130, 0.24);
+
+    border-radius: 16px;
+
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(25, 217, 130, 0.075),
+            transparent 42%
+        ),
+        linear-gradient(
+            145deg,
+            rgba(8, 168, 107, 0.035),
+            transparent 58%
+        ),
+        var(--ai-panel);
+
+    box-shadow:
+        0 18px 50px rgba(0, 0, 0, 0.12),
+        0 0 35px rgba(8, 168, 107, 0.045),
+        inset 0 1px 0 rgba(255, 255, 255, 0.025);
+
+    overflow: visible;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   CORE HEADER
+   ========================================================= */
+
+.ai-core-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 26px;
+
+    padding-bottom: 18px;
+
+    border-bottom:
+        1px solid rgba(8, 168, 107, 0.14);
+
+}
+
+
+.ai-core-title {
+
+    min-width: 0;
+
+}
+
+
+.ai-core-kicker {
+
+    display: block;
+
+    margin-bottom: 5px;
+
+    color:
+        var(--text-less-prominent);
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.14em;
+
+    text-transform: uppercase;
+
+}
+
+
+.ai-core-title .section-heading {
+
+    margin: 0;
+
+    color:
+        var(--text-prominent);
+
+    font-size: 21px;
+
+    font-weight: 900;
+
+    letter-spacing: -0.025em;
+
+}
+
+
+.ai-core-status {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    flex-shrink: 0;
+
+    padding: 7px 11px;
+
+    border:
+        1px solid rgba(25, 217, 130, 0.20);
+
+    border-radius: 999px;
+
+    background:
+        rgba(25, 217, 130, 0.055);
+
+    color:
+        var(--monehunt-green-light);
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.10em;
+
+}
+
+
+.ai-core-status-dot {
+
+    width: 7px;
+
+    height: 7px;
+
+    border-radius: 50%;
+
+    background:
+        var(--monehunt-green-bright);
+
+    box-shadow:
+        0 0 7px var(--monehunt-green-bright),
+        0 0 16px rgba(25, 217, 130, 0.40);
+
+    animation:
+        monehuntPulse 2s ease-in-out infinite;
+
+}
+
+
+/* =========================================================
+   SECTION LABELS
+   ========================================================= */
+
+.ai-core-section-label {
+
+    margin-bottom: 11px;
+
+    color:
+        var(--text-less-prominent);
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.13em;
+
+    text-transform: uppercase;
+
+}
+
+
+.ai-core-inner-label {
+
+    margin-top: 22px;
+
+    padding-top: 18px;
+
+    border-top:
+        1px solid rgba(8, 168, 107, 0.10);
+
+}
+
+
+/* =========================================================
+   TRADE SETTINGS
+   ========================================================= */
+
+.ai-core-settings {
+
+    width: 100%;
+
+}
+
+
+.ai-core-setting {
+
+    width: 100%;
+
+    margin-bottom: 15px;
+
+}
+
+
+.ai-core-setting-label {
+
+    display: block;
+
+    margin-bottom: 8px;
+
+    color:
+        var(--text-less-prominent);
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.10em;
+
+    text-transform: uppercase;
+
+}
+
+
+/* =========================================================
+   LINKED VALUE BOXES
+   ========================================================= */
+
+.ai-core-linked-value {
+
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    min-height: 48px;
+
+    padding: 0 15px;
+
+    border:
+        1px solid rgba(8, 168, 107, 0.20);
+
+    border-radius: 10px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(8, 168, 107, 0.055),
+            rgba(8, 168, 107, 0.018)
+        );
+
+    color:
+        var(--text-prominent);
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.025);
+
+    box-sizing: border-box;
+
+}
+
+
+.ai-core-linked-value > span:first-child {
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+}
+
+
+.ai-core-value-symbol {
+
+    margin-left: auto;
+
+    color:
+        var(--monehunt-green-light);
+
+    font-family:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        monospace;
+
+    font-size: 10px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.05em;
+
+}
+
+
+.ai-core-chevron {
+
+    color:
+        var(--monehunt-green-bright);
+
+    font-size: 13px;
+
+}
+
+
+.ai-core-linked-badge {
+
+    margin-left: auto;
+
+    padding: 4px 7px;
+
+    border:
+        1px solid rgba(25, 217, 130, 0.18);
+
+    border-radius: 5px;
+
+    background:
+        rgba(25, 217, 130, 0.055);
+
+    color:
+        var(--monehunt-green-light);
+
+    font-size: 7px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.09em;
+
+}
+
+
+/* =========================================================
+   MONEY MANAGEMENT
+   ========================================================= */
+
+.ai-core-money-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 12px;
+
+}
+
+
+.ai-core-recovery-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 12px;
+
+}
+
+
+.ai-core-control-card {
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: space-between;
+
+    min-width: 0;
+
+    min-height: 108px;
+
+    padding: 14px;
+
+    border:
+        1px solid rgba(8, 168, 107, 0.18);
+
+    border-radius: 11px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(8, 168, 107, 0.045),
+            transparent
+        );
+
+    box-sizing: border-box;
+
+    transition:
+        border-color 0.18s ease,
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
+
+}
+
+
+.ai-core-control-card:hover {
+
+    transform:
+        translateY(-1px);
+
+    border-color:
+        rgba(25, 217, 130, 0.30);
+
+    box-shadow:
+        0 8px 22px rgba(8, 168, 107, 0.07);
+
+}
+
+
+.ai-core-control-label {
+
+    display: block;
+
+    color:
+        var(--text-less-prominent);
+
+    font-size: 8px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.10em;
+
+    text-transform: uppercase;
+
+}
+
+
+/* =========================================================
+   BOXED VALUE / INPUT
+   ========================================================= */
+
+.ai-core-input-shell {
+
+    display: flex;
+
+    align-items: center;
+
+    min-height: 45px;
+
+    margin-top: 12px;
+
+    padding: 0 11px;
+
+    border:
+        1px solid rgba(25, 217, 130, 0.22);
+
+    border-radius: 8px;
+
+    background:
+        rgba(0, 0, 0, 0.10);
+
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.015),
+        inset 0 6px 18px rgba(0, 0, 0, 0.05);
+
+    box-sizing: border-box;
+
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+
+}
+
+
+.ai-core-input-shell:focus-within {
+
+    border-color:
+        rgba(25, 217, 130, 0.55);
+
+    box-shadow:
+        0 0 0 2px rgba(25, 217, 130, 0.08),
+        0 0 20px rgba(25, 217, 130, 0.07),
+        inset 0 6px 18px rgba(0, 0, 0, 0.05);
+
+}
+
+
+.ai-core-input-prefix,
+.ai-core-input-suffix {
+
+    flex-shrink: 0;
+
+    color:
+        var(--monehunt-green-light);
+
+    font-size: 12px;
+
+    font-weight: 900;
+
+}
+
+
+.ai-core-input-shell input {
+
+    width: 100%;
+
+    min-width: 0;
+
+    height: 43px;
+
+    padding: 0 5px;
+
+    border: 0;
+
+    outline: none;
+
+    background: transparent;
+
+    color:
+        var(--monehunt-green-bright);
+
+    font-family: inherit;
+
+    font-size: 16px;
+
+    font-weight: 900;
+
+    text-align: center;
+
+    box-sizing: border-box;
+
+    appearance: textfield;
+
+    -moz-appearance: textfield;
+
+}
+
+
+.ai-core-input-shell input::-webkit-outer-spin-button,
+.ai-core-input-shell input::-webkit-inner-spin-button {
+
+    margin: 0;
+
+    -webkit-appearance: none;
+
+}
+
+
+.ai-core-centered-input input {
+
+    font-size: 18px;
+
+}
+
+
+.ai-core-centered-input {
+
+    justify-content: center;
+
+}
+
+
+/* =========================================================
+   AI-LINKED VALUES
+   ========================================================= */
+
+.ai-core-ai-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 12px;
+
+}
+
+
+.ai-core-ai-card {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    min-height: 112px;
+
+    padding: 14px;
+
+    border:
+        1px solid rgba(25, 217, 130, 0.18);
+
+    border-radius: 11px;
+
+    background:
+        radial-gradient(
+            circle at 50% 100%,
+            rgba(25, 217, 130, 0.07),
+            transparent 65%
+        ),
+        rgba(8, 168, 107, 0.025);
+
+    box-sizing: border-box;
+
+}
+
+
+.ai-core-digit-value {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 52px;
+
+    height: 45px;
+
+    border:
+        1px solid rgba(25, 217, 130, 0.32);
+
+    border-radius: 8px;
+
+    background:
+        rgba(8, 168, 107, 0.055);
+
+    color:
+        var(--monehunt-green-bright);
+
+    font-size: 22px;
+
+    font-weight: 900;
+
+    box-shadow:
+        0 0 20px rgba(25, 217, 130, 0.055),
+        inset 0 1px 0 rgba(255, 255, 255, 0.025);
+
+}
+
+
+.ai-core-mode-value {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 100%;
+
+    min-height: 45px;
+
+    padding: 0 8px;
+
+    border:
+        1px solid rgba(25, 217, 130, 0.24);
+
+    border-radius: 8px;
+
+    background:
+        rgba(25, 217, 130, 0.045);
+
+    color:
+        var(--monehunt-green-light);
+
+    font-size: 10px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.07em;
+
+    text-align: center;
+
+    box-sizing: border-box;
+
+}
+
+
+/* =========================================================
+   APPLY TO BOT
+   ========================================================= */
+
+.ai-core-action {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-top: 25px;
+
+    padding-top: 20px;
+
+    border-top:
+        1px solid rgba(8, 168, 107, 0.14);
+
+}
+
+
+.ai-core-action .apply-signal-button {
+
+    width: min(100%, 430px);
+
+    min-height: 52px;
+
+    border-radius: 11px;
+
+    font-size: 11px;
+
+}
+
+
+.ai-core-action-helper {
+
+    color:
+        var(--text-less-prominent);
+
+    font-size: 9px;
+
+    font-weight: 600;
+
+    letter-spacing: 0.02em;
+
+    text-align: center;
+
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .ai-core-money-grid {
+
+        grid-template-columns:
+            1fr 1fr;
+
+    }
+
+    .ai-core-money-grid
+    .ai-core-control-card:last-child {
+
+        grid-column:
+            1 / -1;
+
+    }
+
+}
+
+
+@media (max-width: 680px) {
+
+    .ai-lab-signal {
+
+        padding: 18px;
+
+    }
+
+
+    .ai-core-header {
+
+        align-items: flex-start;
+
+    }
+
+
+    .ai-core-money-grid,
+    .ai-core-recovery-grid,
+    .ai-core-ai-grid {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+
+    .ai-core-money-grid
+    .ai-core-control-card:last-child {
+
+        grid-column:
+            auto;
+
+    }
+
+
+    .ai-core-linked-value {
+
+        min-height: 46px;
+
+    }
+
+}
+
+
+@media (max-width: 460px) {
+
+    .ai-core-header {
+
+        flex-direction: column;
+
+    }
+
+
+    .ai-core-status {
+
+        align-self: flex-start;
+
+    }
+
+}

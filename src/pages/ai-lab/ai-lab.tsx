@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
 import { load, save_types } from '@/external/bot-skeleton';
@@ -314,6 +314,72 @@ const [
     setOver2BestMarket
 ] =
     useState<any>(null);
+/*
+ * OVER 2 USER TRADE SETTINGS
+ *
+ * These values are controlled by the user
+ * from the AI LAB signal display.
+ *
+ * They are only initial UI values.
+ * APPLY OVER 2 BOT uses the current values.
+ */
+
+const [
+    over2InitialStake,
+    setOver2InitialStake
+] = useState('10');
+
+const [
+    over2Stake,
+    setOver2Stake
+] = useState('10');
+
+const [
+    over2TakeProfit,
+    setOver2TakeProfit
+] = useState('15');
+
+const [
+    over2MartingaleLevel,
+    setOver2MartingaleLevel
+] = useState('6');
+
+const [
+    over2Martingale,
+    setOver2Martingale
+] = useState('2');/*
+ * MATCHES USER TRADE SETTINGS
+ *
+ * These values are controlled by the user
+ * from the AI LAB signal display.
+ *
+ * APPLY MATCHES BOT uses the current values.
+ */
+
+const [
+    matchesInitialStake,
+    setMatchesInitialStake
+] = useState('10');
+
+const [
+    matchesStake,
+    setMatchesStake
+] = useState('10');
+
+const [
+    matchesTakeProfit,
+    setMatchesTakeProfit
+] = useState('15');
+
+const [
+    matchesMartingaleLevel,
+    setMatchesMartingaleLevel
+] = useState('6');
+
+const [
+    matchesMartingale,
+    setMatchesMartingale
+] = useState('2');
 
 
     const initializedRef =
@@ -382,8 +448,8 @@ const [
                 );
             }
 
-            console.log(
-                'AI LAB → MATCHES SIGNAL BOT',
+                        console.log(
+                'AI LAB ? MATCHES SIGNAL BOT',
                 {
                     market,
                     entryDigit,
@@ -391,8 +457,209 @@ const [
                 }
             );
 
+            /*
+             * MATCHES USER TRADE SETTINGS
+             *
+             * Inject the user's current AI LAB
+             * settings into the XML BEFORE Blockly
+             * loads the bot.
+             *
+             * This prevents the MATCHES XML
+             * initialization blocks from restoring
+             * their default values.
+             */
+
+            const initialStake =
+                Number(matchesInitialStake);
+
+            const stake =
+                Number(matchesStake);
+
+            const takeProfit =
+                Number(matchesTakeProfit);
+
+            const martingaleLevel =
+                Number(matchesMartingaleLevel);
+
+            const martingale =
+                Number(matchesMartingale);
+
+            if (
+                !Number.isFinite(initialStake) ||
+                !Number.isFinite(stake) ||
+                !Number.isFinite(takeProfit) ||
+                !Number.isFinite(martingaleLevel) ||
+                !Number.isFinite(martingale) ||
+                initialStake < 0 ||
+                stake < 0 ||
+                takeProfit < 0 ||
+                martingaleLevel < 0 ||
+                !Number.isInteger(martingaleLevel) ||
+                martingale < 0
+            ) {
+                throw new Error(
+                    'Invalid MATCHES trade settings'
+                );
+            }
+
+            /*
+             * MATCHES XML block IDs contain regex
+             * special characters, so escape the ID
+             * before creating the replacement pattern.
+             */
+
+            const replaceMatchesXmlNumber = (
+                xml: string,
+                blockId: string,
+                value: number
+            ) => {
+
+                const escapedId =
+                    blockId.replace(
+                        /[.*+?^${}()|[\]\\]/g,
+                        '\\$&'
+                    );
+
+                const pattern =
+                    new RegExp(
+                        `(<block[^>]*id="${escapedId}"[^>]*>[\\s\\S]*?<field[^>]*name="NUM"[^>]*>)([^<]*)(</field>)`
+                    );
+
+                return xml.replace(
+                    pattern,
+                    `$1${value}$3`
+                );
+
+            };
+
+            /*
+             * Preserve the original XML so we can
+             * verify that the settings were actually
+             * injected before Blockly loads.
+             */
+
+            const originalMatchesBotXml =
+                bot.xml;
+
+            let matchesBotXml =
+                bot.xml;
+
+            /*
+             * InitialStake
+             */
+
+            matchesBotXml =
+                replaceMatchesXmlNumber(
+                    matchesBotXml,
+                    'Bkh)MPXIEb*OkBYj#pK7',
+                    initialStake
+                );
+
+            /*
+             * Initial Stake / runtime Stake
+             *
+             * This is ONLY the initial Stake number.
+             * Runtime Stake setters used by the
+             * martingale logic remain untouched.
+             */
+
+            matchesBotXml =
+                replaceMatchesXmlNumber(
+                    matchesBotXml,
+                    'OnFEAsEI_^z?;!g+Kw[R',
+                    stake
+                );
+
+            /*
+             * TakeProfit
+             */
+
+            matchesBotXml =
+                replaceMatchesXmlNumber(
+                    matchesBotXml,
+                    'L[oTdLAFR(Q4,,@v+g?/',
+                    takeProfit
+                );
+
+            /*
+             * MartingaleLevel
+             */
+
+            matchesBotXml =
+                replaceMatchesXmlNumber(
+                    matchesBotXml,
+                    'Z58N0I5$5mdai2Aa#I77',
+                    martingaleLevel
+                );
+
+            /*
+             * Martingale
+             */
+
+            matchesBotXml =
+                replaceMatchesXmlNumber(
+                    matchesBotXml,
+                    'x!-}V/5Jd1}I}|030Scu',
+                    martingale
+                );
+
+            console.log(
+                'AI LAB → MATCHES XML SETTINGS INJECTED',
+                {
+                    initialStake,
+                    stake,
+                    takeProfit,
+                    martingaleLevel,
+                    martingale,
+
+                    initialStakeApplied:
+                        matchesBotXml.includes(
+                            `id="Bkh)MPXIEb*OkBYj#pK7"`
+                        ) &&
+                        matchesBotXml.includes(
+                            `>${initialStake}</field>`
+                        ),
+
+                    stakeApplied:
+                        matchesBotXml.includes(
+                            `id="OnFEAsEI_^z?;!g+Kw[R"`
+                        ) &&
+                        matchesBotXml.includes(
+                            `>${stake}</field>`
+                        ),
+
+                    takeProfitApplied:
+                        matchesBotXml.includes(
+                            `id="L[oTdLAFR(Q4,,@v+g?/"`
+                        ) &&
+                        matchesBotXml.includes(
+                            `>${takeProfit}</field>`
+                        ),
+
+                    martingaleLevelApplied:
+                        matchesBotXml.includes(
+                            `id="Z58N0I5$5mdai2Aa#I77"`
+                        ) &&
+                        matchesBotXml.includes(
+                            `>${martingaleLevel}</field>`
+                        ),
+
+                    martingaleApplied:
+                        matchesBotXml.includes(
+                            `id="x!-}V/5Jd1}I}|030Scu"`
+                        ) &&
+                        matchesBotXml.includes(
+                            `>${martingale}</field>`
+                        ),
+
+                    xmlChanged:
+                        matchesBotXml !==
+                        originalMatchesBotXml
+                }
+            );
+
             await load({
-                block_string: bot.xml,
+                block_string: matchesBotXml,
                 file_name: bot.name,
                 strategy_id: bot.id,
                 from: save_types.LOCAL,
@@ -423,37 +690,51 @@ const [
                 }
             }
 
-            const predictionBlock =
-                blocks.find(block => {
-                    if (
-                        block.type !==
-                        'variables_set'
-                    ) {
-                        return false;
-                    }
+            /*
+ * Apply Prediction only for strategies
+ * that use the generic AI barrier.
+ *
+ * OVER 2 is different:
+ * its Prediction is permanently 2
+ * and must NOT be overwritten by
+ * barrierDigit / leastDigit.
+ */
 
-                    const variableField =
-                        block.getField('VAR');
+if (bot.id !== 'over2-signal') {
 
-                    return (
-                        variableField?.getText() ===
-                        'Prediction'
-                    );
-                });
-
-            if (predictionBlock) {
-                const numberBlock =
-                    predictionBlock
-                        .getInputTargetBlock(
-                            'VALUE'
-                        );
-
-                numberBlock
-                    ?.getField('NUM')
-                    ?.setValue(
-                        String(barrierDigit)
-                    );
+    const predictionBlock =
+        blocks.find(block => {
+            if (
+                block.type !==
+                'variables_set'
+            ) {
+                return false;
             }
+
+            const variableField =
+                block.getField('VAR');
+
+            return (
+                variableField?.getText() ===
+                'Prediction'
+            );
+        });
+
+    if (predictionBlock) {
+
+        const numberBlock =
+            predictionBlock
+                .getInputTargetBlock(
+                    'VALUE'
+                );
+
+        numberBlock
+            ?.getField('NUM')
+            ?.setValue(
+                String(barrierDigit)
+            );
+    }
+}
 
             const entryBlock =
                 blocks.find(block => {
@@ -516,6 +797,109 @@ const [
                     ?.getField('NUM')
                     ?.setValue('0');
             }
+/*
+ * Apply user-controlled OVER 2 trade settings.
+ *
+ * These values come directly from the
+ * AI LAB signal display.
+ *
+ * Do NOT use the XML defaults here.
+ */
+
+const over2TradeSettings = [
+    {
+        variable: 'InitialStake',
+        value: over2InitialStake
+    },
+    {
+        variable: 'Stake',
+        value: over2Stake
+    },
+    {
+        variable: 'TakeProfit',
+        value: over2TakeProfit
+    },
+    {
+        variable: 'MartingaleLevel',
+        value: over2MartingaleLevel
+    },
+    {
+        variable: 'Martingale',
+        value: over2Martingale
+    }
+];
+
+over2TradeSettings.forEach(
+    ({ variable, value }) => {
+
+        const variableBlock =
+            blocks.find(block => {
+
+                if (
+                    block.type !==
+                    'variables_set'
+                ) {
+                    return false;
+                }
+
+                const variableField =
+                    block.getField('VAR');
+
+                return (
+                    variableField?.getText() ===
+                    variable
+                );
+            });
+
+        if (!variableBlock) {
+
+            console.warn(
+                `AI LAB: ${variable} variable block not found`
+            );
+
+            return;
+        }
+
+        const numberBlock =
+            variableBlock
+                .getInputTargetBlock(
+                    'VALUE'
+                );
+
+        if (!numberBlock) {
+
+            console.warn(
+                `AI LAB: ${variable} VALUE block not found`
+            );
+
+            return;
+        }
+
+        const numericValue =
+            Number(value);
+
+        if (
+            !Number.isFinite(
+                numericValue
+            )
+        ) {
+
+            console.warn(
+                `AI LAB: INVALID ${variable} VALUE`,
+                value
+            );
+
+            return;
+        }
+
+        numberBlock
+            ?.getField('NUM')
+            ?.setValue(
+                String(numericValue)
+            );
+
+    }
+);
 
             workspace.render();
 
@@ -615,7 +999,7 @@ const signalMarket =
 
 
         console.log(
-    'AI LAB → OVER 2 SIGNAL BOT',
+    'AI LAB ? OVER 2 SIGNAL BOT',
     {
         market:
             signalMarket,
@@ -635,9 +1019,195 @@ const signalMarket =
 );
 
 
+                /*
+         * OVER 2 USER TRADE SETTINGS
+         *
+         * Inject the user's current AI LAB
+         * settings into the XML BEFORE Blockly
+         * loads the bot.
+         *
+         * This prevents the XML initialization
+         * blocks from restoring their defaults.
+         */
+
+        const initialStake =
+            Number(over2InitialStake);
+
+        const stake =
+            Number(over2Stake);
+
+        const takeProfit =
+            Number(over2TakeProfit);
+
+        const martingaleLevel =
+            Number(over2MartingaleLevel);
+
+        const martingale =
+            Number(over2Martingale);
+
+        if (
+            !Number.isFinite(initialStake) ||
+            !Number.isFinite(stake) ||
+            !Number.isFinite(takeProfit) ||
+            !Number.isFinite(martingaleLevel) ||
+            !Number.isFinite(martingale) ||
+            initialStake < 0 ||
+            stake < 0 ||
+            takeProfit < 0 ||
+            martingaleLevel < 0 ||
+            !Number.isInteger(martingaleLevel) ||
+            martingale < 0
+        ) {
+            throw new Error(
+                'Invalid OVER 2 trade settings'
+            );
+        }
+
+
+        /*
+         * Replace ONLY the five initialization
+         * number blocks.
+         *
+         * We use their unique XML IDs so that
+         * runtime Stake changes used by the
+         * martingale logic remain untouched.
+         */
+
+        const replaceOver2XmlNumber = (
+            xml: string,
+            blockId: string,
+            value: number
+        ) => {
+
+            const pattern =
+                new RegExp(
+                    `(<block[^>]*id="${blockId}"[^>]*>[\\s\\S]*?<field[^>]*name="NUM"[^>]*>)([^<]*)(</field>)`
+                );
+
+            return xml.replace(
+                pattern,
+                `$1${value}$3`
+            );
+
+        };
+
+
+        let over2BotXml =
+            bot.xml;
+        const originalOver2BotXml =
+            over2BotXml;
+
+
+        over2BotXml =
+            replaceOver2XmlNumber(
+                over2BotXml,
+                'o2_initial_stake_num',
+                initialStake
+            );
+
+
+        over2BotXml =
+            replaceOver2XmlNumber(
+                over2BotXml,
+                'o2_stake_num',
+                stake
+            );
+
+
+        over2BotXml =
+            replaceOver2XmlNumber(
+                over2BotXml,
+                'o2_tp_num',
+                takeProfit
+            );
+
+
+        over2BotXml =
+            replaceOver2XmlNumber(
+                over2BotXml,
+                'o2_mart_level_num',
+                martingaleLevel
+            );
+
+
+        over2BotXml =
+            replaceOver2XmlNumber(
+                over2BotXml,
+                'o2_mart_num',
+                martingale
+            );
+        console.log(
+            'AI LAB → OVER 2 XML SETTINGS INJECTED',
+            {
+                initialStake,
+                stake,
+                takeProfit,
+                martingaleLevel,
+                martingale,
+
+                initialStakeApplied:
+                    over2BotXml.includes(
+                        `id="o2_initial_stake_num"`
+                    ) &&
+                    over2BotXml.includes(
+                        `>${initialStake}</field>`
+                    ),
+
+                stakeApplied:
+                    over2BotXml.includes(
+                        `id="o2_stake_num"`
+                    ) &&
+                    over2BotXml.includes(
+                        `>${stake}</field>`
+                    ),
+
+                takeProfitApplied:
+                    over2BotXml.includes(
+                        `id="o2_tp_num"`
+                    ) &&
+                    over2BotXml.includes(
+                        `>${takeProfit}</field>`
+                    ),
+
+                martingaleLevelApplied:
+                    over2BotXml.includes(
+                        `id="o2_mart_level_num"`
+                    ) &&
+                    over2BotXml.includes(
+                        `>${martingaleLevel}</field>`
+                    ),
+
+                martingaleApplied:
+                    over2BotXml.includes(
+                        `id="o2_mart_num"`
+                    ) &&
+                    over2BotXml.includes(
+                        `>${martingale}</field>`
+                    ),
+
+                xmlChanged:
+                    over2BotXml !==
+                    originalOver2BotXml
+            }
+        );
+
+
+        console.log(
+            'AI LAB → OVER 2 USER SETTINGS',
+            {
+                initialStake,
+                stake,
+                takeProfit,
+                martingaleLevel,
+                martingale
+            }
+        );
+
+
         await load({
 
-            block_string: bot.xml,
+            block_string:
+                over2BotXml,
 
             file_name: bot.name,
 
@@ -722,7 +1292,7 @@ const signalMarket =
             });
 
 
-        if (leastDigitBlock) {
+                if (leastDigitBlock) {
 
             const numberBlock =
                 leastDigitBlock
@@ -747,26 +1317,75 @@ const signalMarket =
 
 
         /*
+         * Apply AI LAB Prediction.
+         *
+         * OVER 2 always uses prediction 2,
+         * but the trade option receives it
+         * through the Blockly Prediction variable.
+         */
+
+        const predictionBlock =
+            blocks.find(block => {
+
+                if (
+                    block.type !==
+                    'variables_set'
+                ) {
+                    return false;
+                }
+
+
+                const variableField =
+                    block.getField('VAR');
+
+
+                return (
+                    variableField?.getText() ===
+                    'Prediction'
+                );
+
+            });
+
+
+        if (predictionBlock) {
+
+            const numberBlock =
+                predictionBlock
+                    .getInputTargetBlock(
+                        'VALUE'
+                    );
+
+
+            numberBlock
+                ?.getField('NUM')
+                ?.setValue(
+                    '2'
+                );
+
+        } else {
+
+            console.warn(
+                'AI LAB: Prediction variable block not found'
+            );
+
+        }
+
+
+        /*
          * Prediction is permanently OVER 2.
          *
          * Do NOT take this from MATCHES.
          */
 
-        const predictionBlock =
-            blocks.find(
-                block =>
-                    block.id ===
-                    'o2_prediction'
-            );
-
-
-        if (predictionBlock) {
-
-    predictionBlock
-        .getField('NUM')
-        ?.setValue('2');
-
-}
+        /*
+ * OVER 2 Prediction is permanently 2.
+ *
+ * The XML already contains Prediction = 2.
+ * Do not modify it here.
+ *
+ * leastDigit is the ONLY value received
+ * from the scanner.
+ */
 
 /*
  * Always start the OVER 2 bot in
@@ -1789,122 +2408,800 @@ useEffect(() => {
 
             <section className="ai-lab-signal">
 
-               <div className="section-heading">
-    AI CORE
-</div>
+    <div className="ai-core-header">
 
+        <div className="ai-core-title">
 
-                                <div className="signal-grid">
+            <span className="ai-core-kicker">
+                MONEHUNT INTELLIGENCE ENGINE
+            </span>
 
-    {over2Signal?.ready ? (
-
-        <>
-            <div className="signal-card">
-                <span>0</span>
-                <strong>
-                    {over2Signal.percentages?.[0] !== undefined
-                        ? `${over2Signal.percentages[0].toFixed(1)}%`
-                        : '--'}
-                </strong>
+            <div className="section-heading">
+                AI CORE
             </div>
 
-            <div className="signal-card">
-                <span>1</span>
-                <strong>
-                    {over2Signal.percentages?.[1] !== undefined
-                        ? `${over2Signal.percentages[1].toFixed(1)}%`
-                        : '--'}
-                </strong>
+        </div>
+
+        <div className="ai-core-status">
+
+            <span className="ai-core-status-dot" />
+
+            ONLINE
+
+        </div>
+
+    </div>
+
+
+    <div className="ai-core-section-label">
+        ⚙ TRADE SETTINGS
+    </div>
+
+
+    <div className="ai-core-settings">
+
+        <div className="ai-core-setting ai-core-setting-market">
+
+            <span className="ai-core-setting-label">
+                MARKET
+            </span>
+
+            <div className="ai-core-linked-value">
+
+                <span>
+                    {markets.find(
+                        item =>
+                            item.symbol === market
+                    )?.name ?? market}
+                </span>
+
+                <span className="ai-core-value-symbol">
+                    {market}
+                </span>
+
+                <span className="ai-core-chevron">
+                    ▾
+                </span>
+
             </div>
 
-            <div className="signal-card">
-                <span>2</span>
-                <strong>
-                    {over2Signal.percentages?.[2] !== undefined
-                        ? `${over2Signal.percentages[2].toFixed(1)}%`
-                        : '--'}
-                </strong>
+        </div>
+
+
+        <div className="ai-core-setting ai-core-setting-strategy">
+
+            <span className="ai-core-setting-label">
+                STRATEGY / CONTRACT
+            </span>
+
+            <div className="ai-core-linked-value">
+
+                <span>
+                    {over2Signal?.ready || over2State
+                        ? 'DIGIT OVER 2'
+                        : 'MATCHES'}
+                </span>
+
+                <span className="ai-core-linked-badge">
+                    AI LINKED
+                </span>
+
             </div>
 
-            <div className="signal-card">
-                <span>LEAST DIGIT</span>
-                <strong>
-                    {over2Signal.leastDigit ?? '--'}
-                </strong>
+        </div>
+
+
+        <div className="ai-core-section-label ai-core-inner-label">
+            MONEY MANAGEMENT
+        </div>
+
+
+        <div className="ai-core-money-grid">
+
+            <label className="ai-core-control-card">
+
+                <span className="ai-core-control-label">
+                    INITIAL STAKE
+                </span>
+
+                <div className="ai-core-input-shell">
+
+                    <span className="ai-core-input-prefix">
+                        $
+                    </span>
+
+                    <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={over2InitialStake}
+                        onChange={event =>
+                            setOver2InitialStake(
+                                event.target.value
+                            )
+                        }
+                    />
+
+                </div>
+
+            </label>
+
+
+            <label className="ai-core-control-card">
+
+                <span className="ai-core-control-label">
+                    CURRENT STAKE
+                </span>
+
+                <div className="ai-core-input-shell">
+
+                    <span className="ai-core-input-prefix">
+                        $
+                    </span>
+
+                    <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={over2Stake}
+                        onChange={event =>
+                            setOver2Stake(
+                                event.target.value
+                            )
+                        }
+                    />
+
+                </div>
+
+            </label>
+
+
+            <label className="ai-core-control-card">
+
+                <span className="ai-core-control-label">
+                    TAKE PROFIT
+                </span>
+
+                <div className="ai-core-input-shell">
+
+                    <span className="ai-core-input-prefix">
+                        $
+                    </span>
+
+                    <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={over2TakeProfit}
+                        onChange={event =>
+                            setOver2TakeProfit(
+                                event.target.value
+                            )
+                        }
+                    />
+
+                </div>
+
+            </label>
+
+        </div>
+
+
+        <div className="ai-core-section-label ai-core-inner-label">
+            RECOVERY / MARTINGALE
+        </div>
+
+
+        <div className="ai-core-recovery-grid">
+
+            <label className="ai-core-control-card">
+
+                <span className="ai-core-control-label">
+                    MARTINGALE LEVEL
+                </span>
+
+                <div className="ai-core-input-shell ai-core-centered-input">
+
+                    <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={over2MartingaleLevel}
+                        onChange={event =>
+                            setOver2MartingaleLevel(
+                                event.target.value
+                            )
+                        }
+                    />
+
+                </div>
+
+            </label>
+
+
+            <label className="ai-core-control-card">
+
+                <span className="ai-core-control-label">
+                    MARTINGALE MULTIPLIER
+                </span>
+
+                <div className="ai-core-input-shell ai-core-centered-input">
+
+                    <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={over2Martingale}
+                        onChange={event =>
+                            setOver2Martingale(
+                                event.target.value
+                            )
+                        }
+                    />
+
+                    <span className="ai-core-input-suffix">
+                        x
+                    </span>
+
+                </div>
+
+            </label>
+
+        </div>
+
+
+        <div className="ai-core-section-label ai-core-inner-label">
+            AI-LINKED VALUES
+        </div>
+
+
+        <div className="ai-core-ai-grid">
+
+            <div className="ai-core-ai-card">
+
+                <span className="ai-core-control-label">
+                    ENTRY DIGIT
+                </span>
+
+                <div className="ai-core-digit-value">
+
+                    {over2Signal?.ready
+                        ? over2Signal.leastDigit ?? '--'
+                        : signal?.entryDigit ??
+                          engineState?.entry?.entryDigit ??
+                          '--'}
+
+                </div>
+
             </div>
-        </>
 
-    ) : (
 
-        <>
-            <div className="signal-card">
-                <span>ENTRY</span>
-                <strong>
-                    {signal?.entryDigit ?? '--'}
-                </strong>
+            <div className="ai-core-ai-card">
+
+                <span className="ai-core-control-label">
+                    BARRIER
+                </span>
+
+                <div className="ai-core-digit-value">
+
+                    {signal?.barrierDigit ??
+                        engineState?.barrier?.barrierDigit ??
+                        '--'}
+
+                </div>
+
             </div>
 
-            <div className="signal-card">
-                <span>BARRIER</span>
-                <strong>
-                    {signal?.barrierDigit ?? '--'}
-                </strong>
+
+            <div className="ai-core-ai-card">
+
+                <span className="ai-core-control-label">
+                    TRADING MODE
+                </span>
+
+                <div className="ai-core-mode-value">
+
+                    {over2Signal?.ready || over2State
+                        ? 'AI SIGNAL'
+                        : signal?.regime ??
+                          engineState?.regime?.regime ??
+                          'AI SIGNAL'}
+
+                </div>
+
             </div>
 
-            <div className="signal-card signal-confidence-card">
-                <span>CONFIDENCE</span>
-                <strong>
-                    {signal
-                        ? `${signal.confidence.toFixed(1)}%`
-                        : '--'}
-                </strong>
+        </div>
+
+
+        <div className="ai-core-action">
+
+            {over2Signal?.ready ? (
+
+                <button
+                    type="button"
+                    onClick={applyOver2SignalToBot}
+                    disabled={
+                        over2Signal.leastDigit === null
+                    }
+                    className="apply-signal-button"
+                >
+                    ⚡ APPLY TO BOT
+                </button>
+
+            ) : (
+
+                <button
+                    type="button"
+                    onClick={applySignalToBot}
+                    disabled={!signal?.ready}
+                    className="apply-signal-button"
+                >
+                    ⚡ APPLY TO BOT
+                </button>
+
+            )}
+
+            <span className="ai-core-action-helper">
+                Applies AI signal + trade settings to the selected bot.
+            </span>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section className="ai-lab-grid">
+
+
+    <div className="ai-lab-panel">
+
+        <div className="panel-command-header">
+
+            <div>
+
+                <span className="panel-kicker">
+                    AI INTELLIGENCE
+                </span>
+
+                <div className="section-heading">
+                    {over2Signal?.ready || over2State
+                        ? 'OVER 2 INTELLIGENCE'
+                        : 'ENGINE BREAKDOWN'}
+                </div>
+
             </div>
 
-            <div className="signal-card">
-                <span>QUALITY SCORE</span>
-                <strong>
-                    {signal
-                        ? `${signal.qualityScore.toFixed(1)}`
-                        : '--'}
-                </strong>
+            <span className="panel-live-indicator">
+                LIVE
+            </span>
+
+        </div>
+
+
+        {over2Signal?.ready || over2State ? (
+
+            <>
+
+                <div className="engine-row">
+
+                    <span>
+                        WINDOW
+                    </span>
+
+                    <strong>
+                        {over2State?.tickCount ?? 0} / 1000
+                    </strong>
+
+                </div>
+
+
+                <div className="engine-row">
+
+                    <span>
+                        DIGIT 0
+                    </span>
+
+                    <strong>
+                        {over2Signal?.percentages?.[0] !== undefined
+                            ? `${over2Signal.percentages[0].toFixed(1)}%`
+                            : '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="engine-row">
+
+                    <span>
+                        DIGIT 1
+                    </span>
+
+                    <strong>
+                        {over2Signal?.percentages?.[1] !== undefined
+                            ? `${over2Signal.percentages[1].toFixed(1)}%`
+                            : '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="engine-row">
+
+                    <span>
+                        DIGIT 2
+                    </span>
+
+                    <strong>
+                        {over2Signal?.percentages?.[2] !== undefined
+                            ? `${over2Signal.percentages[2].toFixed(1)}%`
+                            : '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="engine-row">
+
+                    <span>
+                        LEAST DIGIT
+                    </span>
+
+                    <strong>
+                        {over2Signal?.leastDigit ?? '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="engine-row">
+
+                    <span>
+                        QUALIFICATION
+                    </span>
+
+                    <strong>
+                        {over2Signal?.qualifying
+                            ? 'QUALIFIED'
+                            : 'SCANNING'}
+                    </strong>
+
+                </div>
+
+
+                <div className="engine-row">
+
+                    <span>
+                        LATEST DIGIT
+                    </span>
+
+                    <strong>
+                        {over2State?.latestDigit ?? '--'}
+                    </strong>
+
+                </div>
+
+            </>
+
+        ) : (
+
+            <>
+
+                <div className="engine-row">
+
+                    <span>
+                        DIGIT ENGINE
+                    </span>
+
+                    <strong>
+                        {engineState?.scores?.[0]
+                            ? engineState.scores[0].digit
+                            : '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="engine-row">
+
+                    <span>
+                        BARRIER ENGINE
+                    </span>
+
+                    <strong>
+                        {engineState?.barrier?.barrierDigit ?? '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="engine-row">
+
+                    <span>
+                        ENTRY ENGINE
+                    </span>
+
+                    <strong>
+                        {engineState?.entry?.entryDigit ?? '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="engine-row">
+
+                    <span>
+                        FIBONACCI
+                    </span>
+
+                    <strong>
+                        {signal?.fibLevel ?? '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="engine-row">
+
+                    <span>
+                        REGIME
+                    </span>
+
+                    <strong>
+                        {engineState?.regime?.regime ?? '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="engine-row">
+
+                    <span>
+                        CONFLUENCE
+                    </span>
+
+                    <strong>
+                        {signal
+                            ? signal.confluenceScore.toFixed(1)
+                            : '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="engine-row">
+
+                    <span>
+                        QUALITY
+                    </span>
+
+                    <strong>
+                        {signal
+                            ? signal.qualityScore.toFixed(1)
+                            : '--'}
+                    </strong>
+
+                </div>
+
+            </>
+
+        )}
+
+    </div>
+
+
+    <div className="ai-lab-panel">
+
+        <div className="panel-command-header">
+
+            <div>
+
+                <span className="panel-kicker">
+                    EXECUTION MONITOR
+                </span>
+
+                <div className="section-heading">
+                    {over2State
+                        ? 'OVER 2 SIGNAL STATUS'
+                        : 'SIGNAL STATUS'}
+                </div>
+
             </div>
-        </>
 
-    )}
+            <span className="panel-live-indicator">
+                MONITORING
+            </span>
 
-</div>
-
-
-                <div className="signal-action">
-
-    {over2Signal?.ready ? (
-
-        <button
-            type="button"
-            onClick={applyOver2SignalToBot}
-            disabled={over2Signal.leastDigit === null}
-            className="apply-signal-button"
-        >
-            APPLY OVER 2 BOT
-        </button>
-
-    ) : (
-
-        <button
-            type="button"
-            onClick={applySignalToBot}
-            disabled={!signal?.ready}
-            className="apply-signal-button"
-        >
-            APPLY TO BOT
-        </button>
-
-    )}
-
-</div>
+        </div>
 
 
-            </section>
+        {over2State ? (
+
+            <>
+
+                <div className="status-main">
+
+                    <span
+                        className={
+                            over2Signal?.ready
+                                ? 'status-ready'
+                                : 'status-waiting'
+                        }
+                    >
+                        {over2Signal?.ready
+                            ? 'READY'
+                            : 'SCANNING'}
+                    </span>
+
+                </div>
+
+
+                <div className="status-row">
+
+                    <span>
+                        WINDOW
+                    </span>
+
+                    <strong>
+                        {over2State.tickCount ?? 0} / 1000
+                    </strong>
+
+                </div>
+
+
+                <div className="status-row">
+
+                    <span>
+                        LEAST DIGIT
+                    </span>
+
+                    <strong>
+                        {over2Signal?.leastDigit ?? '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="status-row">
+
+                    <span>
+                        QUALIFICATION
+                    </span>
+
+                    <strong>
+                        {over2Signal?.qualifying
+                            ? 'QUALIFIED'
+                            : 'NOT READY'}
+                    </strong>
+
+                </div>
+
+
+                <div className="status-row">
+
+                    <span>
+                        LATEST DIGIT
+                    </span>
+
+                    <strong>
+                        {over2State.latestDigit ?? '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="status-row">
+
+                    <span>
+                        STRATEGY
+                    </span>
+
+                    <strong>
+                        DIGIT OVER 2
+                    </strong>
+
+                </div>
+
+            </>
+
+        ) : (
+
+            <>
+
+                <div className="status-main">
+
+                    <span
+                        className={
+                            signal?.ready
+                                ? 'status-ready'
+                                : 'status-waiting'
+                        }
+                    >
+                        {signal?.ready
+                            ? 'READY'
+                            : 'WAITING'}
+                    </span>
+
+                </div>
+
+
+                <div className="status-row">
+
+                    <span>
+                        ENTRY
+                    </span>
+
+                    <strong>
+                        {signal?.entryDigit ?? '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="status-row">
+
+                    <span>
+                        BARRIER
+                    </span>
+
+                    <strong>
+                        {signal?.barrierDigit ?? '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="status-row">
+
+                    <span>
+                        RELATIONSHIP
+                    </span>
+
+                    <strong>
+                        {signal
+                            ? signal.relationshipScore.toFixed(1)
+                            : '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="status-row">
+
+                    <span>
+                        REGIME
+                    </span>
+
+                    <strong>
+                        {signal?.regime ?? '--'}
+                    </strong>
+
+                </div>
+
+
+                <div className="status-row">
+
+                    <span>
+                        PENDING SIGNALS
+                    </span>
+
+                    <strong>
+                        {adapterRef.current
+                            ?.getPendingCount() ?? 0}
+                    </strong>
+
+                </div>
+
+            </>
+
+        )}
+
+    </div>
+
+
+</section>
 
 
             <section className="ai-lab-grid">
@@ -2396,7 +3693,7 @@ useEffect(() => {
 
                                     <span>
                                         E{item.key.entryDigit}
-                                        {' â†’ '}
+                                        {' → '}
                                         B{item.key.barrierDigit}
                                     </span>
 
@@ -2426,4 +3723,3 @@ useEffect(() => {
 
 
 export default AiLab;
-
