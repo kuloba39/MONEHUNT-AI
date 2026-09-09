@@ -1,0 +1,19 @@
+# MONEHUNT AI local backups
+*.backup
+*.before-*
+*.monehunt-backup
+
+# Local debugging / temporary files
+ai-core-current.txt
+ai-lab-check.txt
+add-volatility-function.ps1
+add-volatility-ui.ps1
+
+# Local backup copies inside AI LAB
+src/pages/ai-lab/*.backup
+src/pages/ai-lab/*.before-*
+src/pages/ai-lab/*.monehunt-backup
+
+# Local backup copies inside constants
+src/constants/*.backup
+src/constants/*.before-*
