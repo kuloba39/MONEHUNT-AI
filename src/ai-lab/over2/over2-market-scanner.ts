@@ -373,13 +373,43 @@ export class Over2MarketScanner {
 
                 });
 
-            } catch (error) {
+            } catch (error: any) {
 
-                console.error(
-                    'OVER 2 LIVE SUBSCRIBE ERROR',
-                    market.symbol,
-                    error
-                );
+                /*
+                 * Another part of MONEHUNT-AI may already
+                 * own the live subscription for this market.
+                 *
+                 * In that case Deriv returns AlreadySubscribed.
+                 *
+                 * This is NOT a scanner failure:
+                 * the existing subscription continues publishing
+                 * ticks through the shared API connection, and
+                 * handleMessage() already processes those ticks.
+                 *
+                 * Because no subscription ID is captured for this
+                 * market, stop() will not attempt to forget a
+                 * subscription owned by another component.
+                 */
+
+                if (
+                    error?.error?.code ===
+                    'AlreadySubscribed'
+                ) {
+
+                    console.log(
+                        'OVER 2: USING EXISTING LIVE SUBSCRIPTION',
+                        market.symbol
+                    );
+
+                } else {
+
+                    console.error(
+                        'OVER 2 LIVE SUBSCRIBE ERROR',
+                        market.symbol,
+                        error
+                    );
+
+                }
 
             }
 

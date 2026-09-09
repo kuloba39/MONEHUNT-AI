@@ -1,7 +1,8 @@
 <xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true" collection="false">
   <variables>
     <variable id="o2_least_digit_id">leastDigit</variable>
-    <variable id="o2_stake_id">Stake</variable>
+<variable id="o2_prediction_id">Prediction</variable>
+<variable id="o2_stake_id">Stake</variable>
     <variable id="o2_initial_stake_id">InitialStake</variable>
     <variable id="o2_tp_id">TakeProfit</variable>
     <variable id="o2_mart_level_id">MartingaleLevel</variable>
@@ -61,170 +62,126 @@
     </statement>
 
     <statement name="INITIALIZATION">
-
-      <block type="notify" id="o2_init_notify">
-        <field name="NOTIFICATION_TYPE">success</field>
-        <field name="NOTIFICATION_SOUND">silent</field>
-
-        <value name="MESSAGE">
-          <shadow type="text" id="o2_init_msg">
-            <field name="TEXT">OVER 2 BOT READY</field>
-          </shadow>
+  <block type="notify" id="o2_init_notify">
+    <field name="NOTIFICATION_TYPE">success</field>
+    <field name="NOTIFICATION_SOUND">silent</field>
+    <value name="MESSAGE">
+      <shadow type="text" id="o2_init_msg">
+        <field name="TEXT">OVER 2 BOT READY</field>
+      </shadow>
+    </value>
+    <next>
+      <block type="variables_set" id="o2_least_digit_init">
+        <field name="VAR" id="o2_least_digit_id">leastDigit</field>
+        <value name="VALUE">
+          <block type="math_number" id="o2_least_digit_num">
+            <field name="NUM">1</field>
+          </block>
         </value>
-
         <next>
-
-          <block type="variables_set" id="o2_least_digit_init">
-            <field name="VAR" id="o2_least_digit_id">leastDigit</field>
-
+          <block type="variables_set" id="o2_prediction_init">
+            <field name="VAR" id="o2_prediction_id">Prediction</field>
             <value name="VALUE">
-              <block type="math_number" id="o2_least_digit_num">
-                <field name="NUM">1</field>
+              <block type="math_number" id="o2_prediction_num">
+                <field name="NUM">2</field>
               </block>
             </value>
-
             <next>
-
               <block type="variables_set" id="o2_stake_init">
                 <field name="VAR" id="o2_stake_id">Stake</field>
-
                 <value name="VALUE">
                   <block type="math_number" id="o2_stake_num">
                     <field name="NUM">10</field>
                   </block>
                 </value>
-
                 <next>
-
                   <block type="variables_set" id="o2_initial_stake_init">
                     <field name="VAR" id="o2_initial_stake_id">InitialStake</field>
-
                     <value name="VALUE">
                       <block type="math_number" id="o2_initial_stake_num">
                         <field name="NUM">10</field>
                       </block>
                     </value>
-
                     <next>
-
                       <block type="variables_set" id="o2_tp_init">
                         <field name="VAR" id="o2_tp_id">TakeProfit</field>
-
                         <value name="VALUE">
                           <block type="math_number" id="o2_tp_num">
                             <field name="NUM">15</field>
                           </block>
                         </value>
-
                         <next>
-
                           <block type="variables_set" id="o2_mart_level_init">
                             <field name="VAR" id="o2_mart_level_id">MartingaleLevel</field>
-
                             <value name="VALUE">
                               <block type="math_number" id="o2_mart_level_num">
                                 <field name="NUM">6</field>
                               </block>
                             </value>
-
                             <next>
-
                               <block type="variables_set" id="o2_mart_init">
                                 <field name="VAR" id="o2_mart_id">Martingale</field>
-
                                 <value name="VALUE">
                                   <block type="math_number" id="o2_mart_num">
                                     <field name="NUM">2</field>
                                   </block>
                                 </value>
-
                                 <next>
-
                                   <block type="variables_set" id="o2_loss_init">
                                     <field name="VAR" id="o2_loss_cnt_id">lossCounter</field>
-
                                     <value name="VALUE">
                                       <block type="math_number" id="o2_loss_num">
                                         <field name="NUM">0</field>
                                       </block>
                                     </value>
-
                                     <next>
-
                                       <block type="variables_set" id="o2_tm_init">
                                         <field name="VAR" id="o2_tm_id">trading mode</field>
-
                                         <value name="VALUE">
                                           <block type="math_number" id="o2_tm_zero">
                                             <field name="NUM">0</field>
                                           </block>
                                         </value>
-
                                         <next>
-
                                           <block type="variables_set" id="o2_armed_init">
                                             <field name="VAR" id="o2_armed_id">entry armed</field>
-
                                             <value name="VALUE">
                                               <block type="math_number" id="o2_armed_zero">
                                                 <field name="NUM">0</field>
                                               </block>
                                             </value>
-
                                             <next>
-
                                               <block type="variables_set" id="o2_stop_loss_init">
                                                 <field name="VAR" id="o2_stop_loss_id">StopLoss</field>
-
                                                 <value name="VALUE">
                                                   <block type="math_number" id="o2_stop_loss_num">
                                                     <field name="NUM">50</field>
                                                   </block>
                                                 </value>
-
                                               </block>
-
                                             </next>
-
                                           </block>
-
                                         </next>
-
                                       </block>
-
                                     </next>
-
                                   </block>
-
                                 </next>
-
                               </block>
-
                             </next>
-
                           </block>
-
                         </next>
-
                       </block>
-
                     </next>
-
                   </block>
-
                 </next>
-
               </block>
-
             </next>
-
           </block>
-
         </next>
-
       </block>
-
-    </statement>
+    </next>
+  </block>
+</statement>
 
     <statement name="SUBMARKET">
 
@@ -260,11 +217,15 @@
 
         <value name="PREDICTION">
 
-          <shadow type="math_number_positive" id="o2_prediction_shadow" inline="true">
-            <field name="NUM">2</field>
-          </shadow>
+  <shadow type="math_number_positive" id="o2_prediction_shadow" inline="true">
+    <field name="NUM">2</field>
+  </shadow>
 
-        </value>
+  <block type="variables_get" id="o2_prediction_get">
+    <field name="VAR" id="o2_prediction_id">Prediction</field>
+  </block>
+
+</value>
 
       </block>
 
