@@ -508,27 +508,63 @@ setSelectedStrategyId(
 const [
     over2InitialStake,
     setOver2InitialStake
-] = useState('10');
+] = useState(() => {
+    if (typeof window === 'undefined') return '10';
+    return localStorage.getItem('ai_lab_over2_initial_stake') || '10';
+});
 
 const [
     over2Stake,
     setOver2Stake
-] = useState('10');
+] = useState(() => {
+    if (typeof window === 'undefined') return '10';
+    return localStorage.getItem('ai_lab_over2_stake') || '10';
+});
 
 const [
     over2TakeProfit,
     setOver2TakeProfit
-] = useState('15');
+] = useState(() => {
+    if (typeof window === 'undefined') return '15';
+    return localStorage.getItem('ai_lab_over2_take_profit') || '15';
+});
 
 const [
     over2MartingaleLevel,
     setOver2MartingaleLevel
-] = useState('6');
+] = useState(() => {
+    if (typeof window === 'undefined') return '6';
+    return localStorage.getItem('ai_lab_over2_martingale_level') || '6';
+});
 
 const [
     over2Martingale,
     setOver2Martingale
-] = useState('2');/*
+] = useState(() => {
+    if (typeof window === 'undefined') return '2';
+    return localStorage.getItem('ai_lab_over2_martingale') || '2';
+});
+
+/*
+ * OVER 2 SETTINGS PERSISTENCE
+ *
+ * Market selection, scanner refreshes, and bot loading
+ * must never reset the user's configured settings.
+ */
+useEffect(() => {
+    localStorage.setItem('ai_lab_over2_initial_stake', over2InitialStake);
+    localStorage.setItem('ai_lab_over2_stake', over2Stake);
+    localStorage.setItem('ai_lab_over2_take_profit', over2TakeProfit);
+    localStorage.setItem('ai_lab_over2_martingale_level', over2MartingaleLevel);
+    localStorage.setItem('ai_lab_over2_martingale', over2Martingale);
+}, [
+    over2InitialStake,
+    over2Stake,
+    over2TakeProfit,
+    over2MartingaleLevel,
+    over2Martingale
+]);
+/*
  * MATCHES USER TRADE SETTINGS
  *
  * These values are controlled by the user
@@ -4180,6 +4216,7 @@ useEffect(() => {
 });
 
 export default AiLab;
+
 
 
 
