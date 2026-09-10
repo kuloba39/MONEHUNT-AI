@@ -5,8 +5,12 @@ import {
     Over2DigitStats,
 } from './over2-types';
 
-const WINDOW_SIZE = 1000;
-const MAX_ALLOWED_COUNT = 100;
+import {
+    calculateDigitScores,
+    evaluateOver2Signal,
+} from '../matches/digit-engine';
+
+const WINDOW_SIZE = 600;
 
 export class Over2Engine {
     private ticks: Over2Tick[] = [];
@@ -29,7 +33,9 @@ export class Over2Engine {
         };
     }
 
-    processTick(tick: Over2Tick): Over2EngineState {
+    processTick(
+        tick: Over2Tick
+    ): Over2EngineState {
         this.ticks.push(tick);
 
         if (this.ticks.length > WINDOW_SIZE) {
@@ -41,7 +47,9 @@ export class Over2Engine {
         return this.state;
     }
 
-    processTicks(ticks: Over2Tick[]): Over2EngineState {
+    processTicks(
+        ticks: Over2Tick[]
+    ): Over2EngineState {
         for (const tick of ticks) {
             this.processTick(tick);
         }
@@ -50,7 +58,60 @@ export class Over2Engine {
     }
 
     private analyze(): Over2EngineState {
-        const counts: Record<number, number> = {
+        const total =
+            this.ticks.length;
+
+        /*
+         * Convert OVER 2 ticks into the
+         * shared Matches digit-engine format.
+         */
+        const analysisTicks =
+            this.ticks.map(
+                (tick, index) => ({
+                    timestamp:
+                        tick.epoch,
+
+                    symbol:
+                        tick.market,
+
+                    price:
+                        Number(tick.quote),
+
+                    digit:
+                        Number(tick.digit),
+
+                    index,
+                })
+            );
+
+        const scores =
+            calculateDigitScores(
+                analysisTicks
+            );
+
+        /*
+         * The shared engine contains the
+         * exact OVER 2 qualification rules:
+         *
+         * 1. 0 <= 10%
+         * 2. 1 <= 10%
+         * 3. 2 <= 10%
+         * 4. Least of 0/1/2 becomes entry digit
+         * 5. Entry digit must NOT be overall least
+         */
+        const over2Check =
+            total >= WINDOW_SIZE
+                ? evaluateOver2Signal(scores)
+                : {
+                    valid: false,
+                    entryDigit: null,
+                    overallLeastDigit: null,
+                    reason:
+                        'INSUFFICIENT TICK DATA',
+                };
+
+        const counts:
+            Record<number, number> = {
             0: 0,
             1: 0,
             2: 0,
@@ -63,8 +124,12 @@ export class Over2Engine {
             9: 0,
         };
 
-        for (const tick of this.ticks) {
-            const digit = Number(tick.digit);
+        for (
+            const tick
+            of this.ticks
+        ) {
+            const digit =
+                Number(tick.digit);
 
             if (
                 Number.isInteger(digit) &&
@@ -75,9 +140,8 @@ export class Over2Engine {
             }
         }
 
-        const total = this.ticks.length;
-
-        const percentages: Record<number, number> = {
+        const percentages:
+            Record<number, number> = {
             0: 0,
             1: 0,
             2: 0,
@@ -90,62 +154,78 @@ export class Over2Engine {
             9: 0,
         };
 
-        for (let digit = 0; digit <= 9; digit++) {
+        for (
+            let digit = 0;
+            digit <= 9;
+            digit++
+        ) {
             percentages[digit] =
                 total > 0
-                    ? (counts[digit] / total) * 100
+                    ? (
+                        counts[digit] /
+                        total
+                    ) * 100
                     : 0;
         }
 
-        const digitStats: Over2DigitStats[] =
-            Array.from({ length: 10 }, (_, digit) => ({
-                digit,
-                count: counts[digit],
-                percentage: percentages[digit],
-            }));
+        const digitStats:
+            Over2DigitStats[] =
+            Array.from(
+                { length: 10 },
+                (_, digit) => ({
+                    digit,
+                    count:
+                        counts[digit],
+                    percentage:
+                        percentages[digit],
+                })
+            );
 
-        const ready =
-            total >= WINDOW_SIZE &&
-            counts[0] <= MAX_ALLOWED_COUNT &&
-            counts[1] <= MAX_ALLOWED_COUNT &&
-            counts[2] <= MAX_ALLOWED_COUNT;
-
-        let leastDigit: number | null = null;
-
-        if (ready) {
-            const candidates = [0, 1, 2];
-
-            leastDigit = candidates.reduce((least, digit) => {
-                if (counts[digit] < counts[least]) {
-                    return digit;
-                }
-
-                return least;
-            });
-        }
-
-        const signal: Over2Signal = {
+        const signal:
+            Over2Signal = {
             strategy: 'OVER_2',
-            ready,
-            leastDigit,
+
+            ready:
+                over2Check.valid,
+
+            leastDigit:
+                over2Check.entryDigit,
+
             counts,
+
             percentages,
-            qualifying: ready,
-            generatedAt: Date.now(),
+
+            qualifying:
+                over2Check.valid,
+
+            generatedAt:
+                Date.now(),
+
+            overallLeastDigit:
+                over2Check.overallLeastDigit,
+
+            reason:
+                over2Check.reason,
         };
 
         return {
             digitStats,
+
             signal,
+
             latestDigit:
-                this.ticks.length > 0
-                    ? this.ticks[this.ticks.length - 1].digit
+                total > 0
+                    ? this.ticks[
+                        total - 1
+                    ].digit
                     : null,
-            tickCount: total,
+
+            tickCount:
+                total,
         };
     }
 
-    getState(): Over2EngineState {
+        getState(): Over2EngineState {
         return this.state;
     }
 

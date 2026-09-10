@@ -12,7 +12,11 @@ export class DataProcessor {
     addTick(tick: TickRecord) {
         this.ticks.push(tick);
 
-        if (this.ticks.length > 250) {
+        /*
+         * Keep enough history for the AI engine
+         * to analyse the latest 600 ticks.
+         */
+        if (this.ticks.length > 600) {
             this.ticks.shift();
         }
     }
@@ -35,5 +39,9 @@ export class DataProcessor {
 
     get250() {
         return this.getWindow(250);
+    }
+
+    get600() {
+        return this.getWindow(600);
     }
 }

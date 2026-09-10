@@ -32,7 +32,7 @@ type ScannerSubscription = {
     unsubscribe?: () => void;
 };
 
-const WINDOW_SIZE = 1000;
+const WINDOW_SIZE = 600;
 
 export class Over2MarketScanner {
 
@@ -129,12 +129,29 @@ export class Over2MarketScanner {
                         item !== null
                 );
 
-        const qualifyingMarkets =
-            results.filter(
-                result =>
-                    result.signal?.ready === true &&
-                    result.signal?.leastDigit !== null
+       const qualifyingMarkets =
+    results.filter(
+        result =>
+            result.signal?.qualifying === true &&
+            result.signal?.ready === true &&
+            result.signal?.leastDigit !== null
+    );
+
+        /*
+         * Scanner display order.
+         *
+         * Newest qualifying signal appears first.
+         * This is separate from the strength-ranked
+         * bestMarket calculation below.
+         */
+
+        const arrivalOrderedMarkets =
+            [...qualifyingMarkets].sort(
+                (a, b) =>
+                    (b.signal?.generatedAt ?? 0) -
+                    (a.signal?.generatedAt ?? 0)
             );
+
 
         /*
          * Strongest market selection.
@@ -215,7 +232,7 @@ export class Over2MarketScanner {
                 ).length,
 
             qualifyingMarkets:
-                sorted,
+                arrivalOrderedMarkets,
 
             bestMarket:
                 sorted[0] ?? null,

@@ -1,4 +1,4 @@
-/* =========================================================
+﻿/* =========================================================
    MONEHUNT AI LAB
    AI MISSION CONTROL
    Premium Emerald / AI Command Center
@@ -1123,7 +1123,7 @@
 
 
 /* =========================================================
-   AI CORE — CURRENT SIGNAL
+   AI CORE â€” CURRENT SIGNAL
    ========================================================= */
 
 .ai-lab-signal {
@@ -2109,6 +2109,129 @@
 
 
 /* =========================================================
+   OVER 2 SCANNER RESPONSIVE
+   =========================================================
+
+@media (max-width: 700px) {
+
+    .over2-scanner-panel {
+        margin-bottom: 14px;
+    }
+
+    .over2-scanner-header {
+        align-items: flex-start;
+    }
+
+    .over2-scanner-count {
+        min-width: 50px;
+        padding: 7px 9px;
+    }
+
+    .over2-signal-row {
+        grid-template-columns:
+            minmax(0, 1fr)
+            auto
+            auto;
+        gap: 9px;
+        padding: 10px;
+    }
+
+    .over2-signal-market {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .over2-signal-type {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .over2-signal-valid {
+        grid-column: 3;
+        grid-row: 1;
+    }
+
+    .over2-signal-digit {
+        grid-column: 1;
+        grid-row: 2;
+        justify-self: start;
+        text-align: left;
+        flex-direction: row;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .over2-signal-age {
+        grid-column: 2;
+        grid-row: 2;
+        text-align: left;
+    }
+
+    .over2-select-button {
+        grid-column: 3;
+        grid-row: 2;
+        min-width: 76px;
+    }
+}
+
+/* =========================================================
+   OVER 2 SCANNER SMALL PHONE
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+    .over2-scanner-header {
+        gap: 10px;
+    }
+
+    .over2-scanner-subtitle {
+        font-size: 9px;
+    }
+
+    .over2-signal-row {
+        grid-template-columns:
+            1fr
+            1fr;
+        gap: 8px;
+    }
+
+    .over2-signal-market {
+        grid-column: 1 / -1;
+        grid-row: 1;
+    }
+
+    .over2-signal-type {
+        grid-column: 1;
+        grid-row: 2;
+        text-align: left;
+    }
+
+    .over2-signal-valid {
+        grid-column: 2;
+        grid-row: 2;
+        text-align: right;
+    }
+
+    .over2-signal-digit {
+        grid-column: 1;
+        grid-row: 3;
+    }
+
+    .over2-signal-age {
+        grid-column: 2;
+        grid-row: 3;
+        text-align: right;
+    }
+
+    .over2-select-button {
+        grid-column: 1 / -1;
+        grid-row: 4;
+        width: 100%;
+        min-height: 38px;
+    }
+}
+
+/* =========================================================
    DARK MODE
    MONEHUNT EMERALD COMMAND CENTER
    ========================================================= */
@@ -2196,6 +2319,189 @@
 }
 
 
+
+/* =========================================================
+   OVER 2 LIVE SCANNER
+   ========================================================= */
+
+.over2-scanner-panel {
+    width: 100%;
+    margin-bottom: 18px;
+}
+
+.over2-scanner-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.over2-scanner-subtitle {
+    margin-top: 5px;
+    color: var(--text-less-prominent);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.over2-scanner-count {
+    min-width: 58px;
+    padding: 8px 10px;
+    border: 1px solid var(--ai-border-soft);
+    border-radius: 9px;
+    background: var(--ai-panel-raised);
+    color: var(--monehunt-green);
+    font-size: 12px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.over2-scanner-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.over2-signal-row {
+    display: grid;
+    grid-template-columns:
+        minmax(180px, 1.7fr)
+        80px
+        70px
+        70px
+        80px
+        92px;
+    align-items: center;
+    gap: 12px;
+    min-height: 58px;
+    padding: 9px 11px;
+    border: 1px solid var(--ai-border-soft);
+    border-radius: 10px;
+    background: var(--ai-panel-raised);
+    transition:
+        border-color 0.18s ease,
+        background 0.18s ease,
+        transform 0.18s ease;
+}
+
+.over2-signal-row:hover {
+    border-color: rgba(25, 217, 130, 0.28);
+    transform: translateY(-1px);
+}
+
+.over2-signal-row.selected {
+    border-color: rgba(25, 217, 130, 0.58);
+    background:
+        linear-gradient(
+            90deg,
+            rgba(25, 217, 130, 0.10),
+            var(--ai-panel-raised)
+        );
+    box-shadow:
+        inset 3px 0 0 var(--monehunt-green),
+        0 0 18px rgba(25, 217, 130, 0.07);
+}
+
+.over2-signal-market {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.over2-signal-market strong {
+    overflow: hidden;
+    color: var(--text-prominent);
+    font-size: 12px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.over2-signal-market span {
+    color: var(--text-less-prominent);
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.over2-signal-type,
+.over2-signal-valid,
+.over2-signal-digit,
+.over2-signal-age {
+    font-size: 10px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.over2-signal-type {
+    color: var(--text-less-prominent);
+}
+
+.over2-signal-valid {
+    color: var(--ai-success);
+}
+
+.over2-signal-digit {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: var(--text-less-prominent);
+}
+
+.over2-signal-digit strong {
+    color: var(--ai-gold);
+    font-size: 14px;
+}
+
+.over2-signal-age {
+    color: var(--text-less-prominent);
+    white-space: nowrap;
+}
+
+.over2-select-button {
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid rgba(25, 217, 130, 0.30);
+    border-radius: 7px;
+    background: rgba(25, 217, 130, 0.07);
+    color: var(--monehunt-green);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.18s ease;
+}
+
+.over2-select-button:hover {
+    border-color: var(--monehunt-green);
+    background: rgba(25, 217, 130, 0.14);
+    transform: translateY(-1px);
+}
+
+.over2-signal-row.selected .over2-select-button {
+    border-color: var(--monehunt-green);
+    background: var(--monehunt-green);
+    color: #06110c;
+}
+
+.over2-scanner-empty {
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--ai-border-soft);
+    border-radius: 10px;
+    background: var(--ai-panel-raised);
+    color: var(--text-less-prominent);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
 /* =========================================================
    REDUCED MOTION
    ========================================================= */
@@ -2240,7 +2546,7 @@
 
 /* =========================================================
    PERFORMANCE VISIBILITY SAFETY
-   Final override — intentionally keeps Matches Performance
+   Final override â€” intentionally keeps Matches Performance
    visible regardless of surrounding layout styling.
    ========================================================= */
 
@@ -2252,7 +2558,7 @@
     opacity: 1;
 }
 /* =========================================================
-   MONEHUNT AI CORE — FINAL COMMAND CENTER
+   MONEHUNT AI CORE â€” FINAL COMMAND CENTER
    AI CORE ONLY
    ========================================================= */
 

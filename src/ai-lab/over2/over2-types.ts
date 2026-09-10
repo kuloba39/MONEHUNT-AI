@@ -21,6 +21,9 @@ export interface Over2Signal {
 
     qualifying: boolean;
 
+    overallLeastDigit: number | null;
+    reason: string;
+
     generatedAt: number;
 }
 

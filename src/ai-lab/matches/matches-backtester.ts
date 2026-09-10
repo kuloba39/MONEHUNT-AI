@@ -1,5 +1,8 @@
 import { DataProcessor } from './data-processor';
-import { calculateDigitScores } from './digit-engine';
+import {
+    calculateDigitScores,
+    evaluateOver2Signal
+} from './digit-engine';
 import { findBarrier } from './barrier-engine';
 import { findEntryDigit } from './entry-engine';
 import {
@@ -326,7 +329,7 @@ export class MatchesBacktester {
 
 
         const history =
-            this.processor.get100();
+            this.processor.get600();
 
 
         const predictionHistory =
@@ -337,6 +340,15 @@ export class MatchesBacktester {
             ReturnType<
                 typeof calculateDigitScores
             > = [];
+let over2Signal:
+    ReturnType<
+        typeof evaluateOver2Signal
+    > = {
+    valid: false,
+    entryDigit: null,
+    overallLeastDigit: null,
+    reason: 'NO DIGIT DATA'
+};
 
 
         let barrier:
@@ -368,9 +380,14 @@ export class MatchesBacktester {
         ) {
 
             scores =
-                calculateDigitScores(
-                    predictionHistory
-                );
+    calculateDigitScores(
+        predictionHistory
+    );
+
+over2Signal =
+    evaluateOver2Signal(
+        scores
+    );
 
 
             barrier =
@@ -455,23 +472,25 @@ export class MatchesBacktester {
 
         if (
 
-            entry &&
+    over2Signal.valid &&
 
-            barrier &&
+    over2Signal.entryDigit !== null &&
 
-            priceContext &&
+    entry &&
 
-            regime &&
+    barrier &&
 
-            entry.ready &&
+    priceContext &&
 
-            entry.entryDigit >= 0 &&
+    regime &&
 
-            barrier.barrierDigit >= 0 &&
+    entry.ready &&
 
-            digit === entry.entryDigit
+    barrier.barrierDigit >= 0 &&
 
-        ) {
+    digit === over2Signal.entryDigit
+
+) {
 
             /*
              * -----------------------------------------------------
@@ -595,7 +614,7 @@ export class MatchesBacktester {
                     input.index,
 
                 entryDigit:
-                    entry.entryDigit,
+    over2Signal.entryDigit,
 
                 barrierDigit:
                     barrier.barrierDigit,
@@ -682,7 +701,9 @@ export class MatchesBacktester {
 
             scores,
 
-            barrier,
+over2Signal,
+
+barrier,
 
             entry,
 
@@ -710,7 +731,7 @@ export class MatchesBacktester {
 
     getHistory() {
 
-        return this.processor.get100();
+        return this.processor.get600();
 
     }
 

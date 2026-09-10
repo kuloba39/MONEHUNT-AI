@@ -33,8 +33,19 @@ const AiLab = () => {
     const { dashboard, load_modal, blockly_store } = useStore();
 
     const { setActiveTab } = dashboard;
-    const { setSelectedStrategyId } = load_modal;
+
+    const {
+        setSelectedStrategyId,
+        selected_strategy_id,
+    } = load_modal;
+
     const { setLoading } = blockly_store;
+
+    const isOver2Strategy =
+        selected_strategy_id === 'over2-signal';
+
+    const isMatchesStrategy =
+        selected_strategy_id === 'matches-signal';
     const [markets, setMarkets] =
     useState<AiLabMarket[]>([]);
 
@@ -314,6 +325,118 @@ const [
     setOver2BestMarket
 ] =
     useState<any>(null);
+
+/*
+ * OVER 2 USER SELECTED MARKET
+ *
+ * Scanner bestMarket and the user's selected
+ * market are intentionally separate.
+ *
+ * The scanner may discover a new best signal,
+ * but it must NOT overwrite the user's selection.
+ */
+const [
+    over2SelectedMarket,
+    setOver2SelectedMarket
+] =
+    useState<any>(null);
+
+/*
+ * Stable reference for the user's selected
+ * OVER 2 market.
+ *
+ * The scanner callback reads this ref so
+ * live scanner updates never overwrite the
+ * user's selection.
+ */
+const over2SelectedMarketRef =
+    useRef<any>(null);
+
+over2SelectedMarketRef.current =
+    over2SelectedMarket;
+
+/*
+ * OVER 2 USER SELECTED MARKET
+ *
+ * A scanner result is accepted only when
+ * it is a valid READY OVER 2 signal.
+ */
+const [over2ScannerNow, setOver2ScannerNow] =
+    useState(Date.now());
+
+useEffect(() => {
+    const timer =
+        window.setInterval(() => {
+            setOver2ScannerNow(Date.now());
+        }, 1000);
+
+    return () => {
+        window.clearInterval(timer);
+    };
+}, []);
+
+const formatOver2SignalAge = (
+    generatedAt: number | undefined
+) => {
+    if (!generatedAt) {
+        return '--';
+    }
+
+    const seconds =
+        Math.max(
+            0,
+            Math.floor(
+                (over2ScannerNow - generatedAt) /
+                1000
+            )
+        );
+
+    if (seconds < 1) {
+        return 'NOW';
+    }
+
+    return `${seconds}s ago`;
+};
+
+const selectOver2Market = (
+    result: any
+) => {
+    if (
+        !result?.signal?.qualifying ||
+        !result?.signal?.ready ||
+        result?.signal?.leastDigit === null
+    ) {
+        console.warn(
+            'AI LAB: Cannot select invalid OVER 2 signal'
+        );
+        return;
+    }
+
+    over2SelectedMarketRef.current =
+        result;
+
+    setOver2SelectedMarket(
+        result
+    );
+
+    setOver2State(
+        result.state
+    );
+
+    setOver2Signal(
+        result.signal
+    );
+
+    console.log(
+        'AI LAB OVER 2 MARKET SELECTED',
+        {
+            symbol: result.symbol,
+            name: result.name,
+            leastDigit: result.signal.leastDigit
+        }
+    );
+};
+
 /*
  * OVER 2 USER TRADE SETTINGS
  *
@@ -604,7 +727,7 @@ const [
                 );
 
             console.log(
-                'AI LAB → MATCHES XML SETTINGS INJECTED',
+                'AI LAB ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ MATCHES XML SETTINGS INJECTED',
                 {
                     initialStake,
                     stake,
@@ -927,6 +1050,7 @@ over2TradeSettings.forEach(
 const applyOver2SignalToBot = async () => {
 
     const bestMarket =
+        over2SelectedMarketRef.current ??
         over2BestMarket;
 
     const signal =
@@ -1137,7 +1261,7 @@ const signalMarket =
                 martingale
             );
         console.log(
-            'AI LAB → OVER 2 XML SETTINGS INJECTED',
+            'AI LAB ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ OVER 2 XML SETTINGS INJECTED',
             {
                 initialStake,
                 stake,
@@ -1193,7 +1317,7 @@ const signalMarket =
 
 
         console.log(
-            'AI LAB → OVER 2 USER SETTINGS',
+            'AI LAB ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ OVER 2 USER SETTINGS',
             {
                 initialStake,
                 stake,
@@ -1931,13 +2055,17 @@ useEffect(() => {
                  * OVER 2 signal shape.
                  */
 
+                const activeMarket =
+                    over2SelectedMarketRef.current ??
+                    best;
+
                 setOver2State(
-                    best?.state ??
+                    activeMarket?.state ??
                     null
                 );
 
                 setOver2Signal(
-                    best?.signal ??
+                    activeMarket?.signal ??
                     null
                 );
 
@@ -2059,6 +2187,48 @@ useEffect(() => {
         engineState?.digit ??
         lastTick?.digit;
 
+
+    const aiInitialStake =
+        isOver2Strategy ? over2InitialStake : matchesInitialStake;
+
+    const setAiInitialStake =
+        isOver2Strategy
+            ? setOver2InitialStake
+            : setMatchesInitialStake;
+
+    const aiStake =
+        isOver2Strategy ? over2Stake : matchesStake;
+
+    const setAiStake =
+        isOver2Strategy
+            ? setOver2Stake
+            : setMatchesStake;
+
+    const aiTakeProfit =
+        isOver2Strategy ? over2TakeProfit : matchesTakeProfit;
+
+    const setAiTakeProfit =
+        isOver2Strategy
+            ? setOver2TakeProfit
+            : setMatchesTakeProfit;
+
+    const aiMartingaleLevel =
+        isOver2Strategy
+            ? over2MartingaleLevel
+            : matchesMartingaleLevel;
+
+    const setAiMartingaleLevel =
+        isOver2Strategy
+            ? setOver2MartingaleLevel
+            : setMatchesMartingaleLevel;
+
+    const aiMartingale =
+        isOver2Strategy ? over2Martingale : matchesMartingale;
+
+    const setAiMartingale =
+        isOver2Strategy
+            ? setOver2Martingale
+            : setMatchesMartingale;
 
     return (
 
@@ -2410,346 +2580,412 @@ useEffect(() => {
 
     <div className="ai-core-header">
 
-        <div className="ai-core-title">
+    <div className="ai-core-title">
 
-            <span className="ai-core-kicker">
-                MONEHUNT INTELLIGENCE ENGINE
-            </span>
+        <span className="ai-core-kicker">
+            MONEHUNT INTELLIGENCE ENGINE
+        </span>
 
-            <div className="section-heading">
-                AI CORE
-            </div>
-
-        </div>
-
-        <div className="ai-core-status">
-
-            <span className="ai-core-status-dot" />
-
-            ONLINE
-
+        <div className="section-heading">
+            AI CORE
         </div>
 
     </div>
 
+    <div
+        className={
+            isOver2Strategy
+                ? over2Signal?.ready
+                    ? "ai-core-signal-status ready"
+                    : "ai-core-signal-status waiting"
+                : isMatchesStrategy
+                    ? signal?.ready
+                        ? "ai-core-signal-status ready"
+                        : "ai-core-signal-status waiting"
+                    : "ai-core-signal-status waiting"
+        }
+    >
+
+        <span className="ai-core-status-dot" />
+
+        {isOver2Strategy
+            ? over2Signal?.ready
+                ? "AI SIGNAL / READY"
+                : "AI SIGNAL / SCANNING"
+            : isMatchesStrategy
+                ? signal?.ready
+                    ? "AI SIGNAL / READY"
+                    : "AI SIGNAL / SCANNING"
+                : "AI SIGNAL / WAITING"}
+
+    </div>
+
+</div>
+
+
+<div className="ai-core-section-block">
 
     <div className="ai-core-section-label">
-        ⚙ TRADE SETTINGS
+        BOT SETTINGS
     </div>
-
 
     <div className="ai-core-settings">
 
-        <div className="ai-core-setting ai-core-setting-market">
+        <label className="ai-core-control-card">
 
-            <span className="ai-core-setting-label">
-                MARKET
+            <span className="ai-core-control-label">
+                INITIAL STAKE
             </span>
 
-            <div className="ai-core-linked-value">
+            <div className="ai-core-input-shell">
 
-                <span>
-                    {markets.find(
-                        item =>
-                            item.symbol === market
-                    )?.name ?? market}
+                <span className="ai-core-input-prefix">
+                    $
                 </span>
 
-                <span className="ai-core-value-symbol">
-                    {market}
-                </span>
-
-                <span className="ai-core-chevron">
-                    ▾
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <div className="ai-core-setting ai-core-setting-strategy">
-
-            <span className="ai-core-setting-label">
-                STRATEGY / CONTRACT
-            </span>
-
-            <div className="ai-core-linked-value">
-
-                <span>
-                    {over2Signal?.ready || over2State
-                        ? 'DIGIT OVER 2'
-                        : 'MATCHES'}
-                </span>
-
-                <span className="ai-core-linked-badge">
-                    AI LINKED
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <div className="ai-core-section-label ai-core-inner-label">
-            MONEY MANAGEMENT
-        </div>
-
-
-        <div className="ai-core-money-grid">
-
-            <label className="ai-core-control-card">
-
-                <span className="ai-core-control-label">
-                    INITIAL STAKE
-                </span>
-
-                <div className="ai-core-input-shell">
-
-                    <span className="ai-core-input-prefix">
-                        $
-                    </span>
-
-                    <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={over2InitialStake}
-                        onChange={event =>
-                            setOver2InitialStake(
-                                event.target.value
-                            )
-                        }
-                    />
-
-                </div>
-
-            </label>
-
-
-            <label className="ai-core-control-card">
-
-                <span className="ai-core-control-label">
-                    CURRENT STAKE
-                </span>
-
-                <div className="ai-core-input-shell">
-
-                    <span className="ai-core-input-prefix">
-                        $
-                    </span>
-
-                    <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={over2Stake}
-                        onChange={event =>
-                            setOver2Stake(
-                                event.target.value
-                            )
-                        }
-                    />
-
-                </div>
-
-            </label>
-
-
-            <label className="ai-core-control-card">
-
-                <span className="ai-core-control-label">
-                    TAKE PROFIT
-                </span>
-
-                <div className="ai-core-input-shell">
-
-                    <span className="ai-core-input-prefix">
-                        $
-                    </span>
-
-                    <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={over2TakeProfit}
-                        onChange={event =>
-                            setOver2TakeProfit(
-                                event.target.value
-                            )
-                        }
-                    />
-
-                </div>
-
-            </label>
-
-        </div>
-
-
-        <div className="ai-core-section-label ai-core-inner-label">
-            RECOVERY / MARTINGALE
-        </div>
-
-
-        <div className="ai-core-recovery-grid">
-
-            <label className="ai-core-control-card">
-
-                <span className="ai-core-control-label">
-                    MARTINGALE LEVEL
-                </span>
-
-                <div className="ai-core-input-shell ai-core-centered-input">
-
-                    <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={over2MartingaleLevel}
-                        onChange={event =>
-                            setOver2MartingaleLevel(
-                                event.target.value
-                            )
-                        }
-                    />
-
-                </div>
-
-            </label>
-
-
-            <label className="ai-core-control-card">
-
-                <span className="ai-core-control-label">
-                    MARTINGALE MULTIPLIER
-                </span>
-
-                <div className="ai-core-input-shell ai-core-centered-input">
-
-                    <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={over2Martingale}
-                        onChange={event =>
-                            setOver2Martingale(
-                                event.target.value
-                            )
-                        }
-                    />
-
-                    <span className="ai-core-input-suffix">
-                        x
-                    </span>
-
-                </div>
-
-            </label>
-
-        </div>
-
-
-        <div className="ai-core-section-label ai-core-inner-label">
-            AI-LINKED VALUES
-        </div>
-
-
-        <div className="ai-core-ai-grid">
-
-            <div className="ai-core-ai-card">
-
-                <span className="ai-core-control-label">
-                    ENTRY DIGIT
-                </span>
-
-                <div className="ai-core-digit-value">
-
-                    {over2Signal?.ready
-                        ? over2Signal.leastDigit ?? '--'
-                        : signal?.entryDigit ??
-                          engineState?.entry?.entryDigit ??
-                          '--'}
-
-                </div>
-
-            </div>
-
-
-            <div className="ai-core-ai-card">
-
-                <span className="ai-core-control-label">
-                    BARRIER
-                </span>
-
-                <div className="ai-core-digit-value">
-
-                    {signal?.barrierDigit ??
-                        engineState?.barrier?.barrierDigit ??
-                        '--'}
-
-                </div>
-
-            </div>
-
-
-            <div className="ai-core-ai-card">
-
-                <span className="ai-core-control-label">
-                    TRADING MODE
-                </span>
-
-                <div className="ai-core-mode-value">
-
-                    {over2Signal?.ready || over2State
-                        ? 'AI SIGNAL'
-                        : signal?.regime ??
-                          engineState?.regime?.regime ??
-                          'AI SIGNAL'}
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div className="ai-core-action">
-
-            {over2Signal?.ready ? (
-
-                <button
-                    type="button"
-                    onClick={applyOver2SignalToBot}
-                    disabled={
-                        over2Signal.leastDigit === null
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={aiInitialStake}
+                    onChange={event =>
+                        setAiInitialStake(
+                            event.target.value
+                        )
                     }
-                    className="apply-signal-button"
-                >
-                    ⚡ APPLY TO BOT
-                </button>
+                />
 
-            ) : (
+            </div>
 
-                <button
-                    type="button"
-                    onClick={applySignalToBot}
-                    disabled={!signal?.ready}
-                    className="apply-signal-button"
-                >
-                    ⚡ APPLY TO BOT
-                </button>
+        </label>
 
-            )}
 
-            <span className="ai-core-action-helper">
-                Applies AI signal + trade settings to the selected bot.
+        <label className="ai-core-control-card">
+
+            <span className="ai-core-control-label">
+                STAKE
             </span>
+
+            <div className="ai-core-input-shell">
+
+                <span className="ai-core-input-prefix">
+                    $
+                </span>
+
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={aiStake}
+                    onChange={event =>
+                        setAiStake(
+                            event.target.value
+                        )
+                    }
+                />
+
+            </div>
+
+        </label>
+
+
+        <label className="ai-core-control-card">
+
+            <span className="ai-core-control-label">
+                TAKE PROFIT
+            </span>
+
+            <div className="ai-core-input-shell">
+
+                <span className="ai-core-input-prefix">
+                    $
+                </span>
+
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={aiTakeProfit}
+                    onChange={event =>
+                        setAiTakeProfit(
+                            event.target.value
+                        )
+                    }
+                />
+
+            </div>
+
+        </label>
+
+
+        <label className="ai-core-control-card">
+
+            <span className="ai-core-control-label">
+                MARTINGALE LEVEL
+            </span>
+
+            <div className="ai-core-input-shell ai-core-centered-input">
+
+                <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={aiMartingaleLevel}
+                    onChange={event =>
+                        setAiMartingaleLevel(
+                            event.target.value
+                        )
+                    }
+                />
+
+            </div>
+
+        </label>
+
+
+        <label className="ai-core-control-card">
+
+            <span className="ai-core-control-label">
+                MARTINGALE MULTIPLIER
+            </span>
+
+            <div className="ai-core-input-shell ai-core-centered-input">
+
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={aiMartingale}
+                    onChange={event =>
+                        setAiMartingale(
+                            event.target.value
+                        )
+                    }
+                />
+
+                <span className="ai-core-input-suffix">
+                    x
+                </span>
+
+            </div>
+
+        </label>
+
+    </div>
+
+</div>
+
+
+<div className="ai-core-section-block">
+
+    <div className="ai-core-section-label">
+        SIGNAL VALUES
+    </div>
+
+    <div className="ai-core-ai-grid">
+
+        <div className="ai-core-ai-card">
+
+            <span className="ai-core-control-label">
+                ENTRY DIGIT
+            </span>
+
+            <div className="ai-core-digit-value">
+
+                {isOver2Strategy
+                    ? over2Signal?.ready
+                        ? over2Signal.leastDigit ?? "--"
+                        : "--"
+                    : isMatchesStrategy
+                        ? signal?.entryDigit ??
+                          engineState?.entry?.entryDigit ??
+                          "--"
+                        : "--"}
+
+            </div>
+
+        </div>
+
+
+        <div className="ai-core-ai-card">
+
+            <span className="ai-core-control-label">
+                DIGIT 0
+            </span>
+
+            <div className="ai-core-digit-value">
+
+                {isOver2Strategy
+                    ? over2Signal?.percentages?.[0] !== undefined
+                        ? `${over2Signal.percentages[0].toFixed(1)}%`
+                        : "--"
+                    : "--"}
+
+            </div>
+
+        </div>
+
+
+        <div className="ai-core-ai-card">
+
+            <span className="ai-core-control-label">
+                DIGIT 1
+            </span>
+
+            <div className="ai-core-digit-value">
+
+                {isOver2Strategy
+                    ? over2Signal?.percentages?.[1] !== undefined
+                        ? `${over2Signal.percentages[1].toFixed(1)}%`
+                        : "--"
+                    : "--"}
+
+            </div>
+
+        </div>
+
+
+        <div className="ai-core-ai-card">
+
+            <span className="ai-core-control-label">
+                DIGIT 2
+            </span>
+
+            <div className="ai-core-digit-value">
+
+                {isOver2Strategy
+                    ? over2Signal?.percentages?.[2] !== undefined
+                        ? `${over2Signal.percentages[2].toFixed(1)}%`
+                        : "--"
+                    : "--"}
+
+            </div>
+
+        </div>
+
+
+        <div className="ai-core-ai-card">
+
+            <span className="ai-core-control-label">
+                OVERALL LEAST
+            </span>
+
+            <div className="ai-core-digit-value">
+
+                {isOver2Strategy
+                    ? over2Signal?.overallLeastDigit ?? "--"
+                    : "--"}
+
+            </div>
+
+        </div>
+
+
+        <div className="ai-core-ai-card">
+
+            <span className="ai-core-control-label">
+                WINDOW
+            </span>
+
+            <div className="ai-core-digit-value">
+
+                {isOver2Strategy
+                    ? `${over2State?.tickCount ?? 0} / 600 TICKS`
+                    : "600 TICKS"}
+
+            </div>
+
+        </div>
+
+
+        <div className="ai-core-ai-card">
+
+            <span className="ai-core-control-label">
+                QUALIFICATION
+            </span>
+
+            <div className="ai-core-mode-value">
+
+                {isOver2Strategy
+                    ? over2Signal?.qualifying
+                        ? "QUALIFIED"
+                        : "NO VALID SIGNAL"
+                    : isMatchesStrategy
+                        ? signal?.ready
+                            ? "QUALIFIED"
+                            : "NO VALID SIGNAL"
+                        : "NO VALID SIGNAL"}
+
+            </div>
+
+        </div>
+
+
+        <div className="ai-core-ai-card ai-core-reason-card">
+
+            <span className="ai-core-control-label">
+                SIGNAL REASON
+            </span>
+
+            <div className="ai-core-mode-value">
+
+                {isOver2Strategy
+                    ? over2Signal?.reason ?? "SCANNING"
+                    : isMatchesStrategy
+                        ? signal
+                            ? "MATCHES SIGNAL"
+                            : "SCANNING"
+                        : "SCANNING"}
+
+            </div>
 
         </div>
 
     </div>
 
+</div>
+
+
+<div className="ai-core-action">
+
+    {isOver2Strategy ? (
+
+        <button
+            type="button"
+            onClick={applyOver2SignalToBot}
+            disabled={
+                !over2Signal?.ready ||
+                over2Signal?.leastDigit === null
+            }
+            className="apply-signal-button"
+        >
+            APPLY TO BOT
+        </button>
+
+    ) : isMatchesStrategy ? (
+
+        <button
+            type="button"
+            onClick={applySignalToBot}
+            disabled={!signal?.ready}
+            className="apply-signal-button"
+        >
+            APPLY TO BOT
+        </button>
+
+    ) : (
+
+        <button
+            type="button"
+            disabled
+            className="apply-signal-button"
+        >
+            SELECT A BOT
+        </button>
+
+    )}
+
+</div>
 </section>
 
 
@@ -2792,7 +3028,7 @@ useEffect(() => {
                     </span>
 
                     <strong>
-                        {over2State?.tickCount ?? 0} / 1000
+                        {over2State?.tickCount ?? 0} / 600
                     </strong>
 
                 </div>
@@ -3045,7 +3281,7 @@ useEffect(() => {
                     </span>
 
                     <strong>
-                        {over2State.tickCount ?? 0} / 1000
+                        {over2State.tickCount ?? 0} / 600
                     </strong>
 
                 </div>
@@ -3204,6 +3440,107 @@ useEffect(() => {
 </section>
 
 
+
+            <section className="over2-scanner-panel ai-lab-panel">
+
+                <div className="over2-scanner-header">
+
+                    <div>
+                        <div className="section-heading">
+                            OVER 2 LIVE SCANNER
+                        </div>
+
+                        <div className="over2-scanner-subtitle">
+                            VALID SIGNALS · ARRIVAL ORDER
+                        </div>
+                    </div>
+
+                    <div className="over2-scanner-count">
+                        {over2ScannerState?.qualifyingMarkets?.length ?? 0}
+                        /
+                        {over2ScannerState?.totalMarkets ?? 0}
+                    </div>
+
+                </div>
+
+                <div className="over2-scanner-list">
+
+                    {(over2ScannerState?.qualifyingMarkets ?? []).length === 0 ? (
+
+                        <div className="over2-scanner-empty">
+                            NO VALID OVER 2 SIGNALS
+                        </div>
+
+                    ) : (
+
+                        (over2ScannerState?.qualifyingMarkets ?? []).map(result => {
+
+                            const isSelected =
+                                over2SelectedMarket?.symbol === result.symbol;
+
+                            return (
+
+                                <div
+                                    key={result.symbol}
+                                    className={isSelected ? "over2-signal-row selected" : "over2-signal-row"}
+                                >
+
+                                    <div className="over2-signal-market">
+
+                                        <strong>
+                                            {result.name}
+                                        </strong>
+
+                                        <span>
+                                            {result.symbol}
+                                        </span>
+
+                                    </div>
+
+                                    <div className="over2-signal-type">
+                                        OVER 2
+                                    </div>
+
+                                    <div className="over2-signal-valid">
+                                        VALID
+                                    </div>
+
+                                    <div className="over2-signal-digit">
+                                        DIGIT
+                                        <strong>
+                                            {result.signal?.leastDigit ?? '--'}
+                                        </strong>
+                                    </div>
+
+                                    <div className="over2-signal-age">
+                                        {formatOver2SignalAge(
+                                            result.signal?.generatedAt
+                                        )}
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        className="over2-select-button"
+                                        onClick={() =>
+                                            selectOver2Market(result)
+                                        }
+                                    >
+                                        {isSelected
+                                            ? 'SELECTED'
+                                            : 'SELECT'}
+                                    </button>
+
+                                </div>
+
+                            );
+                        })
+
+                    )}
+
+                </div>
+
+            </section>
+
             <section className="ai-lab-grid">
 
                 <div className="ai-lab-panel">
@@ -3224,7 +3561,7 @@ useEffect(() => {
             </span>
 
             <strong>
-                {over2State?.tickCount ?? 0} / 1000
+                {over2State?.tickCount ?? 0} / 600
             </strong>
 
         </div>
@@ -3445,7 +3782,7 @@ useEffect(() => {
                 </span>
 
                 <strong>
-                    {over2State.tickCount ?? 0} / 1000
+                    {over2State.tickCount ?? 0} / 600
                 </strong>
 
             </div>
@@ -3693,7 +4030,7 @@ useEffect(() => {
 
                                     <span>
                                         E{item.key.entryDigit}
-                                        {' → '}
+                                        {' ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ '}
                                         B{item.key.barrierDigit}
                                     </span>
 
@@ -3723,3 +4060,7 @@ useEffect(() => {
 
 
 export default AiLab;
+
+
+
+

@@ -16,6 +16,7 @@ function createScore(
     return {
         digit,
         frequency,
+        frequencyPercent: 0,
         recency: 80,
         gap: 2,
         momentum: frequency,
