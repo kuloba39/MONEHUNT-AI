@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
+import { observer } from 'mobx-react-lite';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
 import { load, save_types } from '@/external/bot-skeleton';
+import { saveWorkspaceToRecent } from '@/external/bot-skeleton/utils';
 import { FREE_BOTS } from '@/constants/free-bots';
 import './ai-lab.scss';
 import { useAnalysisTicks } from '../analysis/use-analysis-ticks';
@@ -29,7 +31,7 @@ type AiLabMarket = {
     market: string;
 };
 
-const AiLab = () => {
+const AiLab = observer(() => {
     const { dashboard, load_modal, blockly_store } = useStore();
 
     const { setActiveTab } = dashboard;
@@ -320,20 +322,15 @@ const [
 ] =
     useState<any>(null);
 
-const [
-    over2BestMarket,
-    setOver2BestMarket
-] =
-    useState<any>(null);
 
 /*
  * OVER 2 USER SELECTED MARKET
  *
- * Scanner bestMarket and the user's selected
- * market are intentionally separate.
+ * The scanner provides ALL valid signals.
+ * The user explicitly selects one valid signal.
  *
- * The scanner may discover a new best signal,
- * but it must NOT overwrite the user's selection.
+ * Scanner updates must NOT overwrite the
+ * user's current selection.
  */
 const [
     over2SelectedMarket,
@@ -341,6 +338,20 @@ const [
 ] =
     useState<any>(null);
 
+
+/*
+ * OVER 2 USER SELECTED SIGNAL
+ *
+ * This stores the exact signal selected by the user.
+ * It is intentionally separate from the live scanner
+ * signal so scanner refreshes cannot remove the
+ * user's selection.
+ */
+const [
+    over2SelectedSignal,
+    setOver2SelectedSignal
+] =
+    useState<any>(null);
 /*
  * Stable reference for the user's selected
  * OVER 2 market.
@@ -349,6 +360,19 @@ const [
  * live scanner updates never overwrite the
  * user's selection.
  */
+/*
+ * OVER 2 USER SELECTED BOT
+ *
+ * Kept separate from the global Bot Builder
+ * selected strategy. The user must select
+ * a bot before APPLY TO BOT is enabled.
+ */
+const [
+    over2SelectedBot,
+    setOver2SelectedBot
+] =
+    useState<any>(null);
+
 const over2SelectedMarketRef =
     useRef<any>(null);
 
@@ -417,6 +441,40 @@ const selectOver2Market = (
 
     setOver2SelectedMarket(
         result
+    );
+    
+/*
+ * LOCK THE EXACT SIGNAL SELECTED BY THE USER.
+ */
+setOver2SelectedSignal(
+    result.signal
+);
+
+/*
+ * OVER 2 IS A DEDICATED STRATEGY.
+ *
+ * Selecting a valid signal immediately activates the
+ * dedicated OVER 2 bot strategy. No bot selector is required.
+ */
+setSelectedStrategyId(
+    'over2-signal'
+);
+/*
+     * OVER 2 uses one dedicated bot.
+     *
+     * Selecting a valid signal automatically
+     * selects the OVER 2 bot so APPLY TO BOT
+     * becomes immediately available.
+     */
+    const over2Bot =
+        FREE_BOTS.find(
+            bot =>
+                bot.id ===
+                'over2-signal'
+        );
+
+    setOver2SelectedBot(
+        over2Bot ?? null
     );
 
     setOver2State(
@@ -727,7 +785,7 @@ const [
                 );
 
             console.log(
-                'AI LAB ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ MATCHES XML SETTINGS INJECTED',
+                'AI LAB ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ MATCHES XML SETTINGS INJECTED',
                 {
                     initialStake,
                     stake,
@@ -1049,15 +1107,14 @@ over2TradeSettings.forEach(
     };
 const applyOver2SignalToBot = async () => {
 
-    const bestMarket =
-        over2SelectedMarketRef.current ??
-        over2BestMarket;
+    const selectedMarket =
+        over2SelectedMarketRef.current;
 
     const signal =
-        bestMarket?.signal;
+        over2SelectedSignal;
 
     if (
-    !bestMarket ||
+    !selectedMarket ||
     !signal?.ready ||
     signal.leastDigit === null
 ) {
@@ -1068,9 +1125,7 @@ const applyOver2SignalToBot = async () => {
     }
 
 
-    const bot = FREE_BOTS.find(
-        item => item.id === 'over2-signal'
-    );
+    const bot = over2SelectedBot;
 
 
     if (!bot?.xml) {
@@ -1086,7 +1141,7 @@ const applyOver2SignalToBot = async () => {
     const leastDigit =
         Number(signal.leastDigit);
 const signalMarket =
-    bestMarket.symbol;
+    selectedMarket.symbol;
 
 
     if (
@@ -1261,7 +1316,7 @@ const signalMarket =
                 martingale
             );
         console.log(
-            'AI LAB ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ OVER 2 XML SETTINGS INJECTED',
+            'AI LAB ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ OVER 2 XML SETTINGS INJECTED',
             {
                 initialStake,
                 stake,
@@ -1317,7 +1372,7 @@ const signalMarket =
 
 
         console.log(
-            'AI LAB ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ OVER 2 USER SETTINGS',
+            'AI LAB ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ OVER 2 USER SETTINGS',
             {
                 initialStake,
                 stake,
@@ -1603,6 +1658,47 @@ const signalMarket =
         }
 
 
+        /*
+         * Persist the fully modified OVER 2 workspace.
+         */
+        const over2UpdatedXml =
+            window.Blockly.Xml.workspaceToDom(
+                workspace
+            );
+
+        (window.Blockly as any).xmlValues = {
+            ...((window.Blockly as any).xmlValues || {}),
+            strategy_id: bot.id,
+            convertedDom: over2UpdatedXml,
+            file_name: bot.name,
+            from: save_types.LOCAL,
+        };
+
+        /*
+         * Persist the FINAL OVER 2 workspace.
+         *
+         * load() initially saves the original bot XML.
+         * AI Core then modifies the workspace with the
+         * selected signal and trade settings.
+         *
+         * Save the final workspace so those modifications
+         * remain attached to the selected OVER 2 bot.
+         */
+        await saveWorkspaceToRecent(
+            over2UpdatedXml,
+            save_types.LOCAL
+        );
+
+        console.log(
+            'AI LAB: FINAL OVER 2 XML PERSISTED',
+            {
+                strategyId:
+                    workspace.current_strategy_id,
+                botId:
+                    bot.id
+            }
+        );
+
         workspace.render();
 
 
@@ -1619,7 +1715,7 @@ const signalMarket =
         console.log(
             'AI LAB: OVER 2 SIGNAL APPLIED SUCCESSFULLY',
             {
-                market,
+                market: signalMarket,
                 leastDigit,
                 prediction: 2
             }
@@ -1756,6 +1852,28 @@ const selectScannedMarket = (symbol: string) => {
         symbol
     );
 
+    requestAnimationFrame(() => {
+        const aiCore = document.querySelector(
+            '.ai-lab-signal'
+        );
+
+        if (aiCore instanceof HTMLElement) {
+            aiCore.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+
+            console.log(
+                '[AI LAB] SELECTED MARKET HANDED TO AI CORE:',
+                symbol
+            );
+        } else {
+            console.warn(
+                '[AI LAB] AI CORE SECTION NOT FOUND'
+            );
+        }
+    });
+
 };
 
 
@@ -1810,7 +1928,6 @@ if (
 setOver2ScannerState(null);
 setOver2State(null);
 setOver2Signal(null);
-setOver2BestMarket(null);
 
 }, [market]);
 
@@ -2039,16 +2156,7 @@ useEffect(() => {
                     state
                 );
 
-                /*
-                 * Best qualifying market.
-                 */
 
-                const best =
-                    state.bestMarket;
-
-                setOver2BestMarket(
-                    best
-                );
 
                 /*
                  * Preserve the existing
@@ -2056,8 +2164,7 @@ useEffect(() => {
                  */
 
                 const activeMarket =
-                    over2SelectedMarketRef.current ??
-                    best;
+                    over2SelectedMarketRef.current;
 
                 setOver2State(
                     activeMarket?.state ??
@@ -2069,32 +2176,6 @@ useEffect(() => {
                     null
                 );
 
-                if (best) {
-
-                    console.log(
-                        'AI LAB OVER 2 BEST MARKET',
-                        {
-                            symbol:
-                                best.symbol,
-
-                            name:
-                                best.name,
-
-                            leastDigit:
-                                best.signal
-                                    ?.leastDigit,
-
-                            percentages:
-                                best.signal
-                                    ?.percentages,
-
-                            tickCount:
-                                best.state
-                                    ?.tickCount
-                        }
-                    );
-
-                }
 
             }
         );
@@ -2547,11 +2628,19 @@ useEffect(() => {
                             ? 'market-select-button selected'
                             : 'market-select-button'
                     }
-                    onClick={() =>
-                        selectScannedMarket(
-                            ranking.symbol
-                        )
-                    }
+                    onClick={(event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    console.log(
+        '[AI LAB] SELECT BUTTON CLICKED:',
+        ranking.symbol
+    );
+
+    selectScannedMarket(
+        ranking.symbol
+    );
+}}
                 >
                     {isSelected
                         ? 'SELECTED'
@@ -2946,21 +3035,59 @@ useEffect(() => {
 </div>
 
 
+<div className="ai-core-signal-value">
+
+    <span className="ai-core-control-label">
+        SIGNAL VALUE
+    </span>
+
+    <div className="ai-core-digit-value">
+        {isOver2Strategy
+            ? over2SelectedSignal?.leastDigit !== null &&
+              over2SelectedSignal?.leastDigit !== undefined
+                ? over2SelectedSignal.leastDigit
+                : "--"
+            : "--"}
+    </div>
+
+</div>
+
 <div className="ai-core-action">
 
     {isOver2Strategy ? (
 
-        <button
-            type="button"
-            onClick={applyOver2SignalToBot}
-            disabled={
-                !over2Signal?.ready ||
-                over2Signal?.leastDigit === null
-            }
-            className="apply-signal-button"
-        >
-            APPLY TO BOT
-        </button>
+        over2SelectedSignal?.ready &&
+        over2SelectedSignal?.leastDigit !== null ? (            <div className="ai-core-bot-selection">
+
+                <button
+                    type="button"
+                    onClick={
+                        applyOver2SignalToBot
+                    }
+                    disabled={
+                        !over2SelectedMarket ||
+                        !over2SelectedSignal ||
+                        !over2SelectedSignal?.ready ||
+                        over2SelectedSignal?.leastDigit === null
+                    }
+                    className="apply-signal-button"
+                >
+                    APPLY TO BOT
+                </button>
+
+            </div>
+
+        ) : (
+
+            <button
+                type="button"
+                disabled
+                className="apply-signal-button"
+            >
+                SELECT A VALID SIGNAL
+            </button>
+
+        )
 
     ) : isMatchesStrategy ? (
 
@@ -3451,14 +3578,12 @@ useEffect(() => {
                         </div>
 
                         <div className="over2-scanner-subtitle">
-                            VALID SIGNALS · ARRIVAL ORDER
+                            ALL VALID SIGNALS - ARRIVAL ORDER
                         </div>
                     </div>
 
                     <div className="over2-scanner-count">
-                        {over2ScannerState?.qualifyingMarkets?.length ?? 0}
-                        /
-                        {over2ScannerState?.totalMarkets ?? 0}
+                        <strong>{over2ScannerState?.qualifyingMarkets?.length ?? 0}</strong><span> VALID </span><small>/ {over2ScannerState?.totalMarkets ?? 0} MARKETS</small>
                     </div>
 
                 </div>
@@ -3467,9 +3592,7 @@ useEffect(() => {
 
                     {(over2ScannerState?.qualifyingMarkets ?? []).length === 0 ? (
 
-                        <div className="over2-scanner-empty">
-                            NO VALID OVER 2 SIGNALS
-                        </div>
+                        <div className="over2-scanner-empty"><strong>NO VALID OVER 2 SIGNALS</strong><span>Scanner is monitoring all available markets.</span></div>
 
                     ) : (
 
@@ -3505,9 +3628,7 @@ useEffect(() => {
                                         VALID
                                     </div>
 
-                                    <div className="over2-signal-digit">
-                                        DIGIT
-                                        <strong>
+                                    <div className="over2-signal-digit"><span>ENTRY DIGIT</span><strong>
                                             {result.signal?.leastDigit ?? '--'}
                                         </strong>
                                     </div>
@@ -4030,7 +4151,7 @@ useEffect(() => {
 
                                     <span>
                                         E{item.key.entryDigit}
-                                        {' ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ '}
+                                        {' ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ '}
                                         B{item.key.barrierDigit}
                                     </span>
 
@@ -4056,10 +4177,38 @@ useEffect(() => {
 
     );
 
-};
-
+});
 
 export default AiLab;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

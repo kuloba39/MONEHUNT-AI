@@ -1,4 +1,4 @@
-import { api_base } from '@/external/bot-skeleton/services/api/api-base';
+﻿import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 import { Over2Engine } from './over2-engine';
 import {
     Over2Signal,
@@ -25,7 +25,6 @@ export interface Over2ScannerState {
     totalMarkets: number;
     readyMarkets: number;
     qualifyingMarkets: Over2MarketResult[];
-    bestMarket: Over2MarketResult | null;
 }
 
 type ScannerSubscription = {
@@ -56,7 +55,6 @@ export class Over2MarketScanner {
         totalMarkets: 0,
         readyMarkets: 0,
         qualifyingMarkets: [],
-        bestMarket: null,
     };
 
     private listeners =
@@ -137,84 +135,9 @@ export class Over2MarketScanner {
             result.signal?.leastDigit !== null
     );
 
-        /*
-         * Scanner display order.
-         *
-         * Newest qualifying signal appears first.
-         * This is separate from the strength-ranked
-         * bestMarket calculation below.
-         */
 
-        const arrivalOrderedMarkets =
-            [...qualifyingMarkets].sort(
-                (a, b) =>
-                    (b.signal?.generatedAt ?? 0) -
-                    (a.signal?.generatedAt ?? 0)
-            );
-
-
-        /*
-         * Strongest market selection.
-         *
-         * Primary:
-         * lowest combined percentage
-         * of digits 0, 1 and 2.
-         *
-         * Secondary:
-         * lowest leastDigit percentage.
-         *
-         * This gives the scanner a deterministic
-         * best market when several qualify.
-         */
-
-        const sorted =
-            [...qualifyingMarkets]
-                .sort((a, b) => {
-
-                    const aSignal =
-                        a.signal!;
-
-                    const bSignal =
-                        b.signal!;
-
-                    const aCombined =
-                        aSignal.percentages[0] +
-                        aSignal.percentages[1] +
-                        aSignal.percentages[2];
-
-                    const bCombined =
-                        bSignal.percentages[0] +
-                        bSignal.percentages[1] +
-                        bSignal.percentages[2];
-
-                    if (
-                        aCombined !==
-                        bCombined
-                    ) {
-                        return (
-                            aCombined -
-                            bCombined
-                        );
-                    }
-
-                    const aLeast =
-                        aSignal
-                            .percentages[
-                                aSignal.leastDigit!
-                            ];
-
-                    const bLeast =
-                        bSignal
-                            .percentages[
-                                bSignal.leastDigit!
-                            ];
-
-                    return (
-                        aLeast -
-                        bLeast
-                    );
-
-                });
+        const allValidMarkets =
+            [...qualifyingMarkets];
 
         this.state = {
 
@@ -232,13 +155,10 @@ export class Over2MarketScanner {
                 ).length,
 
             qualifyingMarkets:
-                arrivalOrderedMarkets,
+                allValidMarkets,
 
-            bestMarket:
-                sorted[0] ?? null,
 
         };
-
         this.emit();
 
     }
@@ -293,8 +213,6 @@ export class Over2MarketScanner {
             readyMarkets: 0,
 
             qualifyingMarkets: [],
-
-            bestMarket: null,
 
         };
 
@@ -371,9 +289,6 @@ export class Over2MarketScanner {
                     Math.random() * 1000000
                 );
 
-            this.historyRequestIds.add(
-                reqId
-            );
 
             try {
 
@@ -762,13 +677,6 @@ export class Over2MarketScanner {
 
     }
 
-    getBestMarket():
-        Over2MarketResult | null {
-
-        return this.state.bestMarket;
-
-    }
-
     getQualifyingMarkets():
         Over2MarketResult[] {
 
@@ -827,7 +735,6 @@ export class Over2MarketScanner {
 
             qualifyingMarkets: [],
 
-            bestMarket: null,
 
         };
 
@@ -836,3 +743,4 @@ export class Over2MarketScanner {
     }
 
 }
+

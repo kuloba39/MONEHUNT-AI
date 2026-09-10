@@ -1,4 +1,4 @@
-import {
+﻿import {
     Over2EngineState,
     Over2Signal,
     Over2Tick,
@@ -7,8 +7,11 @@ import {
 
 import {
     calculateDigitScores,
-    evaluateOver2Signal,
 } from '../matches/digit-engine';
+
+import {
+    evaluateOver2Signal,
+} from './over2-qualification';
 
 const WINDOW_SIZE = 600;
 
@@ -241,3 +244,4 @@ export class Over2Engine {
         return this.ticks.length;
     }
 }
+

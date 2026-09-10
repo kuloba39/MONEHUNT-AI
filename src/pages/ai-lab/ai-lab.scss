@@ -3386,3 +3386,128 @@
     }
 
 }
+
+/* =========================================================
+   OVER 2 SCANNER — FINAL RESPONSIVE LAYOUT
+   All valid signals are displayed; no ranking or limiting.
+   ========================================================= */
+
+@media (max-width: 700px) {
+    .over2-scanner-panel {
+        margin-bottom: 14px;
+    }
+
+    .over2-scanner-header {
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .over2-scanner-count {
+        min-width: 50px;
+        padding: 7px 9px;
+        flex-shrink: 0;
+    }
+
+    .over2-signal-row {
+        grid-template-columns:
+            minmax(0, 1fr)
+            auto
+            auto;
+        gap: 9px;
+        padding: 10px;
+    }
+
+    .over2-signal-market {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .over2-signal-type {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .over2-signal-valid {
+        grid-column: 3;
+        grid-row: 1;
+    }
+
+    .over2-signal-digit {
+        grid-column: 1;
+        grid-row: 2;
+        justify-self: start;
+        text-align: left;
+        flex-direction: row;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .over2-signal-age {
+        grid-column: 2;
+        grid-row: 2;
+        text-align: left;
+    }
+
+    .over2-select-button {
+        grid-column: 3;
+        grid-row: 2;
+    }
+}
+
+@media (max-width: 480px) {
+    .over2-scanner-header {
+        gap: 10px;
+    }
+
+    .over2-scanner-subtitle {
+        font-size: 9px;
+    }
+
+    .over2-scanner-count {
+        min-width: 46px;
+        padding: 6px 7px;
+        font-size: 11px;
+    }
+
+    .over2-signal-row {
+        grid-template-columns:
+            1fr
+            1fr;
+        gap: 8px;
+    }
+
+    .over2-signal-market {
+        grid-column: 1 / -1;
+        grid-row: 1;
+    }
+
+    .over2-signal-type {
+        grid-column: 1;
+        grid-row: 2;
+        text-align: left;
+    }
+
+    .over2-signal-valid {
+        grid-column: 2;
+        grid-row: 2;
+        text-align: right;
+    }
+
+    .over2-signal-digit {
+        grid-column: 1;
+        grid-row: 3;
+        justify-self: start;
+    }
+
+    .over2-signal-age {
+        grid-column: 2;
+        grid-row: 3;
+        text-align: right;
+    }
+
+    .over2-select-button {
+        grid-column: 1 / -1;
+        grid-row: 4;
+        width: 100%;
+    }
+}
