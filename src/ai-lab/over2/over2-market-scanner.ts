@@ -175,17 +175,64 @@ export class Over2MarketScanner {
         this.historyRequestIds.clear();
 
         /*
-         * Accept every active market supplied
-         * by AI LAB.
+         * OVER 2 MARKET WHITELIST
          *
-         * No R_ filter.
-         * No 1HZ filter.
-         * No Jump-index filter.
+         * The scanner intentionally scans ONLY:
          *
-         * Therefore Jump indices are included.
+         * Volatility 1-second:
+         * 1HZ10V
+         * 1HZ15V
+         * 1HZ25V
+         * 1HZ30V
+         * 1HZ50V
+         * 1HZ75V
+         * 1HZ90V
+         * 1HZ100V
+         *
+         * Regular Volatility:
+         * R_10
+         * R_25
+         * R_50
+         * R_75
+         * R_100
          */
 
-        for (const market of markets) {
+        const OVER2_ALLOWED_SYMBOLS = new Set([
+            '1HZ10V',
+            '1HZ15V',
+            '1HZ25V',
+            '1HZ30V',
+            '1HZ50V',
+            '1HZ75V',
+            '1HZ90V',
+            '1HZ100V',
+            'R_10',
+            'R_25',
+            'R_50',
+            'R_75',
+            'R_100',
+        ]);
+
+        const scanMarkets = markets.filter(
+            market =>
+                market?.symbol &&
+                OVER2_ALLOWED_SYMBOLS.has(
+                    market.symbol
+                )
+        );
+
+        console.log(
+            'OVER 2 MARKET WHITELIST',
+            {
+                requestedMarkets: markets.length,
+                scanningMarkets: scanMarkets.length,
+                symbols: scanMarkets.map(
+                    market => market.symbol
+                ),
+            }
+        );
+
+        for (const market of scanMarkets) {
 
             if (!market?.symbol) {
                 continue;
@@ -743,4 +790,5 @@ export class Over2MarketScanner {
     }
 
 }
+
 
