@@ -26,5 +26,12 @@
         "types": ["jest", "node", "@testing-library/jest-dom"]
     },
     "include": ["src"],
-    "exclude": ["src/utils/tmp"]
+    "exclude": [
+    "src/utils/tmp",
+    "**/*.backup.ts",
+    "**/*.backup.tsx",
+    "**/*.before*",
+    "**/*.bak"
+]
 }
+
