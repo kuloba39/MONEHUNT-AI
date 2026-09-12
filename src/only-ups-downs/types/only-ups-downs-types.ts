@@ -311,6 +311,39 @@ export interface StabilityAnalysis {
 }
 
 /* =========================================================
+   SPIKE REVERSAL ANALYSIS
+   ========================================================= */
+
+export interface SpikeReversalAnalysis {
+    detected: boolean;
+
+    direction:
+        | 'UP'
+        | 'DOWN'
+        | 'NONE';
+
+    spikeIndex: number;
+
+    ticksSinceSpike: number;
+
+    magnitude: number;
+
+    baselineMove: number;
+
+    relativeMagnitude: number;
+
+    oppositeMoveCount: number;
+
+    oppositeNetMove: number;
+
+    rejectionDetected: boolean;
+
+    persistenceDetected: boolean;
+
+    score: number;
+}
+
+/* =========================================================
    REVERSAL ANALYSIS
    ========================================================= */
 
@@ -331,6 +364,8 @@ export interface ReversalAnalysis {
     structureShift: StructureShift;
 
     momentumTransfer: MomentumTransfer;
+
+    spikeReversal?: SpikeReversalAnalysis;
 
     confirmationCount: number;
 
@@ -489,3 +524,4 @@ export interface OnlyUpsDownsEngineResult {
 
     stability: StabilityAnalysis;
 }
+
