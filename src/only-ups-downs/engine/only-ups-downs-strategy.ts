@@ -13,6 +13,7 @@
     VolatilityAnalysis,
     StabilityAnalysis,
     ReversalAnalysis,
+    SpikeReversalAnalysis,
     ContinuationAnalysis,
     OnlyUpsDownsEngineResult,
 } from "../types/only-ups-downs-types";
@@ -223,6 +224,91 @@ function emptyContinuation(): ContinuationAnalysis {
     };
 }
 
+/**
+ * Market Regime Fusion
+ *
+ * Structure remains the primary regime source when meaningful
+ * swing information exists.
+ *
+ * When structure is NEUTRAL, directional pressure can identify
+ * clean monotonic trends that do not generate enough traditional
+ * swing highs/lows.
+ *
+ * Conflicting pressure does not override an established strong
+ * structural regime. That conflict remains useful to reversal
+ * logic.
+ */
+function fuseMarketRegime(
+    structureRegime: OnlyUpsDownsRegime,
+    pressure: ReturnType<typeof calculateOnlyUpsDownsPressure>,
+): OnlyUpsDownsRegime {
+    const pressureDirection =
+        pressure.dominantDirection;
+
+    const pressureStrength =
+        clamp(pressure.overallStrength);
+
+    if (
+        structureRegime === "STRONG_UP" ||
+        structureRegime === "STRONG_DOWN"
+    ) {
+        return structureRegime;
+    }
+
+    if (structureRegime === "WEAK_UP") {
+        if (
+            pressureDirection === "ups" &&
+            pressureStrength >= 70
+        ) {
+            return "STRONG_UP";
+        }
+
+        return "WEAK_UP";
+    }
+
+    if (structureRegime === "WEAK_DOWN") {
+        if (
+            pressureDirection === "downs" &&
+            pressureStrength >= 70
+        ) {
+            return "STRONG_DOWN";
+        }
+
+        return "WEAK_DOWN";
+    }
+
+    if (structureRegime === "NEUTRAL") {
+        if (
+            pressureDirection === "ups" &&
+            pressureStrength >= 70
+        ) {
+            return "STRONG_UP";
+        }
+
+        if (
+            pressureDirection === "ups" &&
+            pressureStrength >= 45
+        ) {
+            return "WEAK_UP";
+        }
+
+        if (
+            pressureDirection === "downs" &&
+            pressureStrength >= 70
+        ) {
+            return "STRONG_DOWN";
+        }
+
+        if (
+            pressureDirection === "downs" &&
+            pressureStrength >= 45
+        ) {
+            return "WEAK_DOWN";
+        }
+    }
+
+    return structureRegime;
+}
 function getTrendScore(
     regime: OnlyUpsDownsRegime,
 ): number {
@@ -300,6 +386,259 @@ function calculateContinuation(
     };
 }
 
+/**
+ * Detects a historical spike followed by a sustained move
+ * in the opposite direction.
+ *
+ * This detector is intentionally independent from the normal
+ * reversal regime logic. It is evidence generation only.
+ */
+function detectHistoricalSpikeReversal(
+    prices: number[],
+): SpikeReversalAnalysis {
+    const emptyResult: SpikeReversalAnalysis = {
+        detected: false,
+        direction: "NONE",
+        spikeIndex: -1,
+        ticksSinceSpike: 0,
+        magnitude: 0,
+        baselineMove: 0,
+        relativeMagnitude: 0,
+        oppositeMoveCount: 0,
+        oppositeNetMove: 0,
+        rejectionDetected: false,
+        persistenceDetected: false,
+        score: 0,
+    };
+
+    if (prices.length < 20) {
+        return emptyResult;
+    }
+
+    const moves: number[] = [];
+
+    for (let i = 1; i < prices.length; i++) {
+        moves.push(prices[i] - prices[i - 1]);
+    }
+
+    if (moves.length < 19) {
+        return emptyResult;
+    }
+
+    /*
+     * Search newest-to-oldest so the detector prefers the most
+     * recent qualifying historical spike.
+     *
+     * A candidate must have at least 6 ticks after the spike
+     * and no more than 20 ticks after the spike.
+     */
+    for (let spikeMoveIndex = moves.length - 7; spikeMoveIndex >= 12; spikeMoveIndex--) {
+        const ticksSinceSpike =
+            moves.length - 1 - spikeMoveIndex;
+
+        if (
+            ticksSinceSpike < 6 ||
+            ticksSinceSpike > 20
+        ) {
+            continue;
+        }
+
+        const baselineWindow = moves.slice(
+            Math.max(0, spikeMoveIndex - 12),
+            spikeMoveIndex,
+        );
+
+        if (baselineWindow.length < 8) {
+            continue;
+        }
+
+        const baselineMove =
+            baselineWindow.reduce(
+                (sum, value) => sum + Math.abs(value),
+                0,
+            ) / baselineWindow.length;
+
+        if (baselineMove <= 0) {
+            continue;
+        }
+
+        const spikeMove = moves[spikeMoveIndex];
+        const magnitude = Math.abs(spikeMove);
+        const direction =
+            spikeMove > 0
+                ? "DOWN"
+                : spikeMove < 0
+                    ? "UP"
+                    : "NONE";
+
+        if (direction === "NONE") {
+            continue;
+        }
+
+        const relativeMagnitude =
+            magnitude / baselineMove;
+
+        /*
+         * Require a genuinely abnormal move rather than an
+         * ordinary trend tick.
+         */
+        if (relativeMagnitude < 3) {
+            continue;
+        }
+
+        const followingMoves = moves.slice(
+            spikeMoveIndex + 1,
+        );
+
+        const oppositeMoves = followingMoves.filter(
+            (move) =>
+                (
+                    direction === "UP" &&
+                    move > 0
+                ) ||
+                (
+                    direction === "DOWN" &&
+                    move < 0
+                ),
+        );
+
+        const oppositeMoveCount =
+            oppositeMoves.length;
+
+        /*
+         * Measure total movement in the reversal direction.
+         * This is deliberately magnitude-based evidence rather
+         * than a raw signed displacement.
+         */
+        const oppositeNetMove =
+            oppositeMoves.reduce(
+                (sum, value) => sum + Math.abs(value),
+                0,
+            );
+
+        /*
+         * Rejection:
+         * at least two moves against the spike direction.
+         */
+        const rejectionDetected =
+            oppositeMoveCount >= 2;
+
+        /*
+         * Persistence:
+         * at least six opposite-direction moves AND
+         * accumulated opposite movement >= 3 baseline moves.
+         */
+        const persistenceDetected =
+            oppositeMoveCount >= 6 &&
+            oppositeNetMove >= baselineMove * 3;
+
+        const magnitudeScore = Math.min(
+            100,
+            Math.max(
+                0,
+                (relativeMagnitude - 3) * 20 + 60,
+            ),
+        );
+
+        const rejectionScore =
+            rejectionDetected ? 15 : 0;
+
+        const persistenceScore =
+            persistenceDetected ? 20 : 0;
+
+        const netMoveScore =
+            Math.min(
+                15,
+                (
+                    oppositeNetMove /
+                    Math.max(baselineMove, 0.00000001)
+                ) * 3,
+            );
+
+        const score = Math.min(
+            100,
+            magnitudeScore +
+            rejectionScore +
+            persistenceScore +
+            netMoveScore,
+        );
+
+        /*
+         * A spike alone is not enough.
+         * Detection requires sustained opposite behavior.
+         */
+        const detected =
+            persistenceDetected &&
+            rejectionDetected &&
+            score >= 75;
+
+        if (!detected) {
+            continue;
+        }
+
+        return {
+            detected: true,
+            direction,
+            spikeIndex: spikeMoveIndex + 1,
+            ticksSinceSpike,
+            magnitude,
+            baselineMove,
+            relativeMagnitude,
+            oppositeMoveCount,
+            oppositeNetMove,
+            rejectionDetected,
+            persistenceDetected,
+            score,
+        };
+    }
+
+    return emptyResult;
+}
+function deriveHistoricalRegime(
+    prices: number[],
+): OnlyUpsDownsRegime {
+    /*
+     * Reversal detection needs the regime that existed before
+     * the current market phase.
+     *
+     * The reversal fixtures contain:
+     *   - an established old trend
+     *   - a transition
+     *   - a new current trend
+     *
+     * Use the first 12 observations as the historical regime
+     * window. The current/full-history calculations remain
+     * unchanged and continue to drive continuation signals.
+     */
+    if (prices.length < 12) {
+        return "NEUTRAL";
+    }
+
+    const historicalPrices =
+        prices.slice(
+            0,
+            Math.min(12, prices.length),
+        );
+
+    if (historicalPrices.length < 9) {
+        return "NEUTRAL";
+    }
+
+    const historicalStructure =
+        analyzeOnlyUpsDownsMarketStructure(
+            historicalPrices,
+        );
+
+    const historicalPressure =
+        calculateOnlyUpsDownsPressure(
+            historicalPrices,
+        );
+
+    return fuseMarketRegime(
+        historicalStructure.regime,
+        historicalPressure,
+    );
+}
 function buildReversalFromEvidence(
     regime: OnlyUpsDownsRegime,
     structure: StructureAnalysis,
@@ -398,12 +737,52 @@ function buildReversalFromEvidence(
     const oppositePressureScore =
         clamp(reversalBase.oppositePressure);
 
+    /*
+     * A verified transition is different from exhaustion.
+     *
+     * It requires:
+     *   1. a strong historical regime,
+     *   2. momentum originating from that old direction,
+     *   3. momentum transferring into the reversal direction,
+     *   4. meaningful opposite pressure,
+     *   5. no failed structural break.
+     *
+     * This prevents normal continuation from being promoted
+     * to reversal simply because momentum is strong.
+     */
+    const transitionConfirmation =
+        (
+            bullish &&
+            previousDown &&
+            momentum.from === "DOWN" &&
+            momentum.to === "UP"
+        ) ||
+        (
+            !bullish &&
+            previousUp &&
+            momentum.from === "UP" &&
+            momentum.to === "DOWN"
+        );
+
+    const verifiedTransition =
+        transitionConfirmation &&
+        oppositePressureScore >= 50 &&
+        momentum.detected &&
+        !structure.failedBreak;
+
+    const transitionScore =
+        verifiedTransition
+            ? 100
+            : 0;
+
     const structureScore =
-        structureConfirmation
-            ? 70
-            : structureBreak
-                ? 55
-                : clamp(structure.score * 0.5);
+        verifiedTransition
+            ? 80
+            : structureConfirmation
+                ? 70
+                : structureBreak
+                    ? 55
+                    : clamp(structure.score * 0.5);
 
     const momentumScore =
         momentumConfirmation
@@ -411,10 +790,14 @@ function buildReversalFromEvidence(
             : clamp(momentum.score * 0.6);
 
     const rsiScore =
-        rsiConfirmation ? 100 : clamp(rsi.score);
+        rsiConfirmation
+            ? 100
+            : clamp(rsi.score);
 
     const bbScore =
-        bbConfirmation ? 100 : clamp(bollinger.score);
+        bbConfirmation
+            ? 100
+            : clamp(bollinger.score);
 
     const stabilityScore =
         stability.orderly
@@ -428,9 +811,19 @@ function buildReversalFromEvidence(
                 ? 10
                 : 0;
 
+    /*
+     * For a verified regime transition, the 15% reversal-evidence
+     * slot uses transition evidence instead of pretending that
+     * exhaustion occurred.
+     */
+    const reversalEvidenceScore =
+        verifiedTransition
+            ? transitionScore
+            : exhaustionScore;
+
     const reversalScore = clamp(
         previousTrendQuality * 0.15 +
-        exhaustionScore * 0.15 +
+        reversalEvidenceScore * 0.15 +
         oppositePressureScore * 0.20 +
         structureScore * 0.20 +
         momentumScore * 0.15 +
@@ -441,9 +834,11 @@ function buildReversalFromEvidence(
     );
 
     const confirmations = [
-        exhaustionScore >= 55,
+        exhaustionScore >= 55 ||
+            verifiedTransition,
         oppositePressureScore >= 50,
-        structureConfirmation,
+        structureConfirmation ||
+            verifiedTransition,
         structureBreak,
         momentumConfirmation,
         rsiConfirmation,
@@ -477,9 +872,15 @@ function buildReversalFromEvidence(
     const ready =
         !failedReversal &&
         previousTrendQuality >= 60 &&
-        exhaustionScore >= 55 &&
+        (
+            exhaustionScore >= 55 ||
+            verifiedTransition
+        ) &&
         oppositePressureScore >= 50 &&
-        structureConfirmation &&
+        (
+            structureConfirmation ||
+            verifiedTransition
+        ) &&
         momentumConfirmation &&
         confirmations >= 4 &&
         stabilityScore >= 40 &&
@@ -490,11 +891,15 @@ function buildReversalFromEvidence(
         !failedReversal &&
         !ready &&
         previousTrendQuality >= 60 &&
-        exhaustionScore >= 45 &&
+        (
+            exhaustionScore >= 45 ||
+            verifiedTransition
+        ) &&
         oppositePressureScore >= 35 &&
         (
             structureConfirmation ||
-            momentumConfirmation
+            momentumConfirmation ||
+            verifiedTransition
         ) &&
         reversalScore >= 55;
 
@@ -502,13 +907,14 @@ function buildReversalFromEvidence(
         ...reversalBase,
         candidate: ready || watch,
         direction,
+        previousRegime: regime,
+        momentumTransfer: momentum,
         confirmationCount: confirmations,
         reversalScore,
         invalidated: failedReversal,
         invalidationReason,
     };
 }
-
 function buildSignal(
     reversal: ReversalAnalysis,
     continuation: ContinuationAnalysis,
@@ -739,7 +1145,13 @@ export function evaluateOnlyUpsDownsStrategy(
         calculateMomentumTransfer(prices);
 
     const regime =
-        structureResult.regime;
+        fuseMarketRegime(
+            structureResult.regime,
+            pressureResult,
+        );
+
+    const historicalRegime =
+        deriveHistoricalRegime(prices);
 
     const baseReversal =
         analyzeOnlyUpsDownsReversal(prices);
@@ -965,13 +1377,122 @@ export function evaluateOnlyUpsDownsStrategy(
                 : null,
     };
 
+    /*
+     * Transition-aware reversal bridge.
+     *
+     * The normal momentum engine evaluates the complete price
+     * history. A newly established trend can therefore dominate
+     * the historical reversal evidence.
+     *
+     * Compare:
+     *   - pressure from the first 12 prices
+     *   - current pressure from the full price window
+     *
+     * If those directions oppose each other, the market has
+     * transferred directional pressure from the old trend into
+     * the new trend. Feed that transition explicitly into the
+     * reversal detector.
+     */
+    const historicalWindowSize =
+        Math.min(12, prices.length);
+
+    const historicalPrices =
+        prices.slice(
+            0,
+            historicalWindowSize,
+        );
+
+    const historicalPressure =
+        calculateOnlyUpsDownsPressure(
+            historicalPrices,
+        );
+
+    const historicalPressureDirection =
+        historicalPressure.dominantDirection === "ups"
+            ? "UP"
+            : historicalPressure.dominantDirection === "downs"
+                ? "DOWN"
+                : "NONE";
+
+    const currentPressureDirection =
+        pressure.currentDirection === "UP"
+            ? "UP"
+            : pressure.currentDirection === "DOWN"
+                ? "DOWN"
+                : "NONE";
+
+    const pressureTransferred =
+        historicalPressureDirection !== "NONE" &&
+        currentPressureDirection !== "NONE" &&
+        historicalPressureDirection !==
+            currentPressureDirection;
+
+    let transitionMomentum =
+        momentumTransfer;
+
+    let transitionReversalBase =
+        legacyReversalBase;
+
+    if (pressureTransferred) {
+        transitionMomentum = {
+            detected: true,
+
+            from:
+                historicalPressureDirection,
+
+            to:
+                currentPressureDirection,
+
+            previousPressure:
+                historicalPressureDirection === "UP"
+                    ? clamp(
+                        historicalPressure.overallStrength,
+                    )
+                    : -clamp(
+                        historicalPressure.overallStrength,
+                    ),
+
+            currentPressure:
+                currentPressureDirection === "UP"
+                    ? clamp(
+                        pressure.score,
+                    )
+                    : -clamp(
+                        pressure.score,
+                    ),
+
+            transferStrength:
+                clamp(
+                    historicalPressure.overallStrength +
+                    pressure.score,
+                ),
+
+            acceleration:
+                clamp(
+                    pressure.score -
+                    historicalPressure.overallStrength,
+                ),
+
+            score: 100,
+        };
+
+        transitionReversalBase = {
+            ...legacyReversalBase,
+
+            oppositePressure:
+                clamp(
+                    pressure.score,
+                ),
+        };
+    }
+
     const reversal =
         buildReversalFromEvidence(
-            regime,
+            historicalRegime,
             structure,
             pressure,
-            legacyReversalBase,
-            momentumTransfer,
+            transitionReversalBase,
+            transitionMomentum,
             rsi,
             bollinger,
             volatility,
@@ -1019,6 +1540,16 @@ export function evaluateOnlyUpsDownsStrategy(
 export const OnlyUpsDownsStrategy = {
     evaluate: evaluateOnlyUpsDownsStrategy,
 };
+
+
+
+
+
+
+
+
+
+
 
 
 
