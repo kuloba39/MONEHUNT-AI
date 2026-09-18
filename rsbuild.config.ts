@@ -78,9 +78,12 @@ export default defineConfig({
         to: 'js/smartcharts/[name][ext]',
         globOptions: { ignore: ['**/*.LICENSE.txt'] },
       },
+      { from: path.join(smartchartsDist, 'flutter-chart-loader-b20830.smartcharts.js'), to: 'flutter-chart-loader-b20830.smartcharts.js' },
+      { from: path.join(smartchartsDist, 'lz-string-0c6be0.smartcharts.js'), to: 'lz-string-0c6be0.smartcharts.js' },
       // The flutter/canvaskit chart renderer lives in dist/chart/ and must keep its
       // directory structure so SmartCharts can load /js/smartcharts/chart/canvaskit/...
       { from: path.join(smartchartsDist, 'chart'), to: 'js/smartcharts/chart' },
+      { from: path.join(smartchartsDist, 'chart'), to: 'chart' },
       // Flutter resolves its asset bundle (AssetManifest.json, FontManifest.json, fonts,
       // packages) against the SmartCharts public path — /js/smartcharts/assets/ — even
       // though the engine files load from chart/. Mirror dist/assets/ there, preserving
@@ -88,6 +91,7 @@ export default defineConfig({
       // flutter aborts booting on a JSON parse error, leaving the chart stuck on
       // "Retrieving Chart Data…".
       { from: path.join(smartchartsDist, 'assets'), to: 'js/smartcharts/assets' },
+      { from: path.join(smartchartsDist, 'assets/packages/deriv_chart/assets/fonts/quill_icons.ttf'), to: 'assets/packages/deriv_chart/assets/fonts/quill_icons.ttf' },
       { from: path.join(smartchartsDist, 'assets/*'), to: 'assets/[name][ext]' },
       { from: path.join(smartchartsDist, 'assets/fonts/*'), to: 'assets/fonts/[name][ext]' },
       { from: path.join(smartchartsDist, 'assets/shaders/*'), to: 'assets/shaders/[name][ext]' },

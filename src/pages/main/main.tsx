@@ -1,4 +1,4 @@
-// @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
+// @ts-nocheck â€” vendored bot code with known upstream type gaps; see AGENTS.md
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
@@ -46,6 +46,7 @@ import Analysis from '../analysis';
 import CopyTrading from '../copy-trading';
 import AiLab from '../ai-lab';
 import RunStrategy from '../dashboard/run-strategy';
+import OnlyUpsDownsPage from '@/pages/only-ups-downs/only-ups-downs';
 import './main.scss';
 
 const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
@@ -95,7 +96,8 @@ const AppWrapper = observer(() => {
     'free_bots',
     'analysis',
     'copy_trading',
-    'ai_lab'
+    'ai_lab',
+    'only_ups_downs'
 ];
     const { isDesktop } = useDevice();
     const location = useLocation();
@@ -137,7 +139,7 @@ const AppWrapper = observer(() => {
         };
     };
 
-    // App Builder embeds the bot at /bot/preview — open the bot builder there by
+    // App Builder embeds the bot at /bot/preview â€” open the bot builder there by
     // default (instead of the dashboard) when no explicit #tab hash is present.
     const is_preview_mode = window.location.pathname.includes('/preview');
     let tab_value: number | string = active_tab;
@@ -448,7 +450,7 @@ const AppWrapper = observer(() => {
 <div
     label={
         <>
-            📊 D Circles
+            ðŸ“Š D Circles
         </>
     }
     id='id-analysis'
@@ -461,7 +463,7 @@ const AppWrapper = observer(() => {
 <div
     label={
         <>
-            👥 Copy Trading
+            ðŸ‘¥ Copy Trading
         </>
     }
     id='id-copy-trading'
@@ -479,6 +481,27 @@ const AppWrapper = observer(() => {
 >
     <AiLab />
 </div>
+{/* ONLY UPS / DOWNS */}
+<div
+    label={
+        <div
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                color: 'inherit',
+                textDecoration: 'none',
+                width: '100%',
+                height: '100%',
+            }}
+        >
+            <span>Only Ups / Downs</span>
+        </div>
+    }
+    id='id-only-ups-downs'
+>
+    <OnlyUpsDownsPage />
+</div>
 {/* TRADINGVIEW */}
 <div
     label={
@@ -495,7 +518,7 @@ const AppWrapper = observer(() => {
                 cursor: 'pointer',
             }}
         >
-            <span>📈 TradingView</span>
+            <span>ðŸ“ˆ TradingView</span>
         </div>
     }
     id='id-tradingview'

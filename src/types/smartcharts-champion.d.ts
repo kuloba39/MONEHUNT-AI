@@ -161,6 +161,7 @@ declare module '@deriv-com/smartcharts-champion' {
         yAxisMargin?: { top: number; bottom: number };
         leftMargin?: number;
         crosshairState?: number | null;
+        crosshairEnabled?: boolean;
         crosshairTooltipLeftAllow?: number | null;
         startWithDataFitMode?: boolean;
         isAnimationEnabled?: boolean;

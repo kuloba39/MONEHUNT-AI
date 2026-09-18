@@ -1,29 +1,18 @@
-﻿import {
-    analyzeOnlyUpsDownsMarketStructure,
-} from "../engine/only-ups-downs-structure";
-
 import {
-    calculateOnlyUpsDownsPressure,
-} from "../engine/only-ups-downs-pressure";
-
-import {
-    analyzeOnlyUpsDownsReversal,
-} from "../engine/only-ups-downs-reversal";
+    evaluateOnlyUpsDownsStrategy,
+} from "../engine/only-ups-downs-strategy";
 
 import type {
     OnlyUpsDownsDirection,
-    OnlyUpsDownsDisplayDirection,
-    OnlyUpsDownsMode,
-    ReversalRisk,
-    EntryQuality,
     OnlyUpsDownsSignal,
+    OnlyUpsDownsEngineResult,
+    OnlyUpsDownsAnalysisHorizon,
 } from "../types/only-ups-downs-types";
 
 export interface OnlyUpsDownsScannerOptions {
     maxPoints?: number;
     minimumPoints?: number;
-    structureLookback?: number;
-    minimumMovePercent?: number;
+    horizon?: OnlyUpsDownsAnalysisHorizon;
 }
 
 export interface OnlyUpsDownsScannerSnapshot {
@@ -34,16 +23,16 @@ export interface OnlyUpsDownsScannerSnapshot {
 
     direction: OnlyUpsDownsDirection | null;
 
-    structure: ReturnType<typeof analyzeOnlyUpsDownsMarketStructure>;
-    pressure: ReturnType<typeof calculateOnlyUpsDownsPressure>;
-    reversal: ReturnType<typeof analyzeOnlyUpsDownsReversal>;
+    structure: OnlyUpsDownsEngineResult["structure"];
+    pressure: OnlyUpsDownsEngineResult["pressure"];
+    reversal: OnlyUpsDownsEngineResult["reversal"];
 
     signal: OnlyUpsDownsSignal | null;
 
     updatedAt: number;
 }
 
-const DEFAULT_MAX_POINTS = 250;
+const DEFAULT_MAX_POINTS = 2000;
 const DEFAULT_MINIMUM_POINTS = 40;
 
 function clamp(value: number, min: number, max: number): number {
@@ -65,183 +54,6 @@ function sanitizePrices(
     return clean.slice(clean.length - maxPoints);
 }
 
-function getLatestDirection(
-    reversal: ReturnType<typeof analyzeOnlyUpsDownsReversal>,
-    pressure: ReturnType<typeof calculateOnlyUpsDownsPressure>,
-): OnlyUpsDownsDirection | null {
-    if (reversal.direction === "bullish") {
-        return "ups";
-    }
-
-    if (reversal.direction === "bearish") {
-        return "downs";
-    }
-
-    if (pressure.dominantDirection === "ups") {
-        return "ups";
-    }
-
-    if (pressure.dominantDirection === "downs") {
-        return "downs";
-    }
-
-    return null;
-}
-
-function getDisplayDirection(
-    direction: OnlyUpsDownsDirection | null,
-): OnlyUpsDownsDisplayDirection {
-    if (direction === "ups") {
-        return "Only Ups";
-    }
-
-    if (direction === "downs") {
-        return "Only Downs";
-    }
-
-    return "None";
-}
-
-function getMode(
-    reversal: ReturnType<typeof analyzeOnlyUpsDownsReversal>,
-): OnlyUpsDownsMode {
-    if (reversal.direction !== "none") {
-        return "REVERSAL";
-    }
-
-    if (reversal.status !== "WAIT") {
-        return "CONTINUATION";
-    }
-
-    return "NONE";
-}
-
-function getReversalRisk(
-    risk: number,
-): ReversalRisk {
-    if (risk >= 80) {
-        return "EXTREME";
-    }
-
-    if (risk >= 60) {
-        return "HIGH";
-    }
-
-    if (risk >= 35) {
-        return "MEDIUM";
-    }
-
-    return "LOW";
-}
-
-function getEntryQuality(
-    score: number,
-    status: string,
-): EntryQuality {
-    if (status === "READY" && score >= 75) {
-        return "HIGH";
-    }
-
-    if (
-        (status === "READY" && score >= 55) ||
-        (status === "WATCH" && score >= 70)
-    ) {
-        return "MEDIUM";
-    }
-
-    if (status === "WATCH" && score >= 40) {
-        return "LOW";
-    }
-
-    return "NONE";
-}
-
-function buildSignal(
-    reversal: ReturnType<typeof analyzeOnlyUpsDownsReversal>,
-    direction: OnlyUpsDownsDirection | null,
-    structure: ReturnType<typeof analyzeOnlyUpsDownsMarketStructure>,
-): OnlyUpsDownsSignal | null {
-    if (!direction) {
-        return null;
-    }
-
-    const botDirection =
-        direction === "ups"
-            ? "ups"
-            : "downs";
-
-    const displayDirection =
-        getDisplayDirection(direction);
-
-    const mode =
-        getMode(reversal);
-
-    const structureScore = Math.max(
-        0,
-        Math.min(
-            100,
-            (
-                (structure.higherHigh ? 25 : 0) +
-                (structure.higherLow ? 25 : 0) +
-                (structure.lowerHigh ? 25 : 0) +
-                (structure.lowerLow ? 25 : 0)
-            ),
-        ),
-    );
-
-    const trendScore =
-        typeof reversal.previousRegime === "string"
-            ? (
-                reversal.previousRegime === "STRONG_UP" ||
-                reversal.previousRegime === "STRONG_DOWN"
-                    ? 100
-                    : reversal.previousRegime === "WEAK_UP" ||
-                      reversal.previousRegime === "WEAK_DOWN"
-                        ? 65
-                        : 0
-            )
-            : 0;
-
-    const entryScore = Math.max(
-        0,
-        Math.min(
-            100,
-            reversal.score * 0.65 +
-            structureScore * 0.35,
-        ),
-    );
-
-    return {
-        direction: displayDirection,
-        botDirection,
-        mode,
-        status: reversal.status,
-        confidence: Math.max(
-            0,
-            Math.min(100, reversal.score),
-        ),
-        trendScore,
-        exhaustionScore: reversal.exhaustionScore,
-        oppositePressureScore: reversal.oppositePressure,
-        structureScore,
-        momentumShiftScore: Math.max(0, Math.min(100, reversal.momentumShift)),
-        rsiConfirmation: reversal.rsiConfirmation >= 50,
-        bollingerConfirmation: reversal.bollingerConfirmation >= 50,
-        adxConfirmation: reversal.pressureStrength >= 50,
-        volatilitySafe: reversal.stabilityScore >= 50,
-        stabilitySafe: reversal.stabilityScore >= 50,
-        reversalRisk: getReversalRisk(
-            reversal.reversalRisk,
-        ),
-        entryQuality: getEntryQuality(
-            entryScore,
-            reversal.status,
-        ),
-        entryScore,
-        reason: reversal.reasons.join(" | "),
-        timestamp: Date.now(),
-    };
-}
 export class OnlyUpsDownsScanner {
     private prices: number[] = [];
 
@@ -249,9 +61,9 @@ export class OnlyUpsDownsScanner {
 
     private readonly minimumPoints: number;
 
-    private readonly structureLookback: number;
+    private readonly horizon: OnlyUpsDownsAnalysisHorizon;
 
-    private readonly minimumMovePercent: number;
+
 
     constructor(options: OnlyUpsDownsScannerOptions = {}) {
         this.maxPoints = Math.max(
@@ -267,15 +79,7 @@ export class OnlyUpsDownsScanner {
             this.maxPoints,
         );
 
-        this.structureLookback = Math.max(
-            2,
-            Math.floor(options.structureLookback ?? 3),
-        );
-
-        this.minimumMovePercent = Math.max(
-            0,
-            options.minimumMovePercent ?? 0.0025,
-        );
+        this.horizon = options.horizon ?? "AUTO";
     }
 
     reset(): void {
@@ -341,76 +145,31 @@ export class OnlyUpsDownsScanner {
     snapshot(): OnlyUpsDownsScannerSnapshot {
         const prices = [...this.prices];
         const ready = prices.length >= this.minimumPoints;
+        const result = evaluateOnlyUpsDownsStrategy({
+            prices,
+            horizon: this.horizon,
+        });
 
-        if (!ready) {
-            const emptyStructure =
-                analyzeOnlyUpsDownsMarketStructure(
-                    prices,
-                    {
-                        swingLookback: this.structureLookback,
-                        minimumMovePercent: this.minimumMovePercent,
-                    },
-                );
+        const signal = result.signal;
 
-            const emptyPressure =
-                calculateOnlyUpsDownsPressure(prices);
-
-            const emptyReversal =
-                analyzeOnlyUpsDownsReversal(prices);
-
-            return {
-                ready: false,
-                price: prices.length
-                    ? prices[prices.length - 1]
-                    : null,
-                prices,
-                pointCount: prices.length,
-                direction: null,
-                structure: emptyStructure,
-                pressure: emptyPressure,
-                reversal: emptyReversal,
-                signal: null,
-                updatedAt: Date.now(),
-            };
-        }
-
-        const structure =
-            analyzeOnlyUpsDownsMarketStructure(
-                prices,
-                {
-                    swingLookback: this.structureLookback,
-                    minimumMovePercent: this.minimumMovePercent,
-                },
-            );
-
-        const pressure =
-            calculateOnlyUpsDownsPressure(prices);
-
-        const reversal =
-            analyzeOnlyUpsDownsReversal(prices);
-
-        const direction =
-            getLatestDirection(
-                reversal,
-                pressure,
-            );
-
-        const signal =
-            buildSignal(
-                reversal,
-                direction,
-                structure,
-            );
+        const direction: OnlyUpsDownsDirection | null =
+            signal?.botDirection === "ups"
+                ? "ups"
+                : signal?.botDirection === "downs"
+                    ? "downs"
+                    : null;
 
         return {
-            ready: true,
-            price: prices[prices.length - 1],
+            ready,
+            price: prices.length
+                ? prices[prices.length - 1]
+                : null,
             prices,
             pointCount: prices.length,
             direction,
-            structure,
-            pressure,
-            reversal,
+            structure: result.structure,
+            pressure: result.pressure,
+            reversal: result.reversal,
             signal,
             updatedAt: Date.now(),
         };
@@ -422,7 +181,6 @@ export function createOnlyUpsDownsScanner(
 ): OnlyUpsDownsScanner {
     return new OnlyUpsDownsScanner(options);
 }
-
 
 
 

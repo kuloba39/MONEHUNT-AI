@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ONLY UPS / ONLY DOWNS
  * Independent Strategy Type Definitions
  *
@@ -11,6 +11,18 @@
    CORE DIRECTIONS
    ========================================================= */
 
+export type OnlyUpsDownsAnalysisHorizon =
+    | 'AUTO'
+    | 'SHORT_TERM'
+    | 'MEDIUM_TERM'
+    | 'LONG_TERM'
+    | 'MULTI_TIMEFRAME';
+
+export interface OnlyUpsDownsHorizonConfig {
+    horizon: OnlyUpsDownsAnalysisHorizon;
+    windows: number[];
+    primaryWindow: number;
+}
 export type OnlyUpsDownsDirection =
     | 'ups'
     | 'downs'
@@ -440,6 +452,10 @@ export interface EntryAnalysis {
    ========================================================= */
 
 export interface OnlyUpsDownsSignal {
+    requestedHorizon: OnlyUpsDownsAnalysisHorizon;
+
+    selectedHorizon: OnlyUpsDownsAnalysisHorizon;
+
     direction: OnlyUpsDownsDisplayDirection;
 
     botDirection: 'ups' | 'downs' | null;

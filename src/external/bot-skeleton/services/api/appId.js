@@ -74,7 +74,30 @@ export const generateDerivApiInstance = async (forceNew = false) => {
             currentWebSocketURL = wsURL;
 
             console.log('[DerivAPI] Creating new WebSocket connection to:', wsURL);
+            console.log('[DerivAPI PROBE] Creating WebSocket connection to:', wsURL);
+            console.log('[DerivAPI PROBE] URL type:', typeof wsURL);
+            console.log('[DerivAPI PROBE] URL value:', wsURL);
+
             const deriv_socket = new WebSocket(wsURL);
+
+            console.log('[DerivAPI PROBE] WebSocket created');
+            console.log('[DerivAPI PROBE] readyState:', deriv_socket.readyState);
+
+            deriv_socket.addEventListener('open', () => {
+                console.log('[DerivAPI PROBE] SOCKET OPEN');
+            });
+
+            deriv_socket.addEventListener('error', (event) => {
+                console.error('[DerivAPI PROBE] SOCKET ERROR', event);
+            });
+
+            deriv_socket.addEventListener('close', (event) => {
+                console.warn('[DerivAPI PROBE] SOCKET CLOSE', {
+                    code: event.code,
+                    reason: event.reason,
+                    wasClean: event.wasClean
+                });
+            });
             const deriv_api = new DerivAPIBasic({
                 connection: deriv_socket,
                 middleware: new APIMiddleware({}),

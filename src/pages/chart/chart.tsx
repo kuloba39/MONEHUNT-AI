@@ -111,6 +111,7 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
                     />
                 )}
                 chartType={chart_type}
+        crosshairEnabled={true}
                 isMobile={isMobile}
                 enabledNavigationWidget={isDesktop}
                 granularity={granularity as TGranularity}

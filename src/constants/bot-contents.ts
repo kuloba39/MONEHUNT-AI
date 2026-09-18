@@ -20,6 +20,7 @@ export const DBOT_TABS: TDashboardTabIndex = Object.freeze({
     ANALYSIS: 4,
     COPY_TRADING: 5,
     AI_LAB: 6,
+    ONLY_UPS_DOWNS: 7,
 });
 
 
@@ -31,6 +32,7 @@ export const TAB_IDS = [
     'id-analysis',
     'id-copy-trading',
     'id-ai-lab',
+    'id-only-ups-downs',
 ];
 
 

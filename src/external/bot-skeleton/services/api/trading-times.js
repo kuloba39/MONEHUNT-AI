@@ -3,6 +3,7 @@ import PendingPromise from '../../utils/pending-promise';
 import { api_base } from './api-base';
 
 export default class TradingTimes {
+    static TRADING_TIMES_TIMEOUT_MS = 10000;
     constructor({ ws, server_time }) {
         this.init_promise = new PendingPromise();
         this.is_initialised = false;
@@ -65,7 +66,7 @@ export default class TradingTimes {
                 this.update_timer = setTimeout(periodicUpdate, wait_period);
             };
 
-            await periodicUpdate();
+            void periodicUpdate();
         }
 
         return this.init_promise;
@@ -81,8 +82,20 @@ export default class TradingTimes {
                 return;
             }
 
-            const response = await (api_base.api?.send({ trading_times: last_update_date }) ||
-                this.ws?.send({ trading_times: last_update_date }));
+            const tradingTimesRequest = api_base.api?.send({ trading_times: last_update_date }) ||
+                this.ws?.send({ trading_times: last_update_date });
+
+            const tradingTimesTimeout = new Promise((_, reject) =>
+                setTimeout(
+                    () => reject(new Error('Trading times fetch timeout')),
+                    TradingTimes.TRADING_TIMES_TIMEOUT_MS,
+                ),
+            );
+
+            const response = await Promise.race([
+                tradingTimesRequest,
+                tradingTimesTimeout,
+            ]);
 
             if (response?.error) {
                 this.setTradingTimes();

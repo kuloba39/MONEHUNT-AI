@@ -25,12 +25,51 @@ export function createTransport(): TTransport {
          * Send one-shot API request
          */
         async send(request: any): Promise<any> {
+            console.log("[SmartCharts Transport] REQUEST", {
+                ticks_history: request?.ticks_history,
+                style: request?.style,
+                count: request?.count,
+                start: request?.start,
+                end: request?.end,
+                granularity: request?.granularity,
+            });
+
             if (!chart_api.api) {
+                console.warn("[SmartCharts Transport] API missing - initializing");
                 await chart_api.init();
             }
-            return chart_api.api.send(request);
-        },
 
+            try {
+                const response = await chart_api.api.send(request);
+
+                console.log("[SmartCharts Transport] RESPONSE", {
+                    msg_type: response?.msg_type,
+                    error: response?.error
+                        ? {
+                            code: response.error.code,
+                            message: response.error.message,
+                        }
+                        : null,
+                    historyPrices: Array.isArray(response?.history?.prices)
+                        ? response.history.prices.length
+                        : null,
+                    historyTimes: Array.isArray(response?.history?.times)
+                        ? response.history.times.length
+                        : null,
+                    firstPrice: response?.history?.prices?.[0],
+                    lastPrice: Array.isArray(response?.history?.prices)
+                        ? response.history.prices[
+                            response.history.prices.length - 1
+                        ]
+                        : undefined,
+                });
+
+                return response;
+            } catch (error) {
+                console.error("[SmartCharts Transport] SEND ERROR", error);
+                throw error;
+            }
+        },
         /**
          * Subscribe to streaming data
          * @param request - API request with subscribe: 1

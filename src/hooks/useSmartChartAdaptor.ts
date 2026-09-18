@@ -3,6 +3,10 @@ import { buildSmartchartsChampionAdapter } from '@/adapters/smartcharts-champion
 import { createServices } from '@/adapters/smartcharts-champion/services';
 import { createTransport } from '@/adapters/smartcharts-champion/transport';
 import chart_api from '@/external/bot-skeleton/services/api/chart-api';
+import {
+    CONNECTION_STATUS,
+    connectionStatus$,
+} from '@/external/bot-skeleton/services/api/observables/connection-status-stream';
 import type { SmartchartsChampionAdapter } from '@/types/smartchart.types';
 import type {
     ActiveSymbols,
@@ -49,6 +53,9 @@ export const useSmartChartAdaptor = (): UseSmartChartAdaptorReturn => {
     // State management
     const [adapter, setAdapter] = useState<SmartchartsChampionAdapter | null>(null);
     const [adapterInitialized, setAdapterInitialized] = useState(false);
+    const [connectionStatus, setConnectionStatusState] = useState<CONNECTION_STATUS>(
+        connectionStatus$.value as CONNECTION_STATUS,
+    );
     const [chartData, setChartData] = useState<{
         activeSymbols: ActiveSymbols;
         tradingTimes: TradingTimesMap;
@@ -78,9 +85,34 @@ export const useSmartChartAdaptor = (): UseSmartChartAdaptorReturn => {
         };
     }, []);
 
-    // Initialize adapter - runs once when chart_api.api is available
+    // Track the shared Deriv connection status.
+    // BehaviorSubject immediately provides the current status on subscription.
     useEffect(() => {
-        if (!adapterInitialized && chart_api.api) {
+        const subscription = connectionStatus$.subscribe((status) => {
+            if (isMountedRef.current) {
+                setConnectionStatusState(status as CONNECTION_STATUS);
+            }
+        });
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, []);
+
+    // Initialize adapter when the shared Deriv connection is OPENED.
+    useEffect(() => {
+        console.log('[SmartCharts Hook Probe] adapterInitialized =', adapterInitialized);
+        console.log('[SmartCharts Hook Probe] connectionStatus =', connectionStatus);
+        console.log('[SmartCharts Hook Probe] chartApiReady =', !!chart_api.api);
+        console.log(
+            '[SmartCharts Hook Probe] chartSocketReadyState =',
+            chart_api.api?.connection?.readyState ?? null
+        );
+        if (
+            !adapterInitialized &&
+            connectionStatus === CONNECTION_STATUS.OPENED &&
+            chart_api.api
+        ) {
             try {
                 const transport = createTransport();
                 const services = createServices();
@@ -101,7 +133,7 @@ export const useSmartChartAdaptor = (): UseSmartChartAdaptorReturn => {
                 }
             }
         }
-    }, [adapterInitialized]);
+    }, [adapterInitialized, connectionStatus]);
 
     // Load chart data when adapter is initialized
     useEffect(() => {

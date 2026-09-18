@@ -1,4 +1,4 @@
-// @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
+// @ts-nocheck â€” vendored bot code with known upstream type gaps; see AGENTS.md
 /* [AI] - Analytics removed - utility functions moved to @/utils/account-helpers */
 import { getAccountId, getAccountType, isDemoAccount, removeUrlParameter } from '@/utils/account-helpers';
 /* [/AI] */
@@ -199,7 +199,21 @@ class APIBase {
         if (this.time_interval) clearInterval(this.time_interval);
         this.time_interval = null;
 
-        chart_api.init(force_create_connection);
+        console.log('[API INIT PROBE] before chart_api.init');
+        console.log('[API INIT PROBE] chart_api.api before =', !!chart_api.api);
+
+        await chart_api.init(force_create_connection);
+
+        console.log('[API INIT PROBE] after chart_api.init');
+        console.log('[API INIT PROBE] chart_api.api after =', !!chart_api.api);
+        console.log('[API INIT PROBE] chart socket readyState =', chart_api.api?.connection?.readyState ?? null);
+        console.log('[API INIT PROBE] main socket readyState =', this.api?.connection?.readyState ?? null);
+
+        // Synchronize the shared connection status when the socket was
+        // already OPEN before APIBase attached its "open" listener.
+        if (this.api?.connection?.readyState === 1) {
+            setConnectionStatus(CONNECTION_STATUS.OPENED);
+        }
     }
 
     getConnectionStatus() {
@@ -406,7 +420,7 @@ class APIBase {
 
             const apiResult = await Promise.race([activeSymbolsPromise, timeout]);
             console.log(
-    "🔥 ACTIVE SYMBOLS RAW RESPONSE:",
+    "ðŸ”¥ ACTIVE SYMBOLS RAW RESPONSE:",
     JSON.stringify(apiResult, null, 2)
 );
 

@@ -72,7 +72,13 @@ const getDefaultServerURL = () => {
  */
 export const getSocketURL = async (): Promise<string> => {
     try {
+        console.log('[getSocketURL PROBE] ENTER');
+        console.log('[getSocketURL PROBE] Calling getAuthInfo...');
         const authInfo = getAuthInfo();
+        console.log('[getSocketURL PROBE] getAuthInfo returned:', {
+            hasAuthInfo: !!authInfo,
+            hasAccessToken: !!authInfo?.access_token
+        });
         if (!authInfo || !authInfo.access_token) {
             return getDefaultServerURL();
         }

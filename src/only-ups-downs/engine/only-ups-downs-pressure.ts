@@ -1,4 +1,4 @@
-﻿import type {
+import type {
     OnlyUpsDownsDirection,
 } from "../types/only-ups-downs-types";
 
@@ -10,6 +10,9 @@ export interface OnlyUpsDownsPressureWindow {
     dominance: OnlyUpsDownsDirection | "neutral";
     strength: number;
     persistence: number;
+    upMoves: number;
+    downMoves: number;
+    flatMoves: number;
 }
 
 export interface OnlyUpsDownsMomentumTransfer {
@@ -49,6 +52,9 @@ interface WindowPressure {
     dominance: OnlyUpsDownsDirection | "neutral";
     strength: number;
     persistence: number;
+    upTicks: number;
+    downTicks: number;
+    flatTicks: number;
 }
 
 const clamp = (value: number, min = 0, max = 100): number =>
@@ -100,6 +106,9 @@ const calculateWindowPressure = (
             dominance: "neutral",
             strength: 0,
             persistence: 0,
+            upTicks: 0,
+            downTicks: 0,
+            flatTicks: 0,
         };
     }
 
@@ -111,6 +120,7 @@ const calculateWindowPressure = (
     let upTicks = 0;
     let downTicks = 0;
     let activeTicks = 0;
+    let flatTicks = 0;
 
     for (let i = 0; i < window.length; i += 1) {
         const move = window[i];
@@ -126,6 +136,8 @@ const calculateWindowPressure = (
             downWeight += weight;
             downTicks += 1;
             activeTicks += 1;
+        } else {
+            flatTicks += 1;
         }
     }
 
@@ -139,6 +151,9 @@ const calculateWindowPressure = (
             dominance: "neutral",
             strength: 0,
             persistence: 0,
+            upTicks: 0,
+            downTicks: 0,
+            flatTicks: 0,
         };
     }
 
@@ -172,6 +187,9 @@ const calculateWindowPressure = (
         dominance,
         strength,
         persistence,
+        upTicks,
+        downTicks,
+        flatTicks,
     };
 };
 
@@ -283,6 +301,9 @@ const buildWindow = (
     dominance: window.dominance,
     strength: window.strength,
     persistence: window.persistence,
+    upMoves: window.upTicks,
+    downMoves: window.downTicks,
+    flatMoves: window.flatTicks,
 });
 
 export const calculateOnlyUpsDownsPressure = (
@@ -403,4 +424,3 @@ export const calculateOnlyUpsDownsPressure = (
 
 export const getOnlyUpsDownsPressure =
     calculateOnlyUpsDownsPressure;
-

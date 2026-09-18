@@ -8,6 +8,10 @@ const menuItems = [
         path: '/',
     },
     {
+        label: 'Only Ups / Downs',
+        path: '/only-ups-downs',
+    },
+    {
         label: 'Analysis',
         path: '/analysis',
     },

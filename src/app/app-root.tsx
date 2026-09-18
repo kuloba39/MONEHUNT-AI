@@ -61,6 +61,7 @@ const AppRoot = () => {
             }
         };
 
+        console.log('[AppRoot API PROBE] Calling initializeApi()');
         initializeApi();
         return () => clearTimeout(timeoutId);
     }, []);

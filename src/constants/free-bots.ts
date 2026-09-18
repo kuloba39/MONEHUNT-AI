@@ -6,7 +6,9 @@ import lastDefenderxml from './last-defender.xml';
 import matchesSignalxml from './Matches_Signal_Bot.xml';
 import over2Signalxml from './Over2_Signal_Bot.xml';
 import overUnderSignalxml from './OverUnder_Signal_Bot.xml';
+import onlyUpsDownsSignalxml from './Only_Ups_Downs_Signal_Bot.xml';
 import over6RecoveryOver3xml from './Over6_Recovery_Over3.xml';
+import { save_types } from '@/external/bot-skeleton';
 
 export const FREE_BOTS = [
     {
@@ -111,6 +113,18 @@ export const FREE_BOTS = [
         save_type: 'local',
         free: true,
     },
+    {
+    id: 'only-ups-downs-signal',
+    name: '📈 ONLY UPS / ONLY DOWNS SIGNAL BOT',
+    description: 'Only Ups / Only Downs signal strategy',
+    icon: '📈',
+    color: '#08a86b',
+    tag: 'SIGNAL',
+    xml: onlyUpsDownsSignalxml,
+    timestamp: Date.now(),
+    save_type: save_types.LOCAL,
+    free: true,
+},
     {
         id: 'over6-recovery-over3',
         name: '🔥 OVER 6 → RECOVERY OVER 3',

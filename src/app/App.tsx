@@ -41,6 +41,9 @@ import './app-root.scss';
 import CopyTradingPage 
 from '../pages/copy-trading';
 
+import OnlyUpsDownsPage
+from '../pages/only-ups-downs';
+
 const Layout = lazy(() => import('../components/layout'));
 
 const AppRoot = lazy(() => import('./app-root'));
@@ -172,6 +175,18 @@ element={<CopyTradingPage />}
 
 
 
+
+
+
+    {/* ONLY UPS / DOWNS */}
+
+    <Route
+
+    path='only-ups-downs'
+
+    element={<OnlyUpsDownsPage />}
+
+    />
 
 {/* FOLLOWER ONBOARDING */}
 

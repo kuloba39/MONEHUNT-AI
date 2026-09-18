@@ -35,6 +35,7 @@ export const TRADING_TIMES = {
         '1HZ100V',
         '1HZ10V',
         '1HZ25V',
+        '1HZ30V',
         '1HZ50V',
         '1HZ75V',
         'R_10',

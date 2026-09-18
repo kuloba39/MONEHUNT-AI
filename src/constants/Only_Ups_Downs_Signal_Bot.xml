@@ -1,0 +1,1014 @@
+<xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true" collection="false">
+
+  <variables>
+    <variable id="oud_direction_id">Direction</variable>
+    <variable id="oud_signal_armed_id">signal armed</variable>
+    <variable id="oud_signal_consumed_id">signal consumed</variable>
+    <variable id="oud_trading_mode_id">trading mode</variable>
+
+    <variable id="oud_stake_id">Stake</variable>
+    <variable id="oud_initial_stake_id">InitialStake</variable>
+    <variable id="oud_tp_id">TakeProfit</variable>
+    <variable id="oud_mart_level_id">MartingaleLevel</variable>
+    <variable id="oud_mart_id">Martingale</variable>
+    <variable id="oud_loss_cnt_id">lossCounter</variable>
+    <variable id="oud_stop_loss_id">StopLoss</variable>
+
+    <variable id="oud_text_id">text</variable>
+  </variables>
+
+  <!-- ========================================================= -->
+  <!-- TRADE DEFINITION                                          -->
+  <!-- ========================================================= -->
+
+  <block type="trade_definition" id="oud_trade_def" deletable="false" x="0" y="60">
+
+    <statement name="TRADE_OPTIONS">
+
+      <block type="trade_definition_market" id="oud_market" deletable="false" movable="false">
+        <field name="MARKET_LIST">synthetic_index</field>
+        <field name="SUBMARKET_LIST">random_index</field>
+        <field name="SYMBOL_LIST">1HZ100V</field>
+
+        <next>
+
+          <block type="trade_definition_tradetype" id="oud_tradetype" deletable="false" movable="false">
+            <field name="TRADETYPECAT_LIST">runs</field>
+            <field name="TRADETYPE_LIST">runs</field>
+
+            <next>
+
+              <block type="trade_definition_contracttype" id="oud_contracttype" deletable="false" movable="false">
+                <field name="TYPE_LIST">both</field>
+
+                <next>
+
+                  <block type="trade_definition_candleinterval" id="oud_candle" deletable="false" movable="false">
+                    <field name="CANDLEINTERVAL_LIST">60</field>
+
+                    <next>
+
+                      <block type="trade_definition_restartbuysell" id="oud_restart" deletable="false" movable="false">
+                        <field name="TIME_MACHINE_ENABLED">FALSE</field>
+
+                        <next>
+
+                          <block type="trade_definition_restartonerror"
+  id="oud_restart_error"
+  deletable="false"
+  movable="false">
+
+  <field name="RESTARTONERROR">TRUE</field>
+
+</block>
+
+                        </next>
+                      </block>
+
+                    </next>
+                  </block>
+
+                </next>
+              </block>
+
+            </next>
+          </block>
+
+               </next>
+      </block>
+
+
+    </statement>
+
+    <!-- ========================================================= -->
+    <!-- INITIALIZATION                                            -->
+    <!-- ========================================================= -->
+
+    <statement name="INITIALIZATION">
+
+      <block type="variables_set" id="oud_direction_init">
+        <field name="VAR" id="oud_direction_id">Direction</field>
+        <value name="VALUE">
+          <block type="text" id="oud_direction_value">
+            <field name="TEXT">UP</field>
+          </block>
+        </value>
+
+        <next>
+
+          <block type="variables_set" id="oud_signal_armed_init">
+            <field name="VAR" id="oud_signal_armed_id">signal armed</field>
+            <value name="VALUE">
+              <block type="math_number" id="oud_signal_armed_value">
+                <field name="NUM">1</field>
+              </block>
+            </value>
+
+            <next>
+
+              <block type="variables_set" id="oud_signal_consumed_init">
+                <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
+                <value name="VALUE">
+                  <block type="math_number" id="oud_signal_consumed_value">
+                    <field name="NUM">0</field>
+                  </block>
+                </value>
+
+                <next>
+
+                  <block type="variables_set" id="oud_trading_mode_init">
+                    <field name="VAR" id="oud_trading_mode_id">trading mode</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="oud_trading_mode_value">
+                        <field name="NUM">0</field>
+                      </block>
+                    </value>
+
+                    <next>
+
+                      <block type="variables_set" id="oud_stake_init">
+                        <field name="VAR" id="oud_stake_id">Stake</field>
+                        <value name="VALUE">
+                          <block type="math_number" id="oud_stake_value">
+                            <field name="NUM">10</field>
+                          </block>
+                        </value>
+
+                        <next>
+
+                          <block type="variables_set" id="oud_initial_stake_init">
+                            <field name="VAR" id="oud_initial_stake_id">InitialStake</field>
+                            <value name="VALUE">
+                              <block type="math_number" id="oud_initial_stake_value">
+                                <field name="NUM">10</field>
+                              </block>
+                            </value>
+
+                            <next>
+
+                              <block type="variables_set" id="oud_tp_init">
+                                <field name="VAR" id="oud_tp_id">TakeProfit</field>
+                                <value name="VALUE">
+                                  <block type="math_number" id="oud_tp_value">
+                                    <field name="NUM">15</field>
+                                  </block>
+                                </value>
+
+                                <next>
+
+                                  <block type="variables_set" id="oud_mart_level_init">
+                                    <field name="VAR" id="oud_mart_level_id">MartingaleLevel</field>
+                                    <value name="VALUE">
+                                      <block type="math_number" id="oud_mart_level_value">
+                                        <field name="NUM">6</field>
+                                      </block>
+                                    </value>
+
+                                    <next>
+
+                                      <block type="variables_set" id="oud_mart_init">
+                                        <field name="VAR" id="oud_mart_id">Martingale</field>
+                                        <value name="VALUE">
+                                          <block type="math_number" id="oud_mart_value">
+                                            <field name="NUM">2</field>
+                                          </block>
+                                        </value>
+
+                                        <next>
+
+                                          <block type="variables_set" id="oud_loss_init">
+                                            <field name="VAR" id="oud_loss_cnt_id">lossCounter</field>
+                                            <value name="VALUE">
+                                              <block type="math_number" id="oud_loss_value">
+                                                <field name="NUM">0</field>
+                                              </block>
+                                            </value>
+
+                                            <next>
+
+                                              <block type="variables_set" id="oud_sl_init">
+                                                <field name="VAR" id="oud_stop_loss_id">StopLoss</field>
+                                                <value name="VALUE">
+                                                  <block type="math_number" id="oud_sl_value">
+                                                    <field name="NUM">50</field>
+                                                  </block>
+                                                </value>
+
+                                                <next>
+
+                                                  <block type="notify" id="oud_init_notify">
+                                                    <field name="NOTIFICATION_TYPE">success</field>
+                                                    <field name="NOTIFICATION_SOUND">silent</field>
+                                                    <value name="MESSAGE">
+                                                      <shadow type="text" id="oud_init_message_shadow">
+                                                        <field name="TEXT">ONLY UPS / ONLY DOWNS SIGNAL ARMED</field>
+                                                      </shadow>
+                                                    </value>
+                                                  </block>
+
+                                                </next>
+                                              </block>
+
+                                            </next>
+                                          </block>
+
+                                        </next>
+                                      </block>
+
+                                    </next>
+                                  </block>
+
+                                </next>
+                              </block>
+
+                            </next>
+                          </block>
+
+                        </next>
+                      </block>
+
+                    </next>
+                  </block>
+
+                </next>
+              </block>
+
+            </next>
+          </block>
+
+        </next>
+      </block>
+
+        </statement>
+
+    <statement name="SUBMARKET">
+
+      <block type="trade_definition_tradeoptions" id="oud_trade_options">
+
+        <mutation xmlns="http://www.w3.org/1999/xhtml"
+          has_first_barrier="false"
+          has_second_barrier="false"
+          has_prediction="false">
+        </mutation>
+
+        <field name="DURATIONTYPE_LIST">t</field>
+
+        <value name="DURATION">
+          <shadow type="math_number_positive" id="oud_duration">
+            <field name="NUM">2</field>
+          </shadow>
+        </value>
+
+        <value name="AMOUNT">
+          <shadow type="math_number_positive" id="oud_amount_shadow">
+            <field name="NUM">0.35</field>
+          </shadow>
+
+          <block type="variables_get" id="oud_stake_get">
+            <field name="VAR" id="oud_stake_id">Stake</field>
+          </block>
+
+        </value>
+
+      </block>
+
+    </statement>
+
+  </block>
+
+
+  <!-- ========================================================= -->
+  <!-- AFTER PURCHASE                                            -->
+  <!-- ========================================================= -->
+
+  <block type="after_purchase" id="oud_after_purchase" x="850" y="60">
+
+    <statement name="AFTERPURCHASE_STACK">
+
+      <!-- TAKE PROFIT -->
+
+      <block type="controls_if" id="oud_tp_check">
+
+        <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+
+        <value name="IF0">
+
+          <block type="logic_compare" id="oud_tp_compare">
+            <field name="OP">GTE</field>
+
+            <value name="A">
+              <block type="total_profit" id="oud_tp_total_profit"></block>
+            </value>
+
+            <value name="B">
+              <block type="variables_get" id="oud_tp_get">
+                <field name="VAR" id="oud_tp_id">TakeProfit</field>
+              </block>
+            </value>
+
+          </block>
+
+        </value>
+
+        <statement name="DO0">
+
+          <block type="variables_set" id="oud_tp_reset_mode">
+            <field name="VAR" id="oud_trading_mode_id">trading mode</field>
+            <value name="VALUE">
+              <block type="math_number" id="oud_tp_mode_zero">
+                <field name="NUM">0</field>
+              </block>
+            </value>
+
+            <next>
+
+              <block type="variables_set" id="oud_tp_disarm">
+                <field name="VAR" id="oud_signal_armed_id">signal armed</field>
+                <value name="VALUE">
+                  <block type="math_number" id="oud_tp_disarm_value">
+                    <field name="NUM">0</field>
+                  </block>
+                </value>
+
+                <next>
+
+                  <block type="variables_set" id="oud_tp_consumed">
+                    <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="oud_tp_consumed_value">
+                        <field name="NUM">1</field>
+                      </block>
+                    </value>
+
+                    <next>
+
+                      <block type="notify" id="oud_tp_notify">
+                        <field name="NOTIFICATION_TYPE">success</field>
+                        <field name="NOTIFICATION_SOUND">earned-money</field>
+                        <value name="MESSAGE">
+                          <shadow type="text" id="oud_tp_message">
+                            <field name="TEXT">OUD SIGNAL COMPLETE - TAKE PROFIT</field>
+                          </shadow>
+                        </value>
+                      </block>
+
+                    </next>
+                  </block>
+
+                </next>
+              </block>
+
+            </next>
+          </block>
+
+        </statement>
+
+        <statement name="ELSE">
+
+          <!-- WIN -->
+
+          <block type="controls_if" id="oud_win_check">
+
+            <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+
+            <value name="IF0">
+
+              <block type="logic_compare" id="oud_win_compare">
+                <field name="OP">GTE</field>
+
+                <value name="A">
+                  <block type="contract_check_result" id="oud_contract_result_win">
+    <field name="CHECK_RESULT">win</field>
+</block>
+                </value>
+
+                <value name="B">
+                  <block type="math_number" id="oud_zero_result">
+                    <field name="NUM">0</field>
+                  </block>
+                </value>
+
+              </block>
+
+            </value>
+
+            <statement name="DO0">
+
+              <block type="variables_set" id="oud_win_mode">
+                <field name="VAR" id="oud_trading_mode_id">trading mode</field>
+                <value name="VALUE">
+                  <block type="math_number" id="oud_win_mode_zero">
+                    <field name="NUM">0</field>
+                  </block>
+                </value>
+
+                <next>
+
+                  <block type="variables_set" id="oud_win_armed">
+                    <field name="VAR" id="oud_signal_armed_id">signal armed</field>
+                    <value name="VALUE">
+                      <block type="math_number" id="oud_win_armed_zero">
+                        <field name="NUM">0</field>
+                      </block>
+                    </value>
+
+                    <next>
+
+                      <block type="variables_set" id="oud_win_consumed">
+                        <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
+                        <value name="VALUE">
+                          <block type="math_number" id="oud_win_consumed_one">
+                            <field name="NUM">1</field>
+                          </block>
+                        </value>
+
+                        <next>
+
+                          <block type="variables_set" id="oud_win_stake_reset">
+                            <field name="VAR" id="oud_stake_id">Stake</field>
+                            <value name="VALUE">
+                              <block type="variables_get" id="oud_win_initial_stake_get">
+                                <field name="VAR" id="oud_initial_stake_id">InitialStake</field>
+                              </block>
+                            </value>
+
+                            <next>
+
+                              <block type="variables_set" id="oud_win_loss_reset">
+                                <field name="VAR" id="oud_loss_cnt_id">lossCounter</field>
+                                <value name="VALUE">
+                                  <block type="math_number" id="oud_win_loss_zero">
+                                    <field name="NUM">0</field>
+                                  </block>
+                                </value>
+
+                                <next>
+
+                                  <block type="notify" id="oud_win_notify">
+                                    <field name="NOTIFICATION_TYPE">success</field>
+                                    <field name="NOTIFICATION_SOUND">earned-money</field>
+                                    <value name="MESSAGE">
+                                      <shadow type="text" id="oud_win_message">
+                                        <field name="TEXT">OUD SIGNAL COMPLETE - WIN</field>
+                                      </shadow>
+                                    </value>
+                                  </block>
+
+                                </next>
+                              </block>
+
+                            </next>
+                          </block>
+
+                        </next>
+                      </block>
+
+                    </next>
+                  </block>
+
+                </next>
+              </block>
+
+            </statement>
+
+            <statement name="ELSE">
+
+              <!-- LOSS -->
+
+              <block type="math_change" id="oud_loss_increment">
+                <field name="VAR" id="oud_loss_cnt_id">lossCounter</field>
+                <value name="DELTA">
+                  <shadow type="math_number" id="oud_loss_delta">
+                    <field name="NUM">1</field>
+                  </shadow>
+                </value>
+
+                <next>
+
+                  <block type="math_change" id="oud_martingale">
+                    <field name="VAR" id="oud_stake_id">Stake</field>
+                    <value name="DELTA">
+                      <block type="math_arithmetic" id="oud_stake_multiplier">
+                        <field name="OP">MULTIPLY</field>
+
+                        <value name="A">
+                          <block type="variables_get" id="oud_stake_get">
+                            <field name="VAR" id="oud_stake_id">Stake</field>
+                          </block>
+                        </value>
+
+                        <value name="B">
+                          <block type="variables_get" id="oud_mart_get">
+                            <field name="VAR" id="oud_mart_id">Martingale</field>
+                          </block>
+                        </value>
+
+                      </block>
+                    </value>
+
+                    <next>
+
+                      <!-- STOP LOSS -->
+
+                      <block type="controls_if" id="oud_sl_check">
+
+                        <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+
+                        <value name="IF0">
+
+                          <block type="logic_compare" id="oud_sl_compare">
+                            <field name="OP">LTE</field>
+
+                            <value name="A">
+                              <block type="total_profit" id="oud_sl_profit"></block>
+                            </value>
+
+                            <value name="B">
+
+                              <block type="math_single" id="oud_sl_negative">
+                                <field name="OP">NEG</field>
+
+                                <value name="NUM">
+
+                                  <block type="variables_get" id="oud_sl_get">
+                                    <field name="VAR" id="oud_stop_loss_id">StopLoss</field>
+                                  </block>
+
+                                </value>
+
+                              </block>
+
+                            </value>
+
+                          </block>
+
+                        </value>
+
+                        <statement name="DO0">
+
+                          <block type="variables_set" id="oud_sl_mode">
+                            <field name="VAR" id="oud_trading_mode_id">trading mode</field>
+                            <value name="VALUE">
+                              <block type="math_number" id="oud_sl_mode_zero">
+                                <field name="NUM">0</field>
+                              </block>
+                            </value>
+
+                            <next>
+
+                              <block type="variables_set" id="oud_sl_armed">
+                                <field name="VAR" id="oud_signal_armed_id">signal armed</field>
+                                <value name="VALUE">
+                                  <block type="math_number" id="oud_sl_armed_zero">
+                                    <field name="NUM">0</field>
+                                  </block>
+                                </value>
+
+                                <next>
+
+                                  <block type="variables_set" id="oud_sl_consumed">
+                                    <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
+                                    <value name="VALUE">
+                                      <block type="math_number" id="oud_sl_consumed_one">
+                                        <field name="NUM">1</field>
+                                      </block>
+                                    </value>
+
+                                    <next>
+
+                                      <block type="notify" id="oud_sl_notify">
+                                        <field name="NOTIFICATION_TYPE">error</field>
+                                        <field name="NOTIFICATION_SOUND">error</field>
+                                        <value name="MESSAGE">
+                                          <shadow type="text" id="oud_sl_message">
+                                            <field name="TEXT">OUD STOP LOSS - SIGNAL CONSUMED</field>
+                                          </shadow>
+                                        </value>
+                                      </block>
+
+                                    </next>
+                                  </block>
+
+                                </next>
+                              </block>
+
+                            </next>
+                          </block>
+
+                        </statement>
+
+                        <statement name="ELSE">
+
+                          <!-- MARTINGALE LIMIT -->
+
+                          <block type="controls_if" id="oud_martingale_limit">
+
+                            <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+
+                            <value name="IF0">
+
+                              <block type="logic_compare" id="oud_martingale_compare">
+                                <field name="OP">LT</field>
+
+                                <value name="A">
+                                  <block type="variables_get" id="oud_loss_counter_get">
+                                    <field name="VAR" id="oud_loss_cnt_id">lossCounter</field>
+                                  </block>
+                                </value>
+
+                                <value name="B">
+                                  <block type="variables_get" id="oud_mart_level_get">
+                                    <field name="VAR" id="oud_mart_level_id">MartingaleLevel</field>
+                                  </block>
+                                </value>
+
+                              </block>
+
+                            </value>
+
+  <statement name="DO0">
+
+  <!-- LOSS RECOVERY:
+       Preserve the Martingale stake,
+       but require a completely NEW OUD signal
+       before the next contract. -->
+
+  <block type="variables_set" id="oud_recovery_wait_mode">
+    <field name="VAR" id="oud_trading_mode_id">trading mode</field>
+    <value name="VALUE">
+      <block type="math_number" id="oud_recovery_wait_mode_zero">
+        <field name="NUM">0</field>
+      </block>
+    </value>
+
+    <next>
+
+      <block type="variables_set" id="oud_recovery_wait_armed">
+        <field name="VAR" id="oud_signal_armed_id">signal armed</field>
+        <value name="VALUE">
+          <block type="math_number" id="oud_recovery_wait_armed_zero">
+            <field name="NUM">0</field>
+          </block>
+        </value>
+
+        <next>
+
+          <block type="variables_set" id="oud_recovery_wait_consumed">
+            <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
+            <value name="VALUE">
+              <block type="math_number" id="oud_recovery_wait_consumed_one">
+                <field name="NUM">1</field>
+              </block>
+            </value>
+
+            <next>
+
+              <block type="notify" id="oud_recovery_wait_notify">
+                <field name="NOTIFICATION_TYPE">warning</field>
+                <field name="NOTIFICATION_SOUND">silent</field>
+                <value name="MESSAGE">
+                  <shadow type="text" id="oud_recovery_wait_message">
+                    <field name="TEXT">OUD LOSS - WAITING FOR NEW SIGNAL</field>
+                  </shadow>
+                </value>
+              </block>
+
+            </next>
+          </block>
+
+        </next>
+      </block>
+
+    </next>
+  </block>
+
+</statement>
+
+                            <statement name="ELSE">
+
+                              <block type="variables_set" id="oud_max_mode">
+                                <field name="VAR" id="oud_trading_mode_id">trading mode</field>
+                                <value name="VALUE">
+                                  <block type="math_number" id="oud_max_mode_zero">
+                                    <field name="NUM">0</field>
+                                  </block>
+                                </value>
+
+                                <next>
+
+                                  <block type="variables_set" id="oud_max_armed">
+                                    <field name="VAR" id="oud_signal_armed_id">signal armed</field>
+                                    <value name="VALUE">
+                                      <block type="math_number" id="oud_max_armed_zero">
+                                        <field name="NUM">0</field>
+                                      </block>
+                                    </value>
+
+                                    <next>
+
+                                      <block type="variables_set" id="oud_max_consumed">
+                                        <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
+                                        <value name="VALUE">
+                                          <block type="math_number" id="oud_max_consumed_one">
+                                            <field name="NUM">1</field>
+                                          </block>
+                                        </value>
+
+                                        <next>
+
+                                          <block type="notify" id="oud_max_notify">
+                                            <field name="NOTIFICATION_TYPE">error</field>
+                                            <field name="NOTIFICATION_SOUND">error</field>
+                                            <value name="MESSAGE">
+                                              <shadow type="text" id="oud_max_message">
+                                                <field name="TEXT">OUD MAX RECOVERY REACHED - SIGNAL CONSUMED</field>
+                                              </shadow>
+                                            </value>
+                                          </block>
+
+                                        </next>
+                                      </block>
+
+                                    </next>
+                                  </block>
+
+                                </next>
+                              </block>
+
+                            </statement>
+
+                          </block>
+
+                        </statement>
+
+                      </block>
+
+                    </next>
+                  </block>
+
+                </next>
+              </block>
+
+            </statement>
+
+          </block>
+
+        </statement>
+
+      </block>
+
+    </statement>
+
+  </block>
+
+
+  <!-- ========================================================= -->
+  <!-- BEFORE PURCHASE                                           -->
+  <!-- ========================================================= -->
+
+  <block type="before_purchase" id="oud_before_purchase" deletable="false" x="0" y="900">
+
+    <statement name="BEFOREPURCHASE_STACK">
+
+      <!-- ===================================================== -->
+      <!-- RECOVERY MODE                                         -->
+      <!-- ===================================================== -->
+
+      <block type="controls_if" id="oud_recovery_gate">
+
+        <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+
+        <value name="IF0">
+
+          <block type="logic_compare" id="oud_recovery_compare">
+            <field name="OP">EQ</field>
+
+            <value name="A">
+              <block type="variables_get" id="oud_recovery_mode_get">
+                <field name="VAR" id="oud_trading_mode_id">trading mode</field>
+              </block>
+            </value>
+
+            <value name="B">
+              <block type="math_number" id="oud_recovery_one">
+                <field name="NUM">1</field>
+              </block>
+            </value>
+
+          </block>
+
+        </value>
+
+        <statement name="DO0">
+
+          <!-- Recovery follows the ORIGINAL direction. -->
+
+          <block type="controls_if" id="oud_recovery_direction">
+
+            <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+
+            <value name="IF0">
+
+              <block type="logic_compare" id="oud_recovery_up_compare">
+                <field name="OP">EQ</field>
+
+                <value name="A">
+                  <block type="variables_get" id="oud_recovery_direction_get">
+                    <field name="VAR" id="oud_direction_id">Direction</field>
+                  </block>
+                </value>
+
+                <value name="B">
+                  <block type="text" id="oud_recovery_up_text">
+                    <field name="TEXT">UP</field>
+                  </block>
+                </value>
+
+              </block>
+
+            </value>
+
+            <statement name="DO0">
+
+              <block type="purchase" id="oud_recovery_call">
+               <field name="PURCHASE_LIST">RUNHIGH</field>
+              </block>
+
+            </statement>
+
+            <statement name="ELSE">
+
+              <block type="purchase" id="oud_recovery_put">
+               <field name="PURCHASE_LIST">RUNLOW</field>
+              </block>
+
+            </statement>
+
+          </block>
+
+        </statement>
+
+        <!-- =================================================== -->
+        <!-- INITIAL SIGNAL ENTRY                                -->
+        <!-- =================================================== -->
+
+        <statement name="ELSE">
+
+          <block type="controls_if" id="oud_signal_entry_gate">
+
+            <value name="IF0">
+
+              <block type="logic_operation" id="oud_signal_ready_logic">
+                <field name="OP">AND</field>
+
+                <value name="A">
+
+                  <block type="logic_compare" id="oud_armed_compare">
+                    <field name="OP">EQ</field>
+
+                    <value name="A">
+                      <block type="variables_get" id="oud_armed_get">
+                        <field name="VAR" id="oud_signal_armed_id">signal armed</field>
+                      </block>
+                    </value>
+
+                    <value name="B">
+                      <block type="math_number" id="oud_armed_one">
+                        <field name="NUM">1</field>
+                      </block>
+                    </value>
+
+                  </block>
+
+                </value>
+
+                <value name="B">
+
+                  <block type="logic_compare" id="oud_consumed_compare">
+                    <field name="OP">EQ</field>
+
+                    <value name="A">
+                      <block type="variables_get" id="oud_consumed_get">
+                        <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
+                      </block>
+                    </value>
+
+                    <value name="B">
+                      <block type="math_number" id="oud_consumed_zero">
+                        <field name="NUM">0</field>
+                      </block>
+                    </value>
+
+                  </block>
+
+                </value>
+
+              </block>
+
+            </value>
+
+            <statement name="DO0">
+
+              <!-- Consume the signal BEFORE purchase. -->
+
+              <block type="variables_set" id="oud_consume_before_purchase">
+                <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
+
+                <value name="VALUE">
+                  <block type="math_number" id="oud_consume_one">
+                    <field name="NUM">1</field>
+                  </block>
+                </value>
+
+                <next>
+
+                  <block type="variables_set" id="oud_disarm_before_purchase">
+                    <field name="VAR" id="oud_signal_armed_id">signal armed</field>
+
+                    <value name="VALUE">
+                      <block type="math_number" id="oud_disarm_zero">
+                        <field name="NUM">0</field>
+                      </block>
+                    </value>
+
+                    <next>
+
+                      <block type="variables_set" id="oud_start_cycle">
+                        <field name="VAR" id="oud_trading_mode_id">trading mode</field>
+
+                        <value name="VALUE">
+                          <block type="math_number" id="oud_start_cycle_one">
+                            <field name="NUM">1</field>
+                          </block>
+                        </value>
+
+                        <next>
+
+                          <block type="controls_if" id="oud_initial_direction">
+
+                            <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+
+                            <value name="IF0">
+
+                              <block type="logic_compare" id="oud_initial_up_compare">
+                                <field name="OP">EQ</field>
+
+                                <value name="A">
+                                  <block type="variables_get" id="oud_initial_direction_get">
+                                    <field name="VAR" id="oud_direction_id">Direction</field>
+                                  </block>
+                                </value>
+
+                                <value name="B">
+                                  <block type="text" id="oud_initial_up_text">
+                                    <field name="TEXT">UP</field>
+                                  </block>
+                                </value>
+
+                              </block>
+
+                            </value>
+
+                            <statement name="DO0">
+
+                              <block type="purchase" id="oud_initial_call">
+                               <field name="PURCHASE_LIST">RUNHIGH</field>
+                              </block>
+
+                            </statement>
+
+                            <statement name="ELSE">
+
+                             <block type="purchase" id="oud_initial_put">
+                              <field name="PURCHASE_LIST">RUNLOW</field>
+                             </block>
+
+                            </statement>
+
+                          </block>
+
+                        </next>
+
+                      </block>
+
+                    </next>
+
+                  </block>
+
+                </next>
+
+              </block>
+
+            </statement>
+
+          </block>
+
+        </statement>
+
+      </block>
+
+    </statement>
+
+  </block>
+
+</xml>
