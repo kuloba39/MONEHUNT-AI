@@ -343,14 +343,18 @@
                     <next>
 
                       <block type="notify" id="oud_tp_notify">
-                        <field name="NOTIFICATION_TYPE">success</field>
-                        <field name="NOTIFICATION_SOUND">earned-money</field>
-                        <value name="MESSAGE">
-                          <shadow type="text" id="oud_tp_message">
-                            <field name="TEXT">OUD SIGNAL COMPLETE - TAKE PROFIT</field>
-                          </shadow>
-                        </value>
-                      </block>
+  <field name="NOTIFICATION_TYPE">success</field>
+  <field name="NOTIFICATION_SOUND">earned-money</field>
+  <value name="MESSAGE">
+    <shadow type="text" id="oud_tp_message">
+      <field name="TEXT">OUD SIGNAL COMPLETE - TAKE PROFIT</field>
+    </shadow>
+  </value>
+
+  <next>
+    <block type="trade_again" id="oud_tp_trade_again"></block>
+  </next>
+</block>
 
                     </next>
                   </block>
@@ -445,14 +449,18 @@
                                 <next>
 
                                   <block type="notify" id="oud_win_notify">
-                                    <field name="NOTIFICATION_TYPE">success</field>
-                                    <field name="NOTIFICATION_SOUND">earned-money</field>
-                                    <value name="MESSAGE">
-                                      <shadow type="text" id="oud_win_message">
-                                        <field name="TEXT">OUD SIGNAL COMPLETE - WIN</field>
-                                      </shadow>
-                                    </value>
-                                  </block>
+  <field name="NOTIFICATION_TYPE">success</field>
+  <field name="NOTIFICATION_SOUND">earned-money</field>
+  <value name="MESSAGE">
+    <shadow type="text" id="oud_win_message">
+      <field name="TEXT">OUD SIGNAL COMPLETE - WIN</field>
+    </shadow>
+  </value>
+
+  <next>
+    <block type="trade_again" id="oud_win_trade_again"></block>
+  </next>
+</block>
 
                                 </next>
                               </block>
@@ -664,14 +672,18 @@
             <next>
 
               <block type="notify" id="oud_recovery_wait_notify">
-                <field name="NOTIFICATION_TYPE">warning</field>
-                <field name="NOTIFICATION_SOUND">silent</field>
-                <value name="MESSAGE">
-                  <shadow type="text" id="oud_recovery_wait_message">
-                    <field name="TEXT">OUD LOSS - WAITING FOR NEW SIGNAL</field>
-                  </shadow>
-                </value>
-              </block>
+  <field name="NOTIFICATION_TYPE">warning</field>
+  <field name="NOTIFICATION_SOUND">silent</field>
+  <value name="MESSAGE">
+    <shadow type="text" id="oud_recovery_wait_message">
+      <field name="TEXT">OUD LOSS - WAITING FOR NEW SIGNAL</field>
+    </shadow>
+  </value>
+
+  <next>
+    <block type="trade_again" id="oud_recovery_trade_again"></block>
+  </next>
+</block>
 
             </next>
           </block>
