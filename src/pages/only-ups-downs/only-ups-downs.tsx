@@ -64,7 +64,21 @@ const OnlyUpsDowns = () => {
     const pendingHistorySymbolRef = useRef<string | null>(null);
     const seededHistorySymbolRef = useRef<string | null>(null);
 
-    const [symbol, setSymbol] = useState('');
+    const ONLY_UPS_DOWNS_MARKET_STORAGE_KEY =
+        'only_ups_downs_selected_market';
+
+    const [symbol, setSymbol] = useState(() => {
+        try {
+            return (
+                localStorage.getItem(
+                    ONLY_UPS_DOWNS_MARKET_STORAGE_KEY,
+                ) ?? ''
+            );
+        } catch {
+            return '';
+        }
+    });
+
     const [analysisHorizon, setAnalysisHorizon] =
         useState<OnlyUpsDownsAnalysisHorizon>('AUTO');
     const [snapshot, setSnapshot] = useState<OnlyUpsDownsScannerSnapshot>(
@@ -95,9 +109,29 @@ const OnlyUpsDowns = () => {
             (item) => item.symbol === symbol,
         );
 
-        if (!exists) {
-            setSymbol(symbols[0].symbol);
+        if (exists) {
+            return;
         }
+
+        try {
+            const savedMarket = localStorage.getItem(
+                ONLY_UPS_DOWNS_MARKET_STORAGE_KEY,
+            );
+
+            if (
+                savedMarket &&
+                symbols.some(
+                    (item) => item.symbol === savedMarket,
+                )
+            ) {
+                setSymbol(savedMarket);
+                return;
+            }
+        } catch {
+            // Fall through to the first available market.
+        }
+
+        setSymbol(symbols[0].symbol);
     }, [symbols, symbol]);
 
     const getQuotesForOnlyUpsDowns = useCallback(
@@ -306,11 +340,12 @@ const OnlyUpsDowns = () => {
         }
 
         /*
-         * OUD IS HARD-CODED TO 1HZ100V.
-         *
-         * Do not use the scanner/chart symbol here.
-         */
-        const oudMarket = '1HZ100V';
+ * Use the market currently being analysed.
+ *
+ * Apply Signal must configure the bot for the
+ * exact market that produced this signal.
+ */
+const oudMarket = symbol;
 
         console.log(
             'ONLY UPS / ONLY DOWNS: APPLY SIGNAL',
@@ -470,10 +505,10 @@ restoreVariableNumber(
 );
 
         /*
-         * ---------------------------------------------------------
-         * HARD-CODE OUD MARKET
-         * ---------------------------------------------------------
-         */
+ * ---------------------------------------------------------
+ * APPLY ANALYSED OUD MARKET
+ * ---------------------------------------------------------
+ */
         const marketBlock =
             blocks.find(
                 block =>
@@ -693,10 +728,21 @@ restoreVariableNumber(
                 <select
                     id='only-ups-downs-market'
                     value={symbol}
-                    onChange={(event) => {
-                        setSymbol(event.target.value);
-                        setAppliedSignalKey(null);
-                    }}
+onChange={(event) => {
+    const nextMarket = event.target.value;
+
+    setSymbol(nextMarket);
+    setAppliedSignalKey(null);
+
+    try {
+        localStorage.setItem(
+            ONLY_UPS_DOWNS_MARKET_STORAGE_KEY,
+            nextMarket,
+        );
+    } catch {
+        // Ignore storage failures.
+    }
+}}
                     disabled={!symbols.length}
                 >
                     {symbols.map((item) => (
