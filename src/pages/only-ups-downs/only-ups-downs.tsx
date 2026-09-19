@@ -41,7 +41,13 @@ const formatHorizon = (
 };
 
 const OnlyUpsDowns = () => {
-    const { dashboard, load_modal, blockly_store, dbot } = useStore();
+    const {
+        dashboard,
+        load_modal,
+        blockly_store,
+        dbot,
+        run_panel,
+    } = useStore();
 
     const { setActiveTab } = dashboard;
 
@@ -794,6 +800,17 @@ restoreVariableNumber(
             save_types.LOCAL,
         );
 
+        /*
+         * ---------------------------------------------------------
+         * START OFFICIAL BOT EXECUTION
+         * ---------------------------------------------------------
+         *
+         * The signal has now been fully configured and persisted.
+         * Use the application's official Run Bot lifecycle.
+         *
+         * Do NOT call dbot.runBot() directly here.
+         */
+        await run_panel.onRunButtonClick();
         workspace.render();
 
         setSelectedStrategyId(
