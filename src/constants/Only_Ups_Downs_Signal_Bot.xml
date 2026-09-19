@@ -783,28 +783,56 @@
     <statement name="BEFOREPURCHASE_STACK">
 
       <!-- ===================================================== -->
-      <!-- RECOVERY MODE                                         -->
+      <!-- NEW AI SIGNAL ENTRY ONLY                              -->
       <!-- ===================================================== -->
 
-      <block type="controls_if" id="oud_recovery_gate">
-
-        <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+      <block type="controls_if" id="oud_signal_entry_gate">
 
         <value name="IF0">
 
-          <block type="logic_compare" id="oud_recovery_compare">
-            <field name="OP">EQ</field>
+          <block type="logic_operation" id="oud_signal_ready_logic">
+            <field name="OP">AND</field>
 
             <value name="A">
-              <block type="variables_get" id="oud_recovery_mode_get">
-                <field name="VAR" id="oud_trading_mode_id">trading mode</field>
+
+              <block type="logic_compare" id="oud_armed_compare">
+                <field name="OP">EQ</field>
+
+                <value name="A">
+                  <block type="variables_get" id="oud_armed_get">
+                    <field name="VAR" id="oud_signal_armed_id">signal armed</field>
+                  </block>
+                </value>
+
+                <value name="B">
+                  <block type="math_number" id="oud_armed_one">
+                    <field name="NUM">1</field>
+                  </block>
+                </value>
+
               </block>
+
             </value>
 
             <value name="B">
-              <block type="math_number" id="oud_recovery_one">
-                <field name="NUM">1</field>
+
+              <block type="logic_compare" id="oud_consumed_compare">
+                <field name="OP">EQ</field>
+
+                <value name="A">
+                  <block type="variables_get" id="oud_consumed_get">
+                    <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
+                  </block>
+                </value>
+
+                <value name="B">
+                  <block type="math_number" id="oud_consumed_zero">
+                    <field name="NUM">0</field>
+                  </block>
+                </value>
+
               </block>
+
             </value>
 
           </block>
@@ -813,193 +841,85 @@
 
         <statement name="DO0">
 
-          <!-- Recovery follows the ORIGINAL direction. -->
+          <!-- Consume the NEW AI signal BEFORE purchase. -->
 
-          <block type="controls_if" id="oud_recovery_direction">
+          <block type="variables_set" id="oud_consume_before_purchase">
+            <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
 
-            <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
-
-            <value name="IF0">
-
-              <block type="logic_compare" id="oud_recovery_up_compare">
-                <field name="OP">EQ</field>
-
-                <value name="A">
-                  <block type="variables_get" id="oud_recovery_direction_get">
-                    <field name="VAR" id="oud_direction_id">Direction</field>
-                  </block>
-                </value>
-
-                <value name="B">
-                  <block type="text" id="oud_recovery_up_text">
-                    <field name="TEXT">UP</field>
-                  </block>
-                </value>
-
+            <value name="VALUE">
+              <block type="math_number" id="oud_consume_one">
+                <field name="NUM">1</field>
               </block>
-
             </value>
 
-            <statement name="DO0">
+            <next>
 
-              <block type="purchase" id="oud_recovery_call">
-               <field name="PURCHASE_LIST">RUNHIGH</field>
-              </block>
-
-            </statement>
-
-            <statement name="ELSE">
-
-              <block type="purchase" id="oud_recovery_put">
-               <field name="PURCHASE_LIST">RUNLOW</field>
-              </block>
-
-            </statement>
-
-          </block>
-
-        </statement>
-
-        <!-- =================================================== -->
-        <!-- INITIAL SIGNAL ENTRY                                -->
-        <!-- =================================================== -->
-
-        <statement name="ELSE">
-
-          <block type="controls_if" id="oud_signal_entry_gate">
-
-            <value name="IF0">
-
-              <block type="logic_operation" id="oud_signal_ready_logic">
-                <field name="OP">AND</field>
-
-                <value name="A">
-
-                  <block type="logic_compare" id="oud_armed_compare">
-                    <field name="OP">EQ</field>
-
-                    <value name="A">
-                      <block type="variables_get" id="oud_armed_get">
-                        <field name="VAR" id="oud_signal_armed_id">signal armed</field>
-                      </block>
-                    </value>
-
-                    <value name="B">
-                      <block type="math_number" id="oud_armed_one">
-                        <field name="NUM">1</field>
-                      </block>
-                    </value>
-
-                  </block>
-
-                </value>
-
-                <value name="B">
-
-                  <block type="logic_compare" id="oud_consumed_compare">
-                    <field name="OP">EQ</field>
-
-                    <value name="A">
-                      <block type="variables_get" id="oud_consumed_get">
-                        <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
-                      </block>
-                    </value>
-
-                    <value name="B">
-                      <block type="math_number" id="oud_consumed_zero">
-                        <field name="NUM">0</field>
-                      </block>
-                    </value>
-
-                  </block>
-
-                </value>
-
-              </block>
-
-            </value>
-
-            <statement name="DO0">
-
-              <!-- Consume the signal BEFORE purchase. -->
-
-              <block type="variables_set" id="oud_consume_before_purchase">
-                <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
+              <block type="variables_set" id="oud_disarm_before_purchase">
+                <field name="VAR" id="oud_signal_armed_id">signal armed</field>
 
                 <value name="VALUE">
-                  <block type="math_number" id="oud_consume_one">
-                    <field name="NUM">1</field>
+                  <block type="math_number" id="oud_disarm_zero">
+                    <field name="NUM">0</field>
                   </block>
                 </value>
 
                 <next>
 
-                  <block type="variables_set" id="oud_disarm_before_purchase">
-                    <field name="VAR" id="oud_signal_armed_id">signal armed</field>
+                  <block type="variables_set" id="oud_start_cycle">
+                    <field name="VAR" id="oud_trading_mode_id">trading mode</field>
 
                     <value name="VALUE">
-                      <block type="math_number" id="oud_disarm_zero">
-                        <field name="NUM">0</field>
+                      <block type="math_number" id="oud_start_cycle_one">
+                        <field name="NUM">1</field>
                       </block>
                     </value>
 
                     <next>
 
-                      <block type="variables_set" id="oud_start_cycle">
-                        <field name="VAR" id="oud_trading_mode_id">trading mode</field>
+                      <!-- ================================================= -->
+                      <!-- DIRECTION COMES FROM THE CURRENT AI SIGNAL        -->
+                      <!-- ================================================= -->
 
-                        <value name="VALUE">
-                          <block type="math_number" id="oud_start_cycle_one">
-                            <field name="NUM">1</field>
-                          </block>
-                        </value>
+                      <block type="controls_if" id="oud_initial_direction">
 
-                        <next>
+                        <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
 
-                          <block type="controls_if" id="oud_initial_direction">
+                        <value name="IF0">
 
-                            <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+                          <block type="logic_compare" id="oud_initial_up_compare">
+                            <field name="OP">EQ</field>
 
-                            <value name="IF0">
-
-                              <block type="logic_compare" id="oud_initial_up_compare">
-                                <field name="OP">EQ</field>
-
-                                <value name="A">
-                                  <block type="variables_get" id="oud_initial_direction_get">
-                                    <field name="VAR" id="oud_direction_id">Direction</field>
-                                  </block>
-                                </value>
-
-                                <value name="B">
-                                  <block type="text" id="oud_initial_up_text">
-                                    <field name="TEXT">UP</field>
-                                  </block>
-                                </value>
-
+                            <value name="A">
+                              <block type="variables_get" id="oud_initial_direction_get">
+                                <field name="VAR" id="oud_direction_id">Direction</field>
                               </block>
-
                             </value>
 
-                            <statement name="DO0">
-
-                              <block type="purchase" id="oud_initial_call">
-                               <field name="PURCHASE_LIST">RUNHIGH</field>
+                            <value name="B">
+                              <block type="text" id="oud_initial_up_text">
+                                <field name="TEXT">UP</field>
                               </block>
-
-                            </statement>
-
-                            <statement name="ELSE">
-
-                             <block type="purchase" id="oud_initial_put">
-                              <field name="PURCHASE_LIST">RUNLOW</field>
-                             </block>
-
-                            </statement>
+                            </value>
 
                           </block>
 
-                        </next>
+                        </value>
+
+                        <statement name="DO0">
+
+                          <block type="purchase" id="oud_initial_call">
+                            <field name="PURCHASE_LIST">RUNHIGH</field>
+                          </block>
+
+                        </statement>
+
+                        <statement name="ELSE">
+
+                          <block type="purchase" id="oud_initial_put">
+                            <field name="PURCHASE_LIST">RUNLOW</field>
+                          </block>
+
+                        </statement>
 
                       </block>
 
@@ -1011,7 +931,7 @@
 
               </block>
 
-            </statement>
+            </next>
 
           </block>
 

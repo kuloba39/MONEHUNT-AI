@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChunkLoader from '@/components/loader/chunk-loader';
 import TradingViewComponent from '@/components/trading-view-chart/trading-view';
 import chart_api from '@/external/bot-skeleton/services/api/chart-api';
@@ -25,6 +25,7 @@ const emptySnapshot = (): OnlyUpsDownsScannerSnapshot => ({
     pressure: {} as OnlyUpsDownsScannerSnapshot['pressure'],
     reversal: {} as OnlyUpsDownsScannerSnapshot['reversal'],
     signal: null,
+    signalLocked: false,
     updatedAt: 0,
 });
 
@@ -215,6 +216,33 @@ const OnlyUpsDowns = () => {
             }
         };
     }, [adapter, adapterInitialized, symbol, analysisHorizon]);
+
+    /*
+     * ---------------------------------------------------------
+     * RELEASE APPLIED SIGNAL AFTER ITS READY CYCLE ENDS
+     * ---------------------------------------------------------
+     *
+     * A locked READY signal has already authorized its one
+     * execution. Do not clear the page state while that signal
+     * remains locked.
+     *
+     * Once the scanner leaves READY and releases its lifecycle
+     * lock, the next READY state is allowed to become a new
+     * signal.
+     */
+    useEffect(() => {
+        if (
+            snapshot.signal !== null ||
+            snapshot.signalLocked
+        ) {
+            return;
+        }
+
+        setAppliedSignalKey(null);
+    }, [
+        snapshot.signal,
+        snapshot.signalLocked,
+    ]);
 
     const subscribeOnlyUpsDownsQuotes = useCallback(
         (params, callback) => {

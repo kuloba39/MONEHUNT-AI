@@ -29,6 +29,12 @@ export interface OnlyUpsDownsScannerSnapshot {
 
     signal: OnlyUpsDownsSignal | null;
 
+    /*
+     * True while the last READY signal is still consuming
+     * the current signal cycle.
+     */
+    signalLocked: boolean;
+
     updatedAt: number;
 }
 
@@ -56,6 +62,17 @@ function sanitizePrices(
 
 export class OnlyUpsDownsScanner {
     private prices: number[] = [];
+    /*
+     * ---------------------------------------------------------
+     * SIGNAL LIFECYCLE
+     * ---------------------------------------------------------
+     *
+     * A READY signal may authorize exactly one execution.
+     *
+     * The scanner must leave READY before another READY
+     * signal can be emitted.
+     */
+    private signalLocked = false;
 
     private readonly maxPoints: number;
 
@@ -84,6 +101,7 @@ export class OnlyUpsDownsScanner {
 
     reset(): void {
         this.prices = [];
+        this.signalLocked = false;
     }
 
     addPrice(price: number): OnlyUpsDownsScannerSnapshot {
@@ -150,6 +168,42 @@ export class OnlyUpsDownsScanner {
             horizon: this.horizon,
         });
 
+        /*
+         * ---------------------------------------------------------
+         * SIGNAL LIFECYCLE GATE
+         * ---------------------------------------------------------
+         *
+         * The strategy may remain READY across many snapshots.
+         * That does NOT represent a new signal.
+         *
+         * Once a READY signal has been exposed, lock it.
+         * The strategy must first leave READY before another
+         * READY signal can be exposed.
+         */
+        const rawSignal = result.signal;
+
+        if (rawSignal?.status === "READY") {
+            if (this.signalLocked) {
+                /*
+                 * Same qualified setup is still active.
+                 * Do not expose it as another executable signal.
+                 */
+                result.signal = null;
+            } else {
+                /*
+                 * First READY state after a non-READY period.
+                 * This is a new executable signal.
+                 */
+                this.signalLocked = true;
+            }
+        } else {
+            /*
+             * WAIT / WATCH / any non-READY state releases the
+             * lifecycle lock so the next READY state is new.
+             */
+            this.signalLocked = false;
+        }
+
         const signal = result.signal;
 
         const direction: OnlyUpsDownsDirection | null =
@@ -171,6 +225,7 @@ export class OnlyUpsDownsScanner {
             pressure: result.pressure,
             reversal: result.reversal,
             signal,
+            signalLocked: this.signalLocked,
             updatedAt: Date.now(),
         };
     }
@@ -181,6 +236,3 @@ export function createOnlyUpsDownsScanner(
 ): OnlyUpsDownsScanner {
     return new OnlyUpsDownsScanner(options);
 }
-
-
-
