@@ -183,19 +183,24 @@ export class OnlyUpsDownsScanner {
         const rawSignal = result.signal;
 
         if (rawSignal?.status === "READY") {
-            if (this.signalLocked) {
-                /*
-                 * Same qualified setup is still active.
-                 * Do not expose it as another executable signal.
-                 */
-                result.signal = null;
-            } else {
+            if (!this.signalLocked) {
                 /*
                  * First READY state after a non-READY period.
                  * This is a new executable signal.
+                 *
+                 * Keep the READY signal visible while the
+                 * lifecycle remains locked so the page can
+                 * apply the signal.
                  */
                 this.signalLocked = true;
             }
+
+            /*
+             * If the lifecycle is already locked, keep exposing
+             * the current READY signal. The lock prevents this
+             * signal from becoming a NEW signal; it must not
+             * remove the signal from the UI.
+             */
         } else {
             /*
              * WAIT / WATCH / any non-READY state releases the
@@ -203,7 +208,6 @@ export class OnlyUpsDownsScanner {
              */
             this.signalLocked = false;
         }
-
         const signal = result.signal;
 
         const direction: OnlyUpsDownsDirection | null =

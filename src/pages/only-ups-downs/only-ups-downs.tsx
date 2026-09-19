@@ -89,6 +89,21 @@ const OnlyUpsDowns = () => {
     const [appliedSignalKey, setAppliedSignalKey] =
         useState<string | null>(null);
 
+      /*
+       * ---------------------------------------------------------
+       * OUD AUTO-APPLY LIFECYCLE
+       * ---------------------------------------------------------
+       *
+       * The first READY signal requires the user to press
+       * APPLY SIGNAL manually.
+       *
+       * Once that first signal has been successfully applied,
+       * subsequent NEW READY signals may be applied automatically.
+       */
+      const [autoApplySignals, setAutoApplySignals] =
+          useState(false);
+
+
     const symbols = useMemo(
         () =>
             (chartData.activeSymbols ?? []).filter(
@@ -336,7 +351,7 @@ const OnlyUpsDowns = () => {
             !signal ||
             signal.status !== 'READY' ||
             !signal.botDirection ||
-            !appliedSignalKey ||
+            !autoApplySignals ||
             !signalKey ||
             signalKey === appliedSignalKey
         ) {
@@ -375,6 +390,7 @@ const OnlyUpsDowns = () => {
 
         setAppliedSignalKey(signalKey);
     }, [
+        autoApplySignals,
         signal,
         signalKey,
         appliedSignalKey,
@@ -793,6 +809,7 @@ restoreVariableNumber(
          * by the OUD page.
          */
         setAppliedSignalKey(signalKey);
+        setAutoApplySignals(true);
 
         console.log(
             'ONLY UPS / ONLY DOWNS: SIGNAL APPLIED SUCCESSFULLY',
@@ -860,6 +877,7 @@ onChange={(event) => {
 
     setSymbol(nextMarket);
     setAppliedSignalKey(null);
+        setAutoApplySignals(false);
 
     try {
         localStorage.setItem(
@@ -894,6 +912,7 @@ onChange={(event) => {
                             event.target.value as OnlyUpsDownsAnalysisHorizon,
                         );
                         setAppliedSignalKey(null);
+                          setAutoApplySignals(false);
                     }}
                 >
                     <option value='AUTO'>AUTO</option>
