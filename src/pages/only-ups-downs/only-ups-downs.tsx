@@ -272,13 +272,25 @@ const OnlyUpsDowns = () => {
     const signalKey = signal
     ? [
         symbol,
-        signal.timestamp,
         signal.botDirection ?? 'none',
         signal.selectedHorizon,
         signal.mode,
         signal.status,
         signal.entryQuality,
         signal.reason,
+        signal.confidence,
+        signal.trendScore,
+        signal.exhaustionScore,
+        signal.oppositePressureScore,
+        signal.structureScore,
+        signal.momentumShiftScore,
+        signal.rsiConfirmation,
+        signal.bollingerConfirmation,
+        signal.adxConfirmation,
+        signal.volatilitySafe,
+        signal.stabilitySafe,
+        signal.reversalRisk,
+        signal.entryScore,
     ].join('|')
     : null;
 
@@ -571,8 +583,25 @@ restoreVariableNumber(
                 marketBlock.getField('SYMBOL_LIST');
 
             if (symbolField) {
-                symbolField.setValue(oudMarket);
-            }
+    symbolField.setValue(oudMarket);
+
+    const appliedMarket =
+        symbolField.getValue();
+
+    if (appliedMarket !== oudMarket) {
+        throw new Error(
+            `OUD MARKET MISMATCH: analysed=${oudMarket}, applied=${appliedMarket}`,
+        );
+    }
+
+    console.log(
+        'ONLY UPS / ONLY DOWNS: ANALYSED MARKET APPLIED',
+        {
+            analysedMarket: oudMarket,
+            appliedMarket,
+        },
+    );
+}
         }
 
         /*
