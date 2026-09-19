@@ -90,7 +90,7 @@
         <field name="VAR" id="oud_direction_id">Direction</field>
         <value name="VALUE">
           <block type="text" id="oud_direction_value">
-            <field name="TEXT">UP</field>
+            <field name="TEXT">WAIT</field>
           </block>
         </value>
 
@@ -100,7 +100,7 @@
             <field name="VAR" id="oud_signal_armed_id">signal armed</field>
             <value name="VALUE">
               <block type="math_number" id="oud_signal_armed_value">
-                <field name="NUM">1</field>
+                <field name="NUM">0</field>
               </block>
             </value>
 
@@ -110,7 +110,7 @@
                 <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
                 <value name="VALUE">
                   <block type="math_number" id="oud_signal_consumed_value">
-                    <field name="NUM">0</field>
+                    <field name="NUM">1</field>
                   </block>
                 </value>
 
