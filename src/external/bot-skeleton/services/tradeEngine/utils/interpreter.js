@@ -40,6 +40,20 @@ const Interpreter = () => {
     let interpreter = {};
     let onFinish;
 
+    function setGlobalVariable(name, value) {
+        if (!interpreter || !interpreter.global) {
+            return false;
+        }
+
+        interpreter.setProperty(
+            interpreter.global,
+            name,
+            interpreter.nativeToPseudo(value)
+        );
+
+        return true;
+    }
+
     $scope.observer.register('REVERT', watchName =>
         revert(watchName === 'before' ? $scope.beforeState : $scope.duringState)
     );
@@ -277,7 +291,14 @@ const Interpreter = () => {
         });
     }
 
-    return { stop, run, terminateSession, bot, unsubscribeFromTicksService };
+        return {
+        stop,
+        run,
+        terminateSession,
+        bot,
+        unsubscribeFromTicksService,
+        setGlobalVariable,
+    };
 };
 export default Interpreter;
 

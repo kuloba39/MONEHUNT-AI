@@ -12,6 +12,7 @@ export type TBotSkeleton = {
     addBeforeRunFunction: (func: () => void) => void;
     shouldRunBot: () => boolean;
     runBot: () => void;
+    setRuntimeVariable: (variable_name: string, value: string | number | boolean) => boolean;
     generateCode: (limitations?: Record<string, unknown>) => string;
     stopBot: () => void;
     terminateBot: () => void;

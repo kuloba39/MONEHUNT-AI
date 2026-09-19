@@ -256,10 +256,32 @@ class DBot {
     }
 
     shouldRunBot() {
-        return this.before_run_funcs.every(func => !!func());
+    return this.before_run_funcs.every(func => !!func());
+}
+
+setRuntimeVariable(variable_name, value) {
+    if (!this.interpreter || !this.is_bot_running) {
+        return false;
     }
 
-    async initializeInterpreter() {
+    const variable = this.workspace?.getVariableMap?.()?.getVariableByName?.(variable_name);
+
+    if (!variable) {
+        return false;
+    }
+
+    const generated_name = window.Blockly.JavaScript.variableDB_.getName(
+        variable.getId(),
+        window.Blockly.Variables.CATEGORY_NAME
+    );
+
+    return this.interpreter.setGlobalVariable(
+        generated_name,
+        value
+    );
+}
+
+async initializeInterpreter() {
         if (this.interpreter) {
             await this.interpreter.terminateSession();
         }

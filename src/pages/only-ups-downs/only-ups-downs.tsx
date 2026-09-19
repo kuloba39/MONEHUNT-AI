@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChunkLoader from '@/components/loader/chunk-loader';
 import TradingViewComponent from '@/components/trading-view-chart/trading-view';
 import chart_api from '@/external/bot-skeleton/services/api/chart-api';
@@ -40,7 +40,7 @@ const formatHorizon = (
 };
 
 const OnlyUpsDowns = () => {
-    const { dashboard, load_modal, blockly_store } = useStore();
+    const { dashboard, load_modal, blockly_store, dbot } = useStore();
 
     const { setActiveTab } = dashboard;
 
@@ -270,16 +270,17 @@ const OnlyUpsDowns = () => {
             : 0;
 
     const signalKey = signal
-        ? [
-            symbol,
-            signal.botDirection ?? 'none',
-            signal.selectedHorizon,
-            signal.mode,
-            signal.status,
-            signal.entryQuality,
-            signal.reason,
-        ].join('|')
-        : null;
+    ? [
+        symbol,
+        signal.timestamp,
+        signal.botDirection ?? 'none',
+        signal.selectedHorizon,
+        signal.mode,
+        signal.status,
+        signal.entryQuality,
+        signal.reason,
+    ].join('|')
+    : null;
 
     const hasAppliedSignal =
         !!signalKey &&
@@ -290,6 +291,55 @@ const OnlyUpsDowns = () => {
         signal.status === 'READY' &&
         !!signal.botDirection &&
         !hasAppliedSignal;
+    useEffect(() => {
+        if (
+            !signal ||
+            signal.status !== 'READY' ||
+            !signal.botDirection ||
+            !appliedSignalKey ||
+            !signalKey ||
+            signalKey === appliedSignalKey
+        ) {
+            return;
+        }
+
+        const direction =
+            signal.botDirection === 'ups'
+                ? 'UP'
+                : 'DOWN';
+
+        const runtimeUpdated =
+            dbot?.setRuntimeVariable?.(
+                'Direction',
+                direction,
+            ) ?? false;
+
+        if (!runtimeUpdated) {
+            return;
+        }
+
+        dbot?.setRuntimeVariable?.(
+            'signal armed',
+            1,
+        );
+
+        dbot?.setRuntimeVariable?.(
+            'signal consumed',
+            0,
+        );
+
+        dbot?.setRuntimeVariable?.(
+            'trading mode',
+            0,
+        );
+
+        setAppliedSignalKey(signalKey);
+    }, [
+        signal,
+        signalKey,
+        appliedSignalKey,
+        dbot,
+    ]);
 
     const handleApplySignal = async () => {
     if (!signalKey || !signal) return;
@@ -613,7 +663,7 @@ restoreVariableNumber(
                 ?.setValue(value);
         };
 
-        setVariableValue(
+                setVariableValue(
             'signal armed',
             '1',
         );
@@ -626,6 +676,26 @@ restoreVariableNumber(
         setVariableValue(
             'trading mode',
             '0',
+        );
+
+        dbot?.setRuntimeVariable?.(
+            'Direction',
+            signalDirection,
+        );
+
+        dbot?.setRuntimeVariable?.(
+            'signal armed',
+            1,
+        );
+
+        dbot?.setRuntimeVariable?.(
+            'signal consumed',
+            0,
+        );
+
+        dbot?.setRuntimeVariable?.(
+            'trading mode',
+            0,
         );
 
         /*
