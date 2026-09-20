@@ -352,56 +352,6 @@ const OnlyUpsDowns = () => {
         signal.status === 'READY' &&
         !!signal.botDirection &&
         !hasAppliedSignal;
-    useEffect(() => {
-        if (
-            !signal ||
-            signal.status !== 'READY' ||
-            !signal.botDirection ||
-            !autoApplySignals ||
-            !signalKey ||
-            signalKey === appliedSignalKey
-        ) {
-            return;
-        }
-
-        const direction =
-            signal.botDirection === 'ups'
-                ? 'UP'
-                : 'DOWN';
-
-        const runtimeUpdated =
-            dbot?.setRuntimeVariable?.(
-                'Direction',
-                direction,
-            ) ?? false;
-
-        if (!runtimeUpdated) {
-            return;
-        }
-
-        dbot?.setRuntimeVariable?.(
-            'signal armed',
-            1,
-        );
-
-        dbot?.setRuntimeVariable?.(
-            'signal consumed',
-            0,
-        );
-
-        dbot?.setRuntimeVariable?.(
-            'trading mode',
-            0,
-        );
-
-        setAppliedSignalKey(signalKey);
-    }, [
-        autoApplySignals,
-        signal,
-        signalKey,
-        appliedSignalKey,
-        dbot,
-    ]);
 
     const handleApplySignal = async () => {
     if (!signalKey || !signal) return;
@@ -656,125 +606,81 @@ restoreVariableNumber(
 
         /*
          * ---------------------------------------------------------
-         * APPLY DIRECTION
+         * APPLY OUD SIGNAL TO INITIALIZATION STATE
          * ---------------------------------------------------------
          *
-         * UP   = CALL
-         * DOWN = PUT
+         * The bot has not started yet, so runtime variables cannot
+         * be used here. Write the AI signal directly into the exact
+         * Blockly initialization blocks before runBot().
          *
-         * The XML itself handles CALL/PUT execution.
-         * We only inject the signal direction here.
+         * UP   = RUNHIGH / Only Ups
+         * DOWN = RUNLOW  / Only Downs
          */
-        const directionBlock =
-            blocks.find(block => {
-                if (
-                    block.type !==
-                    'variables_set'
-                ) {
-                    return false;
-                }
 
-                const variableField =
-                    block.getField('VAR');
-
-                return (
-                    variableField?.getText() ===
-                    'Direction'
-                );
-            });
-
-        if (directionBlock) {
-            const directionValue =
-                directionBlock.getInputTargetBlock(
-                    'VALUE',
-                );
-
-            directionValue
-                ?.getField('TEXT')
-                ?.setValue(direction);
-        } else {
-            console.warn(
-                'ONLY UPS / ONLY DOWNS: Direction variable block not found',
-            );
-        }
-
-        /*
-         * ---------------------------------------------------------
-         * ARM NEW SIGNAL
-         * ---------------------------------------------------------
-         */
-        const setVariableValue = (
-            variableName: string,
+        const setOudInitializationValue = (
+            blockId: string,
+            fieldName: 'TEXT' | 'NUM',
             value: string,
         ) => {
-            const block =
-                blocks.find(item => {
-                    if (
-                        item.type !==
-                        'variables_set'
-                    ) {
-                        return false;
-                    }
-
-                    const variableField =
-                        item.getField('VAR');
-
-                    return (
-                        variableField?.getText() ===
-                        variableName
-                    );
-                });
+            const block = workspace.getBlockById(blockId);
 
             if (!block) {
-                console.warn(
-                    `ONLY UPS / ONLY DOWNS: ${variableName} variable block not found`,
+                throw new Error(
+                    `ONLY UPS / ONLY DOWNS: initialization block not found: ${blockId}`,
                 );
-                return;
             }
 
-            const valueBlock =
-                block.getInputTargetBlock(
-                    'VALUE',
-                );
+            const valueBlock = block.getInputTargetBlock('VALUE');
 
-            valueBlock
-                ?.getField('NUM')
-                ?.setValue(value);
+            if (!valueBlock) {
+                throw new Error(
+                    `ONLY UPS / ONLY DOWNS: VALUE block missing: ${blockId}`,
+                );
+            }
+
+            const field = valueBlock.getField(fieldName);
+
+            if (!field) {
+                throw new Error(
+                    `ONLY UPS / ONLY DOWNS: ${fieldName} field missing: ${blockId}`,
+                );
+            }
+
+            field.setValue(value);
         };
 
-                setVariableValue(
-            'signal armed',
-            '1',
-        );
-
-        setVariableValue(
-            'signal consumed',
-            '0',
-        );
-
-        setVariableValue(
-            'trading mode',
-            '0',
-        );
-
-        dbot?.setRuntimeVariable?.(
-            'Direction',
+        setOudInitializationValue(
+            'oud_direction_init',
+            'TEXT',
             signalDirection,
         );
 
-        dbot?.setRuntimeVariable?.(
-            'signal armed',
-            1,
+        setOudInitializationValue(
+            'oud_signal_armed_init',
+            'NUM',
+            '1',
         );
 
-        dbot?.setRuntimeVariable?.(
-            'signal consumed',
-            0,
+        setOudInitializationValue(
+            'oud_signal_consumed_init',
+            'NUM',
+            '0',
         );
 
-        dbot?.setRuntimeVariable?.(
-            'trading mode',
-            0,
+        setOudInitializationValue(
+            'oud_trading_mode_init',
+            'NUM',
+            '0',
+        );
+
+        console.log(
+            'ONLY UPS / ONLY DOWNS: SIGNAL INJECTED INTO OUD INITIALIZATION',
+            {
+                direction: signalDirection,
+                signalArmed: 1,
+                signalConsumed: 0,
+                tradingMode: 0,
+            },
         );
 
         /*
@@ -845,6 +751,42 @@ restoreVariableNumber(
         setLoading(false);
     }
 };
+
+
+    /*
+     * ---------------------------------------------------------
+     * AUTO APPLY READY OUD SIGNAL
+     * ---------------------------------------------------------
+     *
+     * The bot is not running when a READY signal appears.
+     * Therefore runtime variables cannot be injected here.
+     *
+     * Reuse the exact same Apply Signal pipeline as the manual
+     * button so the signal is configured before runBot().
+     *
+     * One READY signal arms one initial purchase.
+     * Existing recovery / martingale logic remains untouched.
+     */
+    useEffect(() => {
+        if (
+            !autoApplySignals ||
+            !signal ||
+            signal.status !== 'READY' ||
+            !signal.botDirection ||
+            !signalKey ||
+            signalKey === appliedSignalKey
+        ) {
+            return;
+        }
+
+        void handleApplySignal();
+    }, [
+        autoApplySignals,
+        signal,
+        signalKey,
+        appliedSignalKey,
+        handleApplySignal,
+    ]);
 
     if (!symbol || symbols.length === 0) {
         return <ChunkLoader message='' />;
