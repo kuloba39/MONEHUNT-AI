@@ -422,6 +422,85 @@ const oudMarket = symbol;
         );
 
         /*
+         * ---------------------------------------------------------
+         * INITIAL SIGNAL VS RECOVERY SIGNAL
+         * ---------------------------------------------------------
+         *
+         * A stopped bot needs the XML workspace configured and
+         * started through the official Run Bot lifecycle.
+         *
+         * A running bot must NOT reload the XML and must NOT be
+         * started again. A NEW READY signal is injected directly
+         * into the existing interpreter so the current Martingale
+         * Stake and lossCounter remain untouched.
+         */
+        const dbot = run_panel.dbot as any;
+
+        const botAlreadyRunning =
+            Boolean(
+                dbot?.is_bot_running &&
+                dbot?.interpreter,
+            );
+
+        if (botAlreadyRunning) {
+            console.log(
+                'ONLY UPS / ONLY DOWNS: RECOVERY SIGNAL - LIVE RUNTIME INJECTION',
+                {
+                    market: oudMarket,
+                    direction,
+                    signalKey,
+                },
+            );
+
+            const runtimeUpdates = [
+                ['Direction', direction],
+                ['signal armed', 1],
+                ['signal consumed', 0],
+                ['trading mode', 0],
+            ] as const;
+
+            for (const [variableName, value] of runtimeUpdates) {
+                const injected =
+                    dbot.setRuntimeVariable(
+                        variableName,
+                        value,
+                    );
+
+                if (!injected) {
+                    throw new Error(
+                        `ONLY UPS / ONLY DOWNS: failed to inject runtime variable "${variableName}"`,
+                    );
+                }
+            }
+
+            console.log(
+                'ONLY UPS / ONLY DOWNS: NEW RECOVERY SIGNAL ARMED',
+                {
+                    direction,
+                    signalArmed: 1,
+                    signalConsumed: 0,
+                    tradingMode: 0,
+                    martingaleState:
+                        'PRESERVED IN LIVE BOT',
+                },
+            );
+
+            setAppliedSignalKey(signalKey);
+            setAutoApplySignals(true);
+
+            return;
+        }
+
+        /*
+         * ---------------------------------------------------------
+         * INITIAL SIGNAL - CONTINUE WITH XML CONFIGURATION
+         * ---------------------------------------------------------
+         *
+         * The bot is stopped, so the existing XML loading and
+         * initialization path below remains unchanged.
+         */
+
+        /*
  * ---------------------------------------------------------
  * PRESERVE OUD MARTINGALE STATE
  * ---------------------------------------------------------
