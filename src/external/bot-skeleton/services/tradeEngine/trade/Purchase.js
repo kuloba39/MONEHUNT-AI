@@ -347,12 +347,20 @@ export default Engine =>
 
 
 
-            const action = () =>
-                api_base.api.send(
-                    trade_option
-                );
+            const action = () => {
+                console.log('[OUD BUY DEBUG] REQUEST', JSON.stringify(trade_option, null, 2));
 
-
+                return api_base.api
+                    .send(trade_option)
+                    .then(response => {
+                        console.log('[OUD BUY DEBUG] RESPONSE', response);
+                        return response;
+                    })
+                    .catch(error => {
+                        console.error('[OUD BUY DEBUG] ERROR', error);
+                        throw error;
+                    });
+            };
 
             this.isSold = false;
 
