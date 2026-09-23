@@ -40,3 +40,10 @@ export const openContractReceived = () => (dispatch, getState) => {
 
 export const sell = () => (dispatch, getState) =>
     dispatchIfScopeIs({ dispatch, getState, data: { type: constants.SELL }, scope: constants.DURING_PURCHASE });
+export const readyForNextPurchase = () => (dispatch, getState) =>
+    dispatchIfScopeIs({
+        dispatch,
+        getState,
+        data: { type: constants.READY_FOR_NEXT_PURCHASE },
+        scope: constants.STOP,
+    });

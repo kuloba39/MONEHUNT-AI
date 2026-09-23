@@ -1,4 +1,4 @@
-<xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true" collection="false">
+﻿<xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true" collection="false">
 
   <variables>
     <variable id="oud_direction_id">Direction</variable>
@@ -816,19 +816,79 @@
 
             <value name="B">
 
-              <block type="logic_compare" id="oud_consumed_compare">
-                <field name="OP">EQ</field>
+              <block type="logic_operation" id="oud_signal_valid_state">
+                <field name="OP">AND</field>
 
                 <value name="A">
-                  <block type="variables_get" id="oud_consumed_get">
-                    <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
+
+                  <block type="logic_compare" id="oud_consumed_compare">
+                    <field name="OP">EQ</field>
+
+                    <value name="A">
+                      <block type="variables_get" id="oud_consumed_get">
+                        <field name="VAR" id="oud_signal_consumed_id">signal consumed</field>
+                      </block>
+                    </value>
+
+                    <value name="B">
+                      <block type="math_number" id="oud_consumed_zero">
+                        <field name="NUM">0</field>
+                      </block>
+                    </value>
+
                   </block>
+
                 </value>
 
                 <value name="B">
-                  <block type="math_number" id="oud_consumed_zero">
-                    <field name="NUM">0</field>
+
+                  <block type="logic_operation" id="oud_direction_valid_logic">
+                    <field name="OP">OR</field>
+
+                    <value name="A">
+
+                      <block type="logic_compare" id="oud_direction_up_gate">
+                        <field name="OP">EQ</field>
+
+                        <value name="A">
+                          <block type="variables_get" id="oud_direction_up_get">
+                            <field name="VAR" id="oud_direction_id">Direction</field>
+                          </block>
+                        </value>
+
+                        <value name="B">
+                          <block type="text" id="oud_direction_up_text">
+                            <field name="TEXT">UP</field>
+                          </block>
+                        </value>
+
+                      </block>
+
+                    </value>
+
+                    <value name="B">
+
+                      <block type="logic_compare" id="oud_direction_down_gate">
+                        <field name="OP">EQ</field>
+
+                        <value name="A">
+                          <block type="variables_get" id="oud_direction_down_get">
+                            <field name="VAR" id="oud_direction_id">Direction</field>
+                          </block>
+                        </value>
+
+                        <value name="B">
+                          <block type="text" id="oud_direction_down_text">
+                            <field name="TEXT">DOWN</field>
+                          </block>
+                        </value>
+
+                      </block>
+
+                    </value>
+
                   </block>
+
                 </value>
 
               </block>
@@ -882,7 +942,7 @@
 
                       <block type="controls_if" id="oud_initial_direction">
 
-                        <mutation xmlns="http://www.w3.org/1999/xhtml" else="1"></mutation>
+                        <mutation xmlns="http://www.w3.org/1999/xhtml" elseif="1" else="0"></mutation>
 
                         <value name="IF0">
 
@@ -913,7 +973,28 @@
 
                         </statement>
 
-                        <statement name="ELSE">
+                        <value name="IF1">
+
+                          <block type="logic_compare" id="oud_initial_down_compare">
+                            <field name="OP">EQ</field>
+
+                            <value name="A">
+                              <block type="variables_get" id="oud_initial_direction_down_get">
+                                <field name="VAR" id="oud_direction_id">Direction</field>
+                              </block>
+                            </value>
+
+                            <value name="B">
+                              <block type="text" id="oud_initial_down_text">
+                                <field name="TEXT">DOWN</field>
+                              </block>
+                            </value>
+
+                          </block>
+
+                        </value>
+
+                        <statement name="DO1">
 
                           <block type="purchase" id="oud_initial_put">
                             <field name="PURCHASE_LIST">RUNLOW</field>
@@ -944,3 +1025,4 @@
   </block>
 
 </xml>
+

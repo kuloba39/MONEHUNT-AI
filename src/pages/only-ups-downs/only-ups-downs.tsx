@@ -129,7 +129,7 @@ const OnlyUpsDowns = () => {
 
         const exists = symbols.some(
             (item) => item.symbol === symbol,
-        );
+                );
 
         if (exists) {
             return;
@@ -370,7 +370,7 @@ const OnlyUpsDowns = () => {
     if (!bot?.xml) {
         console.error(
             'ONLY UPS / ONLY DOWNS: SIGNAL BOT XML NOT FOUND',
-        );
+                );
         return;
     }
 
@@ -385,7 +385,7 @@ const OnlyUpsDowns = () => {
         console.error(
             'ONLY UPS / ONLY DOWNS: INVALID SIGNAL DIRECTION',
             signal,
-        );
+                );
         return;
     }
 
@@ -419,7 +419,7 @@ const oudMarket = symbol;
                 mode: signal.mode,
                 confidence: signal.confidence,
             },
-        );
+                );
 
         /*
          * ---------------------------------------------------------
@@ -451,6 +451,14 @@ const oudMarket = symbol;
                     signalKey,
                 },
             );
+
+            const readyForNextPurchase = dbot.readyForNextPurchase?.();
+
+            if (readyForNextPurchase === false) {
+                throw new Error(
+                    'ONLY UPS / ONLY DOWNS: failed to prepare trade engine for the next signal.',
+                );
+            }
 
             const runtimeUpdates = [
                 ['Direction', direction],
@@ -545,7 +553,7 @@ const readVariableNumber = (
     const valueBlock =
         variableBlock.getInputTargetBlock(
             'VALUE',
-        );
+                );
 
     const valueField =
         valueBlock?.getField('NUM');
@@ -616,14 +624,14 @@ const restoreVariableNumber = (
     if (!variableBlock) {
         console.warn(
             `ONLY UPS / ONLY DOWNS: ${variableName} restore block not found`,
-        );
+                );
         return;
     }
 
     const valueBlock =
         variableBlock.getInputTargetBlock(
             'VALUE',
-        );
+                );
 
     const numberField =
         valueBlock?.getField('NUM');
@@ -631,7 +639,7 @@ const restoreVariableNumber = (
     if (numberField) {
         numberField.setValue(
             String(value),
-        );
+                );
     }
 };
 
@@ -668,9 +676,9 @@ restoreVariableNumber(
         symbolField.getValue();
 
     if (appliedMarket !== oudMarket) {
-        throw new Error(
+                throw new Error(
             `OUD MARKET MISMATCH: analysed=${oudMarket}, applied=${appliedMarket}`,
-        );
+                );
     }
 
     console.log(
@@ -701,7 +709,7 @@ restoreVariableNumber(
             fieldName: 'TEXT' | 'NUM',
             value: string,
         ) => {
-            const block = workspace.getBlockById(blockId);
+            const block = (workspace.getAllBlocks() as any[]).find(item => item.id === blockId);
 
             if (!block) {
                 throw new Error(
@@ -732,25 +740,25 @@ restoreVariableNumber(
             'oud_direction_init',
             'TEXT',
             signalDirection,
-        );
+                );
 
         setOudInitializationValue(
             'oud_signal_armed_init',
             'NUM',
             '1',
-        );
+                );
 
         setOudInitializationValue(
             'oud_signal_consumed_init',
             'NUM',
             '0',
-        );
+                );
 
         setOudInitializationValue(
             'oud_trading_mode_init',
             'NUM',
             '0',
-        );
+                );
 
         console.log(
             'ONLY UPS / ONLY DOWNS: SIGNAL INJECTED INTO OUD INITIALIZATION',
@@ -760,7 +768,7 @@ restoreVariableNumber(
                 signalConsumed: 0,
                 tradingMode: 0,
             },
-        );
+                );
 
         /*
          * ---------------------------------------------------------
@@ -783,7 +791,7 @@ restoreVariableNumber(
         await saveWorkspaceToRecent(
             updatedXml,
             save_types.LOCAL,
-        );
+                );
 
         /*
          * ---------------------------------------------------------
@@ -800,11 +808,11 @@ restoreVariableNumber(
 
         setSelectedStrategyId(
             bot.id,
-        );
+                );
 
         setActiveTab(
             DBOT_TABS.BOT_BUILDER,
-        );
+                );
 
         /*
          * Mark THIS exact signal as consumed
@@ -820,12 +828,12 @@ restoreVariableNumber(
                 direction,
                 signalKey,
             },
-        );
+                );
     } catch (error) {
         console.error(
             'ONLY UPS / ONLY DOWNS: APPLY SIGNAL ERROR',
             error,
-        );
+                );
     } finally {
         setLoading(false);
     }
@@ -921,7 +929,7 @@ onChange={(event) => {
         localStorage.setItem(
             ONLY_UPS_DOWNS_MARKET_STORAGE_KEY,
             nextMarket,
-        );
+                );
     } catch {
         // Ignore storage failures.
     }
@@ -1369,3 +1377,4 @@ onChange={(event) => {
 };
 
 export default OnlyUpsDowns;
+

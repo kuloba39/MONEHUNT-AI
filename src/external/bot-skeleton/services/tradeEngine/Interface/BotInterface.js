@@ -8,6 +8,7 @@ const getBotInterface = tradeEngine => {
         init: (...args) => tradeEngine.init(...args),
         start: (...args) => tradeEngine.start(...args),
         stop: (...args) => tradeEngine.stop(...args),
+        readyForNextPurchase: () => tradeEngine.readyForNextPurchase(),
         purchase: contract_type => tradeEngine.purchase(contract_type),
         getAskPrice: contract_type => Number(getProposal(contract_type, tradeEngine).ask_price),
         getPayout: contract_type => Number(getProposal(contract_type, tradeEngine).payout),

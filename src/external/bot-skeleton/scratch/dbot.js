@@ -281,6 +281,23 @@ setRuntimeVariable(variable_name, value) {
     );
 }
 
+readyForNextPurchase() {
+    if (!this.interpreter || !this.is_bot_running) {
+        return false;
+    }
+
+    const tradeEngine =
+        this.interpreter?.bot?.tradeEngine;
+
+    if (!tradeEngine?.readyForNextPurchase) {
+        return false;
+    }
+
+    tradeEngine.readyForNextPurchase();
+
+    return true;
+}
+
 async initializeInterpreter() {
         if (this.interpreter) {
             await this.interpreter.terminateSession();

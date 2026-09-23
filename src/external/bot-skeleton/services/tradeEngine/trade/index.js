@@ -6,7 +6,7 @@ import { observer as globalObserver } from '../../../utils/observer';
 import { api_base } from '../../api/api-base';
 import { checkBlocksForProposalRequest, doUntilDone } from '../utils/helpers';
 import { expectInitArg } from '../utils/sanitize';
-import { proposalsReady, start } from './state/actions';
+import { proposalsReady, readyForNextPurchase, start } from './state/actions';
 import * as constants from './state/constants';
 import rootReducer from './state/reducers';
 import Balance from './Balance';
@@ -86,6 +86,9 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
         this.startPromise = this.loginAndGetBalance(token);
 
         if (!this.checkTicksPromiseExists()) this.watchTicks(symbol);
+    }
+    readyForNextPurchase() {
+        this.store.dispatch(readyForNextPurchase());
     }
 
     start(tradeOptions) {
