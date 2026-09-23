@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChunkLoader from '@/components/loader/chunk-loader';
 import TradingViewComponent from '@/components/trading-view-chart/trading-view';
 import chart_api from '@/external/bot-skeleton/services/api/chart-api';
@@ -252,18 +252,14 @@ const OnlyUpsDowns = () => {
      * signal.
      */
     useEffect(() => {
-        if (
-            snapshot.signal !== null ||
-            snapshot.signalLocked
-        ) {
-            return;
-        }
+    if (snapshot.signalLocked) {
+        return;
+    }
 
-        setAppliedSignalKey(null);
-    }, [
-        snapshot.signal,
-        snapshot.signalLocked,
-    ]);
+    setAppliedSignalKey(null);
+}, [
+    snapshot.signalLocked,
+]);
 
     const subscribeOnlyUpsDownsQuotes = useCallback(
         (params, callback) => {
