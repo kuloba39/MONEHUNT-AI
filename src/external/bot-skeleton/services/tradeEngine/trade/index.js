@@ -17,14 +17,25 @@ import Sell from './Sell';
 import Ticks from './Ticks';
 import Total from './Total';
 
-const watchBefore = store =>
-    watchScope({
+const watchBefore = store => {
+    const state = store.getState();
+
+    // Fast path: when the bot is already ready to purchase,
+    // do not wait for another market tick.
+    if (
+        state.scope === constants.BEFORE_PURCHASE &&
+        state.proposalsReady
+    ) {
+        return Promise.resolve(true);
+    }
+
+    return watchScope({
         store,
         stopScope: constants.DURING_PURCHASE,
         passScope: constants.BEFORE_PURCHASE,
         passFlag: 'proposalsReady',
     });
-
+};
 const watchDuring = store =>
     watchScope({
         store,

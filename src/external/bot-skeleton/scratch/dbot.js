@@ -387,7 +387,7 @@ async initializeInterpreter() {
                 BinaryBotPrivateTickAnalysis();
                 BinaryBotPrivateRun(BinaryBotPrivateStart);
                 if (!BinaryBotPrivateHasCalledTradeOptions) {
-                    sleep(1);
+                    sleep(0.2);
                     continue;
                 }
                 while (watch('before')) {
