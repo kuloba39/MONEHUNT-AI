@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import ErrorBoundary from '@/components/error-component/error-boundary';
 import ErrorComponent from '@/components/error-component/error-component';
 import ChunkLoader from '@/components/loader/chunk-loader';
-import { api_base } from '@/external/bot-skeleton';
+import { api_base, ApiHelpers } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
 import './app-root.scss';
@@ -36,11 +36,10 @@ const ErrorComponentWrapper = observer(() => {
 const AppRoot = () => {
     const store = useStore();
     const api_base_initialized = useRef(false);
-    const [is_api_initialized, setIsApiInitialized] = useState(false);
 
-    // Initialize API
+    const [is_api_initialized, setIsApiInitialized] = useState(false);
     useEffect(() => {
-        const timeoutId = setTimeout(() => {
+const timeoutId = window.setTimeout(() => {
             if (!is_api_initialized) {
                 setIsApiInitialized(true);
             }
@@ -49,6 +48,18 @@ const AppRoot = () => {
         const initializeApi = async () => {
             if (!api_base_initialized.current) {
                 try {
+                    console.log('[AppRoot API PROBE] Calling initializeApi()');
+
+                    // ApiHelpers must exist before api_base.init() can initialize
+                    // SmartCharts/chart_api and request active symbols.
+                    if (!ApiHelpers.instance && store.app.api_helpers_store) {
+                        console.log('[AppRoot API PROBE] Installing ApiHelpers instance before API init');
+                        ApiHelpers.setInstance(store.app.api_helpers_store);
+                    }
+
+                    console.log('[AppRoot API PROBE] ApiHelpers ready:', !!ApiHelpers.instance);
+                    console.log('[AppRoot API PROBE] ActiveSymbols helper ready:', !!ApiHelpers.instance?.active_symbols);
+
                     await api_base.init();
                     api_base_initialized.current = true;
                 } catch (error) {
@@ -56,26 +67,35 @@ const AppRoot = () => {
                     api_base_initialized.current = false;
                 } finally {
                     setIsApiInitialized(true);
-                    clearTimeout(timeoutId); // Clear timeout if API init completes
+                    clearTimeout(timeoutId);
                 }
             }
         };
 
-        console.log('[AppRoot API PROBE] Calling initializeApi()');
         initializeApi();
-        return () => clearTimeout(timeoutId);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
     }, []);
 
-    if (!store || !is_api_initialized) return <AppRootLoader />;
+
+    if (!store || !is_api_initialized) {
+        return <AppRootLoader />;
+    }
 
     return (
-        <Suspense fallback={<AppRootLoader />}>
-            <ErrorBoundary root_store={store}>
-                <ErrorComponentWrapper />
-                <AppContent />
-            </ErrorBoundary>
-        </Suspense>
+        <>
+            <Suspense fallback={<AppRootLoader />}>
+                <ErrorBoundary root_store={store}>
+                    <ErrorComponentWrapper />
+                    <AppContent />
+                </ErrorBoundary>
+            </Suspense>
+        </>
     );
 };
 
 export default AppRoot;
+
+

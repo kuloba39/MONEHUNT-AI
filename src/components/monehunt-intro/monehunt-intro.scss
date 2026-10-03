@@ -1,0 +1,335 @@
+﻿.monehunt-intro {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 42%, rgba(16, 185, 129, 0.12), transparent 34%),
+        radial-gradient(circle at 15% 85%, rgba(52, 211, 153, 0.07), transparent 28%),
+        #030806;
+    color: #ffffff;
+    opacity: 1;
+    visibility: visible;
+    transition:
+        opacity 600ms ease,
+        visibility 600ms ease;
+}
+
+.monehunt-intro--exit {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.monehunt-intro__ambient {
+    position: absolute;
+    width: 32rem;
+    height: 32rem;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.16;
+    pointer-events: none;
+    animation: monehunt-float 7s ease-in-out infinite;
+}
+
+.monehunt-intro__ambient--one {
+    top: -15rem;
+    right: -10rem;
+    background: #10b981;
+}
+
+.monehunt-intro__ambient--two {
+    bottom: -18rem;
+    left: -12rem;
+    background: #34d399;
+    animation-delay: -3s;
+}
+
+.monehunt-intro__content {
+    position: relative;
+    z-index: 2;
+    width: min(90vw, 620px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: monehunt-content-in 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.monehunt-intro__logo-wrap {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.4rem;
+}
+
+.monehunt-intro__logo-glow {
+    position: absolute;
+    inset: 18px;
+    border-radius: 32px;
+    background: #10b981;
+    filter: blur(38px);
+    opacity: 0.32;
+    animation: monehunt-pulse 2.2s ease-in-out infinite;
+}
+
+.monehunt-intro__logo {
+    position: relative;
+    z-index: 2;
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 28px rgba(16, 185, 129, 0.3));
+}
+
+.monehunt-intro__brand {
+    animation: monehunt-brand-in 1000ms 180ms both cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.monehunt-intro__name {
+    font-size: clamp(2.4rem, 8vw, 4.5rem);
+    line-height: 0.95;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    margin-left: 0.16em;
+    background: linear-gradient(120deg, #ffffff, #6ee7b7, #10b981);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+.monehunt-intro__tagline {
+    margin-top: 0.9rem;
+    font-size: clamp(0.68rem, 2vw, 0.9rem);
+    letter-spacing: 0.22em;
+    color: rgba(255, 255, 255, 0.62);
+    font-weight: 500;
+}
+
+.monehunt-intro__systems {
+    width: min(100%, 480px);
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.7rem;
+    margin-top: 2.5rem;
+    animation: monehunt-systems-in 900ms 450ms both ease;
+}
+
+.monehunt-intro__system {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid rgba(16, 185, 129, 0.16);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.025);
+    color: rgba(255, 255, 255, 0.66);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-align: left;
+}
+
+.monehunt-intro__dot {
+    width: 6px;
+    height: 6px;
+    flex: 0 0 6px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 10px rgba(52, 211, 153, 0.8);
+    animation: monehunt-dot 1.6s ease-in-out infinite;
+}
+
+.monehunt-intro__system:nth-child(2) .monehunt-intro__dot {
+    animation-delay: 150ms;
+}
+
+.monehunt-intro__system:nth-child(3) .monehunt-intro__dot {
+    animation-delay: 300ms;
+}
+
+.monehunt-intro__system:nth-child(4) .monehunt-intro__dot {
+    animation-delay: 450ms;
+}
+
+.monehunt-intro__status {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-top: 2rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    animation: monehunt-status-in 800ms 700ms both ease;
+}
+
+.monehunt-intro__loader {
+    width: 13px;
+    height: 13px;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    border-top-color: #34d399;
+    border-radius: 50%;
+    animation: monehunt-spin 800ms linear infinite;
+}
+
+.monehunt-intro__progress {
+    width: min(100%, 330px);
+    height: 2px;
+    margin-top: 1rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.monehunt-intro__progress span {
+    display: block;
+    width: 38%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, transparent, #10b981, #6ee7b7);
+    animation: monehunt-progress 2.5s ease-in-out infinite;
+}
+
+.monehunt-intro__footer {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.28);
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+}
+
+@keyframes monehunt-content-in {
+    from {
+        opacity: 0;
+        transform: translateY(22px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes monehunt-brand-in {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes monehunt-systems-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes monehunt-status-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes monehunt-pulse {
+    0%,
+    100% {
+        transform: scale(0.92);
+        opacity: 0.24;
+    }
+
+    50% {
+        transform: scale(1.08);
+        opacity: 0.4;
+    }
+}
+
+@keyframes monehunt-float {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+
+    50% {
+        transform: translate3d(18px, -14px, 0);
+    }
+}
+
+@keyframes monehunt-dot {
+    0%,
+    100% {
+        opacity: 0.45;
+        transform: scale(0.85);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.15);
+    }
+}
+
+@keyframes monehunt-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes monehunt-progress {
+    0% {
+        transform: translateX(-180%);
+    }
+
+    100% {
+        transform: translateX(430%);
+    }
+}
+
+@media (max-width: 520px) {
+    .monehunt-intro__logo-wrap,
+    .monehunt-intro__logo {
+        width: 115px;
+        height: 115px;
+    }
+
+    .monehunt-intro__systems {
+        grid-template-columns: 1fr;
+        width: min(88vw, 360px);
+    }
+
+    .monehunt-intro__system {
+        padding: 0.65rem 0.8rem;
+    }
+
+    .monehunt-intro__tagline {
+        letter-spacing: 0.14em;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .monehunt-intro *,
+    .monehunt-intro {
+        animation: none !important;
+        transition: none !important;
+    }
+}

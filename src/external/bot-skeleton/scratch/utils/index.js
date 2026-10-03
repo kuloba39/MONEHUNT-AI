@@ -1,4 +1,4 @@
-import { botNotification } from '@/components/bot-notification/bot-notification';
+﻿import { botNotification } from '@/components/bot-notification/bot-notification';
 import { notification_message } from '@/components/bot-notification/bot-notification-utils';
 import { getCurrencyDisplayCode } from '@/components/shared';
 import { localize } from '@deriv-com/translations';
@@ -14,8 +14,8 @@ import { saveAs } from '../shared';
 
 export const inject_workspace_options = {
     // Getter (not a literal) so the public-path prefix is read when the options are spread
-    // into Blockly.inject at runtime — after public-path.ts has set window.__webpack_public_path__
-    // ('/bot/preview/' in the preview build) — rather than at module-load time when it may be unset.
+    // into Blockly.inject at runtime â€” after public-path.ts has set window.__webpack_public_path__
+    // ('/bot/preview/' in the preview build) â€” rather than at module-load time when it may be unset.
     get media() {
         return `${window.__webpack_public_path__}assets/images/`;
     },
@@ -265,9 +265,34 @@ export const loadBlocks = (xml, drop_event, event_group, workspace) => {
 
 export const loadWorkspace = async (xml, event_group, workspace) => {
     window.Blockly.Events.setGroup(event_group);
+    console.log('[MONEHUNT BLOCKLY LOAD] BEFORE asyncClear');
     await workspace.asyncClear();
-    window.Blockly.Xml.clearWorkspaceAndLoadFromXml(xml, workspace);
+    console.log('[MONEHUNT BLOCKLY LOAD] AFTER asyncClear');
+    const beforeShadow = xml.querySelector('[id="o2_init_msg"]');
+
+    console.log('[MONEHUNT SHADOW PROBE] XML BEFORE LOAD', {
+        shadowExists: !!beforeShadow,
+        shadowParent: beforeShadow?.parentElement?.tagName,
+        shadowParentName: beforeShadow?.parentElement?.getAttribute('name'),
+    });
+
+    window.Blockly.Xml.domToWorkspace(xml, workspace);
+
+    const loadedNotify = workspace.getBlockById('o2_init_notify');
+    const loadedInput = loadedNotify?.getInput('MESSAGE');
+    const loadedTarget = loadedInput?.connection?.targetBlock();
+
+    console.log('[MONEHUNT SHADOW PROBE] WORKSPACE AFTER LOAD', {
+        notifyExists: !!loadedNotify,
+        messageInputExists: !!loadedInput,
+        targetExists: !!loadedTarget,
+        targetId: loadedTarget?.id ?? null,
+        targetType: loadedTarget?.type ?? null,
+        targetIsShadow: loadedTarget?.isShadow?.() ?? null,
+    });
+    console.log('[MONEHUNT BLOCKLY LOAD] AFTER XML LOAD');
     workspace.cleanUp();
+    console.log('[MONEHUNT BLOCKLY LOAD] AFTER cleanUp');
 };
 
 const loadBlocksFromHeader = (xml_string, block) => {
@@ -775,3 +800,7 @@ export const setCurrency = block_instance => {
     const { currency } = DBotStore.instance.client;
     currency_field?.setValue(getCurrencyDisplayCode(currency));
 };
+
+
+
+

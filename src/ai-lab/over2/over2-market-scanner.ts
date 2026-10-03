@@ -1,5 +1,4 @@
-﻿import { api_base } from '@/external/bot-skeleton/services/api/api-base';
-import { Over2Engine } from './over2-engine';
+﻿import { Over2Engine } from './over2-engine';
 import {
     Over2Signal,
     Over2Tick,
@@ -27,10 +26,6 @@ export interface Over2ScannerState {
     qualifyingMarkets: Over2MarketResult[];
 }
 
-type ScannerSubscription = {
-    unsubscribe?: () => void;
-};
-
 const WINDOW_SIZE = 600;
 
 export class Over2MarketScanner {
@@ -40,16 +35,6 @@ export class Over2MarketScanner {
 
     private markets =
         new Map<string, Over2ScanMarket>();
-
-    private subscription:
-        ScannerSubscription | null = null;
-
-    private subscriptionIds =
-        new Map<string, string>();
-
-    private historyRequestIds =
-        new Set<number>();
-
     private state: Over2ScannerState = {
         scanning: false,
         totalMarkets: 0,
@@ -171,31 +156,6 @@ export class Over2MarketScanner {
 
         this.engines.clear();
         this.markets.clear();
-        this.subscriptionIds.clear();
-        this.historyRequestIds.clear();
-
-        /*
-         * OVER 2 MARKET WHITELIST
-         *
-         * The scanner intentionally scans ONLY:
-         *
-         * Volatility 1-second:
-         * 1HZ10V
-         * 1HZ15V
-         * 1HZ25V
-         * 1HZ30V
-         * 1HZ50V
-         * 1HZ75V
-         * 1HZ90V
-         * 1HZ100V
-         *
-         * Regular Volatility:
-         * R_10
-         * R_25
-         * R_50
-         * R_75
-         * R_100
-         */
 
         const OVER2_ALLOWED_SYMBOLS = new Set([
             '1HZ10V',
@@ -251,211 +211,41 @@ export class Over2MarketScanner {
         }
 
         this.state = {
-
             scanning: true,
-
-            totalMarkets:
-                this.markets.size,
-
+            totalMarkets: this.markets.size,
             readyMarkets: 0,
-
             qualifyingMarkets: [],
-
         };
 
         this.emit();
-
-        if (!api_base?.api) {
-
-            console.error(
-                'OVER 2 SCANNER: API NOT READY'
-            );
-
-            this.state = {
-                ...this.state,
-                scanning: false,
-            };
-
-            this.emit();
-
-            return;
-        }
-
-        const api =
-            api_base.api;
-
-        /*
-         * One shared listener handles every
-         * history response and every live tick.
-         */
-
-        this.subscription =
-            api.onMessage().subscribe(
-                ({ data }: any) => {
-
-                    this.handleMessage(
-                        data
-                    );
-
-                }
-            );
-
-        /*
-         * Load 1000 ticks independently
-         * for EVERY market.
-         */
-
-        const historyPromises =
-            Array.from(
-                this.markets.values()
-            )
-                .map(
-                    market =>
-                        this.loadHistory(
-                            market.symbol
-                        )
-                );
-
-        await Promise.allSettled(
-            historyPromises
-        );
-
-        /*
-         * Subscribe to live ticks for every
-         * market after histories have loaded.
-         */
-
-        for (
-            const market
-            of this.markets.values()
-        ) {
-
-            const reqId =
-                Date.now() +
-                Math.floor(
-                    Math.random() * 1000000
-                );
-
-
-            try {
-
-                await api.send({
-
-                    req_id:
-                        reqId,
-
-                    ticks:
-                        market.symbol,
-
-                    subscribe:
-                        1,
-
-                });
-
-            } catch (error: any) {
-
-                /*
-                 * Another part of MONEHUNT-AI may already
-                 * own the live subscription for this market.
-                 *
-                 * In that case Deriv returns AlreadySubscribed.
-                 *
-                 * This is NOT a scanner failure:
-                 * the existing subscription continues publishing
-                 * ticks through the shared API connection, and
-                 * handleMessage() already processes those ticks.
-                 *
-                 * Because no subscription ID is captured for this
-                 * market, stop() will not attempt to forget a
-                 * subscription owned by another component.
-                 */
-
-                if (
-                    error?.error?.code ===
-                    'AlreadySubscribed'
-                ) {
-
-                    console.log(
-                        'OVER 2: USING EXISTING LIVE SUBSCRIPTION',
-                        market.symbol
-                    );
-
-                } else {
-
-                    console.error(
-                        'OVER 2 LIVE SUBSCRIBE ERROR',
-                        market.symbol,
-                        error
-                    );
-
-                }
-
-            }
-
-        }
-
         this.updateState();
 
     }
 
-    private async loadHistory(
-        symbol: string
-    ): Promise<void> {
+    public feedHistory(
+        symbol: string,
+        data: any
+    ): void {
 
-        if (!api_base?.api) {
+        if (!this.markets.has(symbol)) {
             return;
         }
 
-        const reqId =
-            Date.now() +
-            Math.floor(
-                Math.random() * 1000000
-            );
-
-        this.historyRequestIds.add(
-            reqId
+        this.handleHistory(
+            symbol,
+            data
         );
-
-        try {
-
-            const response =
-                await api_base.api.send({
-
-                    req_id:
-                        reqId,
-
-                    ticks_history:
-                        symbol,
-
-                    count:
-                        WINDOW_SIZE,
-
-                    end:
-                        'latest',
-
-                    style:
-                        'ticks',
-
-                });
-
-            this.handleHistory(
-                symbol,
-                response
-            );
-
-        } catch (error) {
-
-            console.error(
-                'OVER 2 HISTORY ERROR',
-                symbol,
-                error
-            );
-
-        }
 
     }
 
-        private handleMessage(
+    public feedTick(
+        data: any
+    ): void {
+
+        this.handleMessage(data);
+
+    }
+    private handleMessage(
         data: any
     ): void {
 
@@ -463,78 +253,8 @@ export class Over2MarketScanner {
             return;
         }
 
-        /*
-         * Handle history responses first.
-         */
-        if (
-            data.history &&
-            data.echo_req?.ticks_history
-        ) {
-            this.handleHistory(
-                data.echo_req.ticks_history,
-                data
-            );
 
-            return;
-        }
-
-        /*
-         * Capture the subscription ID for each
-         * market so stop() can unsubscribe cleanly.
-         */
-        if (
-            data.subscription?.id &&
-            data.echo_req?.ticks
-        ) {
-            const symbol =
-                data.echo_req.ticks;
-
-            if (
-                this.engines.has(symbol)
-            ) {
-                this.subscriptionIds.set(
-                    symbol,
-                    data.subscription.id
-                );
-            }
-        }
-
-        /*
-         * IMPORTANT:
-         * Deriv can reject a live subscription with
-         * an error response that does not contain data.tick.
-         *
-         * Therefore this error check MUST happen
-         * before the !data.tick guard.
-         */
-        if (
-            data?.error &&
-            data?.echo_req?.ticks
-        ) {
-            console.error(
-                'OVER 2 DERIV LIVE SUBSCRIBE REJECTED',
-                {
-                    symbol:
-                        data.echo_req.ticks,
-
-                    code:
-                        data.error.code,
-
-                    message:
-                        data.error.message,
-
-                    error:
-                        data.error,
-
-                    echo_req:
-                        data.echo_req,
-                }
-            );
-
-            return;
-        }
-
-        /*
+                        /*
          * Ignore messages that are not live tick messages.
          */
         if (!data.tick) {
@@ -735,60 +455,22 @@ export class Over2MarketScanner {
 
     stop(): void {
 
-        if (this.subscription) {
-
-            this.subscription.unsubscribe();
-
-            this.subscription =
-                null;
-
-        }
-
-        if (
-            api_base?.api
-        ) {
-
-            for (
-                const subscriptionId
-                of this.subscriptionIds.values()
-            ) {
-
-                try {
-
-                    api_base.api.send({
-
-                        forget:
-                            subscriptionId,
-
-                    });
-
-                } catch {
-                    // Ignore cleanup errors.
-                }
-
-            }
-
-        }
-
-        this.subscriptionIds.clear();
-
         this.state = {
-
             scanning: false,
-
             totalMarkets: 0,
-
             readyMarkets: 0,
-
             qualifyingMarkets: [],
-
-
         };
 
         this.emit();
 
-    }
+    }}
 
-}
+
+
+
+
+
+
 
 

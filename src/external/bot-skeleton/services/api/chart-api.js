@@ -1,29 +1,65 @@
-import { generateDerivApiInstance } from './appId';
+﻿import { generateDerivApiInstance } from './appId';
 
 class ChartAPI {
     api;
     chart_active_symbols = null; // Separate variable for chart-specific symbols
+
+    // Prevent overlapping normal chart API initialization calls.
+    init_promise = null;
+
+    // Keep a stable listener reference so removeEventListener() works.
+    socket_close_handler = () => this.onsocketclose();
 
     onsocketclose() {
         this.reconnectIfNotConnected();
     }
 
     init = async (force_create_connection = false) => {
-        if (!this.api || force_create_connection) {
-            if (this.api?.connection) {
-                this.api.disconnect();
-                this.api.connection.removeEventListener('close', this.onsocketclose.bind(this));
-            }
-            this.api = await generateDerivApiInstance();
-            this.api?.connection.addEventListener('close', this.onsocketclose.bind(this));
-
-            // Intercept the send method to filter active_symbols responses for chart
-            // this.interceptApiCalls();
-
-            // Force inject symbols after a short delay to ensure api_base is ready
-            // this.forceInjectSymbols();
+        // Normal chart initialization is single-flight.
+        // Forced initialization intentionally bypasses this lock because
+        // reconnect callers explicitly request a fresh connection.
+        if (!force_create_connection && this.init_promise) {
+            console.log('[CHART API INIT LOCK] Reusing in-flight initialization');
+            return this.init_promise;
         }
-        this.getTime();
+
+        const initialize = async () => {
+            if (!this.api || force_create_connection) {
+                if (this.api?.connection) {
+                    // Remove the actual registered callback before disconnecting.
+                    this.api.connection.removeEventListener('close', this.socket_close_handler);
+                    this.api.disconnect();
+                }
+
+                this.api = await generateDerivApiInstance();
+
+                this.api?.connection.addEventListener('close', this.socket_close_handler);
+
+                // Intercept the send method to filter active_symbols responses for chart
+                // this.interceptApiCalls();
+
+                // Force inject symbols after a short delay to ensure api_base is ready
+                // this.forceInjectSymbols();
+            }
+
+            this.getTime();
+        };
+
+        if (force_create_connection) {
+            return initialize();
+        }
+
+        const promise = initialize();
+
+        this.init_promise = promise;
+
+        try {
+            await promise;
+        } finally {
+            if (this.init_promise === promise) {
+                this.init_promise = null;
+            }
+        }
     };
 
     getTime() {
@@ -35,8 +71,8 @@ class ChartAPI {
     }
 
     reconnectIfNotConnected = () => {
-        if (this.api?.connection?.readyState && this.api?.connection?.readyState > 1) {
-            this.init(true);
+        if (this.api?.connection?.readyState && this.api.connection.readyState > 1) {
+            void this.init(true);
         }
     };
 

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect } from 'react';
+﻿import React, { lazy, Suspense, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { ToastContainer } from 'react-toastify';
 import AuthLoadingWrapper from '@/components/auth-loading-wrapper';
@@ -7,7 +7,7 @@ import useLiveChat from '@/components/chat/useLiveChat';
 import ChunkLoader from '@/components/loader/chunk-loader';
 import { getUrlBase } from '@/components/shared';
 import TransactionDetailsModal from '@/components/transaction-details';
-import { api_base, ApiHelpers, ServerTime } from '@/external/bot-skeleton';
+import { api_base, ApiHelpers, ServerTime, load, save_types } from '@/external/bot-skeleton';
 import { CONNECTION_STATUS } from '@/external/bot-skeleton/services/api/observables/connection-status-stream';
 import { useApiBase } from '@/hooks/useApiBase';
 import useDevMode from '@/hooks/useDevMode';
@@ -28,11 +28,12 @@ import '../components/bot-notification/bot-notification.scss';
 
 // App Builder live-preview branding listener. Mounted only in the preview deployment
 // (NEXT_PUBLIC_APP_BUILD === 'true'); the inline check is constant-folded by rsbuild so
-// the import — and all of src/preview/ — is dead-code-eliminated from standalone partner
+// the import â€” and all of src/preview/ â€” is dead-code-eliminated from standalone partner
 // builds (where the BFF strips src/preview/ entirely).
 const PreviewBranding =
     process.env.NEXT_PUBLIC_APP_BUILD === 'true' ? lazy(() => import('../preview/preview-branding')) : null;
 
+const FREE_BOT_LOAD_KEY = 'monehunt_free_bot_to_load';
 const AppContent = observer(() => {
     const [is_api_initialized, setIsApiInitialized] = React.useState(false);
     const [is_loading, setIsLoading] = React.useState(true);
@@ -55,7 +56,7 @@ const AppContent = observer(() => {
     useEffect(() => {
         if (isPreviewMode()) return;
         if (!process.env.NEXT_PUBLIC_DERIV_APP_ID) {
-            botNotification(localize('Waiting for environment variables to be set…'), undefined, { type: 'warning' });
+            botNotification(localize('Waiting for environment variables to be setâ€¦'), undefined, { type: 'warning' });
         }
     }, []);
 
@@ -110,7 +111,73 @@ const AppContent = observer(() => {
     React.useEffect(() => {
         setSmartChartsPublicPath(getUrlBase('/js/smartcharts/'));
     }, []);
+    React.useEffect(() => {
+        let cancelled = false;
 
+        const consumeFreeBot = async () => {
+            const raw = sessionStorage.getItem(FREE_BOT_LOAD_KEY);
+            if (!raw) return;
+
+            let bot;
+            try {
+                bot = JSON.parse(raw);
+            } catch (error) {
+                console.error('[MONEHUNT FREE BOT] INVALID HANDOFF:', error);
+                sessionStorage.removeItem(FREE_BOT_LOAD_KEY);
+                return;
+            }
+
+            console.log('[MONEHUNT FREE BOT] WAITING FOR WORKSPACE INIT:', bot.id);
+
+            try {
+                if (app.workspace_ready_promise) {
+                    await app.workspace_ready_promise;
+                }
+
+                if (cancelled) return;
+
+                let workspace = window.Blockly?.derivWorkspace;
+                let attempts = 0;
+
+                while (!workspace && attempts < 150 && !cancelled) {
+                    await new Promise(resolve => window.setTimeout(resolve, 100));
+                    workspace = window.Blockly?.derivWorkspace;
+                    attempts += 1;
+                }
+
+                if (cancelled) return;
+
+                if (!workspace) {
+                    console.error('[MONEHUNT FREE BOT] WORKSPACE MISSING AFTER INIT');
+                    return;
+                }
+
+                console.log('[MONEHUNT FREE BOT] WORKSPACE INIT COMPLETE:', bot.id);
+                sessionStorage.removeItem(FREE_BOT_LOAD_KEY);
+
+                await load({
+                    block_string: bot.xml,
+                    file_name: bot.name,
+                    strategy_id: bot.id,
+                    from: save_types.LOCAL,
+                    workspace,
+                    drop_event: null,
+                    showIncompatibleStrategyDialog: null,
+                    show_snackbar: true,
+                });
+
+                console.log('[MONEHUNT FREE BOT] LOADED SUCCESSFULLY:', bot.id);
+            } catch (error) {
+                console.error('[MONEHUNT FREE BOT] LOAD ERROR:', error);
+            }
+        };
+
+        void consumeFreeBot();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [app]);
     React.useEffect(() => {
         // Check if api is initialized and then subscribe to the api messages
         // Also we should only subscribe to the messages once user is logged in
@@ -210,3 +277,6 @@ const AppContent = observer(() => {
 });
 
 export default AppContent;
+
+
+

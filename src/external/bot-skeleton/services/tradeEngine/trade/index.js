@@ -166,6 +166,19 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
     }
 
     makeDirectPurchaseDecision() {
+        /*
+         * Native OUD direct-purchase mode intentionally bypasses
+         * Blockly proposal requirements.
+         *
+         * This is scoped to the native OUD TradeEngine caller only.
+         * Normal Blockly bots retain the existing proposal decision.
+         */
+        if (this.options?.nativeOudDirectPurchase === true) {
+            this.is_proposal_subscription_required = false;
+            this.store.dispatch(proposalsReady());
+            return;
+        }
+
         const { has_payout_block, is_basis_payout } = checkBlocksForProposalRequest();
         this.is_proposal_subscription_required = has_payout_block || is_basis_payout;
 

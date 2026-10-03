@@ -1,4 +1,4 @@
-import { api_base } from '@/external/bot-skeleton/services/api/api-base';
+﻿import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 
 import {
     createOnlyUpsDownsScanner,
@@ -310,6 +310,10 @@ export class OnlyUpsDownsLive {
         this.scanner.reset();
     }
 
+    consumeSignal(): void {
+        this.scanner.consumeSignal();
+    }
+
     getSnapshot():
         OnlyUpsDownsScannerSnapshot {
         return this.scanner.snapshot();
@@ -325,3 +329,5 @@ export class OnlyUpsDownsLive {
         );
     }
 }
+
+

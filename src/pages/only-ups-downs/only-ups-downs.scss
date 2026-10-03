@@ -1,4 +1,4 @@
-scss
+﻿scss
 .only-ups-downs-page {
     width: 100%;
     min-height: 100%;
@@ -835,4 +835,504 @@ scss
         width: 100%;
         min-width: 0;
     }
+}/*
+ * OUD official Blockly workspace host.
+ *
+ * DBot.initWorkspace() requires a real DOM container with
+ * measurable dimensions. The Blockly workspace itself remains
+ * outside the visible OUD interface.
+ */
+.only-ups-downs-workspace-host {
+    position: absolute;
+    left: -10000px;
+    top: 0;
+    width: 640px;
+    height: 480px;
+    overflow: hidden;
+    visibility: hidden;
+    pointer-events: none;
 }
+
+/* =========================================================
+   NATIVE OUD BOT
+   Dedicated native execution panel.
+   Does not modify TradingView / SmartChart styles.
+   ========================================================= */
+
+.only-ups-downs-native-bot {
+    margin: 0 14px 24px;
+    padding: 24px;
+    border: 1px solid var(--general-section-1, #e5e7eb);
+    border-radius: 16px;
+    background: var(--general-main-1, #ffffff);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.only-ups-downs-native-bot__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.only-ups-downs-native-bot__eyebrow {
+    margin-bottom: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.62;
+}
+
+.only-ups-downs-native-bot h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.only-ups-downs-native-bot__status {
+    min-width: 110px;
+    padding: 9px 14px;
+    border: 1px solid var(--general-section-1, #e5e7eb);
+    border-radius: 999px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+
+.only-ups-downs-native-bot__status.is-running {
+    border-color: #16a34a;
+}
+
+.only-ups-downs-native-bot__status.is-paused {
+    border-color: #d97706;
+}
+
+.only-ups-downs-native-bot__status.is-stopped {
+    border-color: #dc2626;
+}
+
+.only-ups-downs-native-bot__grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.only-ups-downs-native-bot__grid > div {
+    min-width: 0;
+    padding: 15px;
+    border: 1px solid var(--general-section-1, #e5e7eb);
+    border-radius: 12px;
+}
+
+.only-ups-downs-native-bot__grid span,
+.only-ups-downs-native-bot__result span,
+.only-ups-downs-native-bot__execution-status span {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.62;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.only-ups-downs-native-bot__grid strong,
+.only-ups-downs-native-bot__result strong,
+.only-ups-downs-native-bot__execution-status strong {
+    display: block;
+    overflow: hidden;
+    font-size: 15px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.only-ups-downs-native-bot__grid input,
+.only-ups-downs-native-bot__grid select {
+    width: 100%;
+    min-height: 34px;
+    padding: 6px 9px;
+    border: 1px solid var(--general-section-1, #d1d5db);
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.only-ups-downs-native-bot__grid input:focus,
+.only-ups-downs-native-bot__grid select:focus {
+    border-color: currentColor;
+}
+
+.only-ups-downs-native-bot__grid input:disabled,
+.only-ups-downs-native-bot__grid select:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.only-ups-downs-native-bot__controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.only-ups-downs-native-bot__control {
+    width: 100%;
+    min-height: 52px;
+    padding: 10px 14px;
+    border: 1px solid var(--general-section-1, #d1d5db);
+    border-radius: 12px;
+    background: transparent;
+    color: inherit;
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition:
+        opacity 0.15s ease,
+        transform 0.15s ease;
+}
+
+.only-ups-downs-native-bot__control:hover:not(:disabled) {
+    opacity: 0.88;
+    transform: translateY(-1px);
+}
+
+.only-ups-downs-native-bot__control:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+}
+
+.only-ups-downs-native-bot__control--run {
+    border-color: var(--brand-primary, #10b981);
+    background: var(--brand-primary, #10b981);
+    color: #ffffff;
+}
+
+.only-ups-downs-native-bot__execution-status {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.only-ups-downs-native-bot__execution-status > div {
+    min-width: 0;
+    padding: 13px 15px;
+    border: 1px solid var(--general-section-1, #e5e7eb);
+    border-radius: 10px;
+}
+
+.only-ups-downs-native-bot__trades {
+    margin-top: 20px;
+}
+
+.only-ups-downs-native-bot__section-title {
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.only-ups-downs-native-bot__empty {
+    padding: 18px;
+    border: 1px dashed var(--general-section-1, #d1d5db);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 13px;
+    opacity: 0.62;
+}
+
+.only-ups-downs-native-bot__table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--general-section-1, #e5e7eb);
+    border-radius: 10px;
+}
+
+.only-ups-downs-native-bot__table {
+    width: 100%;
+    min-width: 520px;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.only-ups-downs-native-bot__table th,
+.only-ups-downs-native-bot__table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--general-section-1, #e5e7eb);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.only-ups-downs-native-bot__table th {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.62;
+}
+
+.only-ups-downs-native-bot__table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.only-ups-downs-native-bot__result {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.only-ups-downs-native-bot__result > div {
+    min-width: 0;
+    padding: 13px 15px;
+    border-radius: 10px;
+    background: var(--general-section-1, #f3f4f6);
+}
+
+.only-ups-downs-native-bot__result > div:last-child {
+    overflow-wrap: anywhere;
+}
+
+.only-ups-downs-native-bot__reset {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
+.only-ups-downs-native-bot__reset-button {
+    min-width: 110px;
+    min-height: 40px;
+    padding: 8px 14px;
+    border: 1px solid var(--general-section-1, #d1d5db);
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.only-ups-downs-native-bot__reset-button:hover:not(:disabled) {
+    opacity: 0.8;
+}
+
+.only-ups-downs-native-bot__reset-button:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+}
+@media (max-width: 900px) {
+    .only-ups-downs-native-bot__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .only-ups-downs-native-bot__result {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .only-ups-downs-native-bot {
+        margin-left: 0;
+        margin-right: 0;
+        padding: 18px;
+        border-radius: 14px;
+    }
+
+    .only-ups-downs-native-bot__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .only-ups-downs-native-bot__status {
+        width: 100%;
+    }
+
+    .only-ups-downs-native-bot__grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .only-ups-downs-native-bot__result {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* =========================================================
+   NATIVE OUD BOT â€” CONTROL VISIBILITY
+   Explicit styles for manual execution controls.
+   ========================================================= */
+
+.only-ups-downs-native-bot__direction {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    margin: 20px 0;
+}
+
+.only-ups-downs-native-bot__direction > span {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.only-ups-downs-native-bot__direction-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.only-ups-downs-native-bot__direction-button {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    min-height: 48px;
+    padding: 10px 18px;
+    border: 1px solid var(--general-section-1, #d1d5db);
+    border-radius: 10px;
+    background: var(--general-main-1, #ffffff);
+    color: var(--text-general, #111827);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.only-ups-downs-native-bot__direction-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.only-ups-downs-native-bot__direction-button.is-active {
+    border-color: var(--status-success, #10b981);
+    background: var(--status-success, #10b981);
+    color: #ffffff;
+}
+
+.only-ups-downs-native-bot__direction-button:disabled {
+    opacity: 0.45 !important;
+    cursor: not-allowed;
+}
+
+.only-ups-downs-native-bot__execute {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 100% !important;
+    min-width: 100%;
+    min-height: 52px;
+    margin-top: 8px;
+    padding: 12px 20px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--brand-primary, #10b981);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.only-ups-downs-native-bot__execute:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.only-ups-downs-native-bot__execute:disabled {
+    opacity: 0.42 !important;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+    .only-ups-downs-native-bot__direction {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .only-ups-downs-native-bot__direction-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+    }
+
+    .only-ups-downs-native-bot__direction-button {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+/* =========================================================
+   NATIVE OUD BOT — DIRECTION CONTROL LAYOUT FIX
+   Keep UP/DOWN controls wide and visible on narrow screens.
+   ========================================================= */
+
+.only-ups-downs-native-bot__direction {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100% !important;
+    min-width: 0;
+}
+
+.only-ups-downs-native-bot__direction > span {
+    flex: 0 0 auto;
+}
+
+.only-ups-downs-native-bot__direction-buttons {
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex: 1 1 auto;
+    width: auto !important;
+    min-width: 0;
+}
+
+.only-ups-downs-native-bot__direction-button {
+    flex: 1 1 0 !important;
+    width: auto !important;
+    min-width: 120px !important;
+    max-width: 180px;
+    min-height: 48px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+    .only-ups-downs-native-bot__direction {
+        align-items: stretch;
+        flex-direction: column;
+        width: 100% !important;
+    }
+
+    .only-ups-downs-native-bot__direction-buttons {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        width: 100% !important;
+        flex: none;
+    }
+
+    .only-ups-downs-native-bot__direction-button {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none;
+    }
+}
+
+

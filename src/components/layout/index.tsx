@@ -1,4 +1,4 @@
-// @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
+﻿// @ts-nocheck â€” vendored bot code with known upstream type gaps; see AGENTS.md
 import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { observer } from 'mobx-react-lite';
@@ -10,6 +10,7 @@ import { crypto_currencies_display_order, fiat_currencies_display_order } from '
 import Footer from './footer';
 import AppHeader from './header';
 import Body from './main-body';
+import MonehuntExecutionBar from '../monehunt-execution-bar';
 import './layout.scss';
 
 const Layout = observer(() => {
@@ -153,9 +154,11 @@ const Layout = observer(() => {
             <Body>
                 <Outlet />
             </Body>
+            {!isCallbackPage && <MonehuntExecutionBar />}
             {!isCallbackPage && isDesktop && <Footer />}
         </div>
     );
 });
 
 export default Layout;
+

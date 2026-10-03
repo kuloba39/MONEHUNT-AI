@@ -1,21 +1,14 @@
 ﻿import { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { useNavigate } from 'react-router-dom';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
+import { useMonehuntAI } from '@/monehunt-ai-core';
 import { load, save_types } from '@/external/bot-skeleton';
 import { saveWorkspaceToRecent } from '@/external/bot-skeleton/utils';
 import { FREE_BOTS } from '@/constants/free-bots';
 import './ai-lab.scss';
 import { useAnalysisTicks } from '../analysis/use-analysis-ticks';
-import {
-    MatchesUIAdapter
-} from '@/ai-lab/matches/matches-ui-adapter';
-
-import {
-    Over2MarketScanner,
-    Over2ScannerState
-} from '@/ai-lab/over2/over2-market-scanner';
-
 import {
     VolatilityScannerController,
 } from '@/ai-lab/matches/volatility-scanner-controller';
@@ -32,7 +25,9 @@ type AiLabMarket = {
 };
 
 const AiLab = observer(() => {
+    const navigate = useNavigate();
     const { dashboard, load_modal, blockly_store } = useStore();
+    const { state: aiState } = useMonehuntAI();
 
     const { setActiveTab } = dashboard;
 
@@ -281,17 +276,7 @@ const AiLab = observer(() => {
 
     };
 
-}, []);
-
-
-    const ticks = useAnalysisTicks(
-        market,
-        AI_LAB_TICK_COUNT
-    );
-
-
-    const adapterRef =
-        useRef<MatchesUIAdapter | null>(null);
+}, []);
 /*
  * OVER 2 MULTI-MARKET SCANNER
  *
@@ -301,27 +286,7 @@ const AiLab = observer(() => {
  * Over2Engine.
  */
 
-const over2ScannerRef =
-    useRef<Over2MarketScanner | null>(null);
-
-const [
-    over2ScannerState,
-    setOver2ScannerState
-] =
-    useState<Over2ScannerState | null>(null);
-
-const [
-    over2State,
-    setOver2State
-] =
-    useState<any>(null);
-
-const [
-    over2Signal,
-    setOver2Signal
-] =
-    useState<any>(null);
-
+const over2ScannerState = aiState.over2.scannerState;
 
 /*
  * OVER 2 USER SELECTED MARKET
@@ -352,6 +317,22 @@ const [
     setOver2SelectedSignal
 ] =
     useState<any>(null);
+
+const over2SelectedLiveResult =
+    over2ScannerState?.qualifyingMarkets?.find(
+        (result: any) =>
+            result.symbol === over2SelectedMarket?.symbol
+    ) ?? null;
+
+const over2State =
+    over2SelectedLiveResult?.state ??
+    over2SelectedMarket?.state ??
+    null;
+
+const over2Signal =
+    over2SelectedSignal ??
+    over2SelectedLiveResult?.signal ??
+    null;
 /*
  * Stable reference for the user's selected
  * OVER 2 market.
@@ -476,16 +457,7 @@ setSelectedStrategyId(
     setOver2SelectedBot(
         over2Bot ?? null
     );
-
-    setOver2State(
-        result.state
-    );
-
-    setOver2Signal(
-        result.signal
-    );
-
-    console.log(
+console.log(
         'AI LAB OVER 2 MARKET SELECTED',
         {
             symbol: result.symbol,
@@ -656,8 +628,42 @@ const [
         setLoading(true);
 
         try {
-            const workspace =
+            let workspace =
                 window.Blockly?.derivWorkspace;
+
+            if (!workspace) {
+                console.log(
+                    'AI LAB: Navigating to Trading Workspace for Blockly workspace'
+                );
+
+                navigate('/preview');
+
+                await new Promise<void>((resolve, reject) => {
+                    let attempts = 0;
+
+                    const timer = window.setInterval(() => {
+                        workspace =
+                            window.Blockly?.derivWorkspace;
+
+                        if (workspace) {
+                            window.clearInterval(timer);
+                            resolve();
+                            return;
+                        }
+
+                        attempts += 1;
+
+                        if (attempts >= 150) {
+                            window.clearInterval(timer);
+                            reject(
+                                new Error(
+                                    'Blockly workspace initialization timed out'
+                                )
+                            );
+                        }
+                    }, 100);
+                });
+            }
 
             if (!workspace) {
                 throw new Error(
@@ -1199,18 +1205,48 @@ const signalMarket =
 
 
     try {
+            let workspace =
+                window.Blockly?.derivWorkspace;
 
-        const workspace =
-            window.Blockly?.derivWorkspace;
+            if (!workspace) {
+                console.log(
+                    'AI LAB: Navigating to Trading Workspace for Blockly workspace'
+                );
 
+                navigate('/preview');
 
-        if (!workspace) {
+                await new Promise<void>((resolve, reject) => {
+                    let attempts = 0;
 
-            throw new Error(
-                'Blockly workspace is not ready'
-            );
+                    const timer = window.setInterval(() => {
+                        workspace =
+                            window.Blockly?.derivWorkspace;
 
-        }
+                        if (workspace) {
+                            window.clearInterval(timer);
+                            resolve();
+                            return;
+                        }
+
+                        attempts += 1;
+
+                        if (attempts >= 150) {
+                            window.clearInterval(timer);
+                            reject(
+                                new Error(
+                                    'Blockly workspace initialization timed out'
+                                )
+                            );
+                        }
+                    }, 100);
+                });
+            }
+
+            if (!workspace) {
+                throw new Error(
+                    'Blockly workspace is not ready'
+                );
+            }
 
 
         console.log(
@@ -1919,369 +1955,10 @@ const selectScannedMarket = (symbol: string) => {
      */
 
     useEffect(() => {
-
-    /*
-     * MATCHES ENGINE
-     */
-
-    adapterRef.current =
-        new MatchesUIAdapter();
-
-    initializedRef.current =
-        false;
-
-    lastProcessedTickRef.current =
-        null;
-
-    setEngineState(null);
-    setCurrentSignal(null);
-
-    setStats({
-        total: 0,
-        wins: 0,
-        losses: 0,
-        winRate: 0
-    });
-
-    setLearningStats([]);
-
-
-   /*
- * OVER 2 MULTI-MARKET SCANNER
- *
- * The scanner does NOT follow the selected
- * AI LAB market.
- *
- * It scans every active market.
- */
-
-if (
-    over2ScannerRef.current
-) {
-    over2ScannerRef.current.stop();
-}
-
-setOver2ScannerState(null);
-setOver2State(null);
-setOver2Signal(null);
-
-}, [market]);
-
-
-    /*
- * Feed D Circles ticks into Matches.
- *
- * The first batch is historical data.
- * After that, only the newest live tick
- * is processed.
- */
-
-useEffect(() => {
-
-    const adapter =
-        adapterRef.current;
-
-    if (
-        !adapter ||
-        ticks.length === 0
-    ) {
-        return;
-    }
-
-
-    /*
-     * Process the initial history once.
-     */
-
-    if (!initializedRef.current) {
-
-        adapter.processTicks(
-            ticks
-        );
-
-
-        initializedRef.current =
-            true;
-
-
-        const lastTick =
-            ticks[ticks.length - 1];
-
-
-        lastProcessedTickRef.current =
-            [
-                lastTick.epoch,
-                lastTick.quote,
-                lastTick.digit
-            ].join('|');
-
-
-        setEngineState(
-            adapter.getCurrentState()
-        );
-
-
-        setStats({
-
-            total:
-                adapter.getTotalOutcomes(),
-
-            wins:
-                adapter.getWins().length,
-
-            losses:
-                adapter.getLosses().length,
-
-            winRate:
-                adapter.getWinRate()
-
-        });
-
-
-        setLearningStats(
-            adapter.getLearningStats()
-        );
-
-
-        return;
-
-    }
-
-
-    /*
-     * The D Circles hook continuously appends
-     * live ticks to the end of the array.
-     *
-     * Identify the newest tick using its
-     * actual data instead of its array index.
-     */
-
-    const lastTick =
-        ticks[ticks.length - 1];
-
-
-    const tickKey =
-        [
-            lastTick.epoch,
-            lastTick.quote,
-            lastTick.digit
-        ].join('|');
-
-
-    /*
-     * Nothing new has arrived.
-     */
-
-    if (
-        tickKey ===
-        lastProcessedTickRef.current
-    ) {
-        return;
-    }
-
-
-    /*
-     * Process the new live tick.
-     */
-
-    const result =
-    adapter.processTick(
-        lastTick
-    );
-
-
-    lastProcessedTickRef.current =
-        tickKey;
-
-
-    if (result) {
-
-    setEngineState(
-        result
-    );
-
-    if (
-        result.pendingSignal?.signal
-    ) {
-
-        setCurrentSignal(
-            result.pendingSignal.signal
-        );
-
-    }
-
-}
-
-
-    setStats({
-
-        total:
-            adapter.getTotalOutcomes(),
-
-        wins:
-            adapter.getWins().length,
-
-        losses:
-            adapter.getLosses().length,
-
-        winRate:
-            adapter.getWinRate()
-
-    });
-
-
-    setLearningStats(
-        adapter.getLearningStats()
-    );
-
-
-}, [ticks]);
-/*
- * OVER 2 MULTI-MARKET SCANNER
- *
- * Scan ALL active AI LAB markets simultaneously.
- *
- * Each market has:
- *
- *     1000 historical ticks
- *          +
- *     continuous live ticks
- *          +
- *     independent Over2Engine
- *
- * Jump indices are included automatically
- * because the scanner receives the complete
- * AI LAB active-symbol list.
- */
-
-useEffect(() => {
-
-    if (
-        !markets ||
-        markets.length === 0
-    ) {
-        return;
-    }
-
-    /*
-     * Stop the previous scanner before
-     * creating a new one.
-     */
-
-    if (
-        over2ScannerRef.current
-    ) {
-        over2ScannerRef.current.stop();
-    }
-
-    const scanner =
-        new Over2MarketScanner();
-
-    over2ScannerRef.current =
-        scanner;
-
-    /*
-     * Receive scanner updates.
-     */
-
-    const unsubscribe =
-        scanner.subscribe(
-            state => {
-
-                setOver2ScannerState(
-                    state
-                );
-
-
-
-                /*
-                 * Preserve the existing
-                 * OVER 2 signal shape.
-                 */
-
-                const activeMarket =
-                    over2SelectedMarketRef.current;
-
-                setOver2State(
-                    activeMarket?.state ??
-                    null
-                );
-
-                setOver2Signal(
-                    activeMarket?.signal ??
-                    null
-                );
-
-
-            }
-        );
-
-    /*
-     * Convert the AI LAB market list into
-     * scanner markets.
-     *
-     * NO symbol filtering here.
-     *
-     * This deliberately includes:
-     *
-     * R_*
-     * 1HZ*
-     * Jump indices
-     * and other active synthetic markets
-     * supplied by Deriv.
-     */
-
-    const scanMarkets =
-        markets.map(item => ({
-
-            symbol:
-                item.symbol,
-
-            name:
-                item.name,
-
-            market:
-                item.market
-
-        }));
-
-    console.log(
-        'AI LAB OVER 2 SCANNING ALL MARKETS',
-        {
-            total:
-                scanMarkets.length,
-
-            markets:
-                scanMarkets.map(
-                    item =>
-                        item.symbol
-                )
-        }
-    );
-
-    scanner.start(
-        scanMarkets
-    );
-
-    return () => {
-
-        unsubscribe();
-
-        scanner.stop();
-
-        if (
-            over2ScannerRef.current ===
-            scanner
-        ) {
-            over2ScannerRef.current =
-                null;
-        }
-
-    };
-
-}, [markets]);
-
-
+        setEngineState(aiState.matches.engineState);
+        setCurrentSignal(aiState.matches.signal);
+        setStats(aiState.matches.stats);
+    }, [aiState.matches]);
     useEffect(() => {
 
         localStorage.setItem(
@@ -2289,20 +1966,13 @@ useEffect(() => {
             market
         );
 
-    }, [market]);
-
-
-    const lastTick =
-        ticks[ticks.length - 1];
-
-
-    const signal =
+    }, [market]);
+const signal =
     currentSignal;
 
 
     const digit =
-        engineState?.digit ??
-        lastTick?.digit;
+        engineState?.digit;
 
 
     const aiInitialStake =
@@ -2438,7 +2108,7 @@ useEffect(() => {
                 <div className="ai-lab-tick-info">
 
                     <span>
-                        Ticks: {ticks.length}
+                        Ticks: {AI_LAB_TICK_COUNT}
                     </span>
 
                     <span>
@@ -2446,7 +2116,7 @@ useEffect(() => {
                     </span>
 
                     <span>
-                        Quote: {lastTick?.quote ?? '--'}
+                        Quote: {engineState?.quote ?? '--'}
                     </span>
 
                 </div>
@@ -3587,8 +3257,7 @@ useEffect(() => {
                     </span>
 
                     <strong>
-                        {adapterRef.current
-                            ?.getPendingCount() ?? 0}
+                        {0}
                     </strong>
 
                 </div>
@@ -4082,8 +3751,7 @@ useEffect(() => {
                 </span>
 
                 <strong>
-                    {adapterRef.current
-                        ?.getPendingCount() ?? 0}
+                    {0}
                 </strong>
 
             </div>
@@ -4216,6 +3884,24 @@ useEffect(() => {
 });
 
 export default AiLab;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

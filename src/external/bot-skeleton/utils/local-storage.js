@@ -1,4 +1,4 @@
-import localForage from 'localforage';
+﻿import localForage from 'localforage';
 import LZString from 'lz-string';
 import { config } from '../constants';
 import { save_types } from '../constants/save-type';
@@ -55,7 +55,11 @@ export const saveWorkspaceToRecent = async (xml, save_type = save_types.UNSAVED)
 
 export const getSavedWorkspaces = async () => {
     try {
-        return JSON.parse(LZString.decompress(await localForage.getItem('saved_workspaces'))) || [];
+        const workspaces = JSON.parse(LZString.decompress(await localForage.getItem('saved_workspaces')) || '[]');
+        if (typeof window !== 'undefined') {
+            window.__MONEHUNT_SAVED_WORKSPACES__ = workspaces;
+        }
+        return workspaces;
     } catch (e) {
         return [];
     }
@@ -80,3 +84,4 @@ export const convertStrategyToIsDbot = xml_dom => {
     xml_dom.setAttribute('is_dbot', 'true');
     return xml_dom;
 };
+

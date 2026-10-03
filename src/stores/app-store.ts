@@ -11,6 +11,9 @@ export default class AppStore {
     dbot_store: RootStore | null;
     api_helpers_store: TApiHelpersStore | null;
     timer: ReturnType<typeof setInterval> | null;
+    workspace_init_promise: Promise<void> | null;
+    workspace_ready_promise: Promise<void> | null;
+    workspace_mount_count = 0;
     disposeReloadOnLanguageChangeReaction: unknown;
     disposeCurrencyReaction: unknown;
     disposeSwitchAccountListener: unknown;
@@ -34,11 +37,25 @@ export default class AppStore {
         this.dbot_store = null;
         this.api_helpers_store = null;
         this.timer = null;
+        this.workspace_init_promise = null;
+        this.workspace_ready_promise = null;
+        this.workspace_mount_count = 0;
     }
 
     onMount = async () => {
+        this.workspace_mount_count += 1;
+
         const { blockly_store, run_panel } = this.root_store;
         const { ui } = this.core;
+
+        if (this.workspace_init_promise) {
+            await this.workspace_init_promise;
+            return;
+        }
+
+        if (window.Blockly?.derivWorkspace) {
+            return;
+        }
 
         let timer_counter = 1;
 
@@ -55,12 +72,29 @@ export default class AppStore {
         }, 10000);
 
         if (!this.dbot_store) return;
+        this.workspace_init_promise = (async () => {
+            blockly_store.setLoading(true);
 
-        blockly_store.setLoading(true);
-        await DBot.initWorkspace('/', this.dbot_store, this.api_helpers_store, ui.is_mobile, false);
+            await DBot.initWorkspace(
+                '/',
+                this.dbot_store,
+                this.api_helpers_store,
+                ui.is_mobile,
+                false
+            );
 
-        blockly_store.setContainerSize();
-        blockly_store.setLoading(false);
+            blockly_store.setContainerSize();
+            blockly_store.setLoading(false);
+        })();
+
+        this.workspace_ready_promise = this.workspace_init_promise;
+
+        try {
+            await this.workspace_init_promise;
+        } catch (error) {
+            this.workspace_ready_promise = null;
+            throw error;
+        }
 
         this.registerCurrencyReaction.call(this);
         this.registerOnAccountSwitch.call(this);
@@ -73,39 +107,89 @@ export default class AppStore {
     };
 
     onUnmount = () => {
-        DBot.terminateBot();
-        DBot.terminateConnection();
-        if (window.Blockly?.derivWorkspace) {
-            clearInterval(window.Blockly?.derivWorkspace.save_workspace_interval);
-            window.Blockly.derivWorkspace?.dispose();
-        }
-        if (typeof this.disposeReloadOnLanguageChangeReaction === 'function') {
-            this.disposeReloadOnLanguageChangeReaction();
-        }
-        if (typeof this.disposeCurrencyReaction === 'function') {
-            this.disposeCurrencyReaction();
-        }
-        if (typeof this.disposeSwitchAccountListener === 'function') {
-            this.disposeSwitchAccountListener();
+        this.workspace_mount_count = Math.max(0, this.workspace_mount_count - 1);
+
+        if (this.workspace_mount_count > 0) {
+            return;
         }
 
-        if (typeof this.disposeResidenceChangeReaction === 'function') {
-            this.disposeResidenceChangeReaction();
+        const cleanupWorkspace = () => {
+            if (this.workspace_mount_count > 0) {
+                return;
+            }
+
+            // Clear the completed promises before cleanup so this method
+            // cannot recursively schedule itself forever.
+            this.workspace_init_promise = null;
+            this.workspace_ready_promise = null;
+
+            const workspace = window.Blockly?.derivWorkspace;
+
+            if (workspace) {
+                clearInterval(workspace.save_workspace_interval);
+
+                // Detach the global reference first so navigation cannot
+                // reuse a workspace while it is being destroyed.
+                if (window.Blockly.derivWorkspace === workspace) {
+                    window.Blockly.derivWorkspace = null;
+                }
+
+                // Blockly 10.4.3 can throw when dispose() is reached after
+                // the workspace has already been disposed/unsubscribed.
+                if (!(typeof workspace.isDisposed === 'function' && workspace.isDisposed())) {
+                    try {
+                        workspace.dispose();
+                    } catch (error) {
+                        const message = error instanceof Error ? error.message : String(error);
+
+                        if (!message.includes("Cannot unsubscribe a workspace that hasn't been subscribed")) {
+                            throw error;
+                        }
+
+                        console.warn(
+                            '[MONEHUNT WORKSPACE CLEANUP] Workspace already unsubscribed:',
+                            error
+                        );
+                    }
+                }
+            }
+
+            if (typeof this.disposeReloadOnLanguageChangeReaction === 'function') {
+                this.disposeReloadOnLanguageChangeReaction();
+            }
+
+            if (typeof this.disposeCurrencyReaction === 'function') {
+                this.disposeCurrencyReaction();
+            }
+
+            if (typeof this.disposeSwitchAccountListener === 'function') {
+                this.disposeSwitchAccountListener();
+            }
+
+            if (typeof this.disposeResidenceChangeReaction === 'function') {
+                this.disposeResidenceChangeReaction();
+            }
+
+            window.removeEventListener('click', this.onClickOutsideBlockly);
+
+            // Ensure account switch is re-enabled.
+            // TODO: fix
+            const { ui } = this.core;
+
+            ui.setAccountSwitcherDisabledMessage();
+            ui.setPromptHandler(false);
+
+            if (this.timer) clearInterval(this.timer);
+            performance.clearMeasures();
+        };
+
+        if (this.workspace_init_promise) {
+            void this.workspace_init_promise.finally(cleanupWorkspace);
+            return;
         }
 
-        window.removeEventListener('click', this.onClickOutsideBlockly);
-
-        // Ensure account switch is re-enabled.
-        // TODO: fix
-        const { ui } = this.core;
-
-        ui.setAccountSwitcherDisabledMessage();
-        ui.setPromptHandler(false);
-
-        if (this.timer) clearInterval(this.timer);
-        performance.clearMeasures();
+        cleanupWorkspace();
     };
-
     registerCurrencyReaction = () => {
         // Syncs all trade options blocks' currency with the client's active currency.
         this.disposeCurrencyReaction = reaction(
@@ -228,3 +312,16 @@ export default class AppStore {
         }
     };
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

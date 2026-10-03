@@ -18,6 +18,11 @@ import './header.scss';
 
 const AppHeader = observer(() => {
     const { isDesktop } = useDevice();
+
+    console.log('[MONEHUNT HEADER]', {
+        isDesktop,
+        width: window.innerWidth,
+    });
     const { isAuthorizing, activeLoginid, setIsAuthorizing, authData } = useApiBase();
     const { client } = useStore() ?? {};
     const [authTimeout, setAuthTimeout] = useState(false);
@@ -240,7 +245,7 @@ const AppHeader = observer(() => {
                 <Wrapper variant='left'>
                     <MobileMenu onLogout={handleLogout} />
                     <AppLogo />
-                    {isDesktop ? <MenuItems /> : renderAccountSection('left')}
+                    <MenuItems />
                 </Wrapper>
                 <Wrapper variant='right'>
                     {renderAccountSection('right')}
@@ -251,3 +256,5 @@ const AppHeader = observer(() => {
 });
 
 export default AppHeader;
+
+

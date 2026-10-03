@@ -1,4 +1,4 @@
-// @ts-nocheck â€” vendored bot code with known upstream type gaps; see AGENTS.md
+﻿// @ts-nocheck Ã¢â‚¬â€ vendored bot code with known upstream type gaps; see AGENTS.md
 /* [AI] - Analytics removed - utility functions moved to @/utils/account-helpers */
 import { getAccountId, getAccountType, isDemoAccount, removeUrlParameter } from '@/utils/account-helpers';
 /* [/AI] */
@@ -65,6 +65,13 @@ class APIBase {
     active_symbols_promise: Promise<any[] | undefined> | null = null;
     common_store: CommonStore | undefined;
     reconnection_attempts: number = 0;
+
+    // Prevent overlapping normal API initialization calls.
+    private init_promise: Promise<void> | null = null;
+
+    // Keep stable listener references so removeEventListener() actually works.
+    private readonly socket_open_handler = () => this.onsocketopen();
+    private readonly socket_close_handler = () => this.onsocketclose();
 
     // Constants for timeouts - extracted magic numbers for better maintainability
     private readonly ACTIVE_SYMBOLS_TIMEOUT_MS = 10000; // 10 seconds
@@ -152,70 +159,99 @@ class APIBase {
     }
 
     async init(force_create_connection = false) {
-        this.toggleRunButton(true);
-
-        if (this.api) {
-            this.unsubscribeAllSubscriptions();
+        // Normal initialization is single-flight.
+        // Forced initialization intentionally bypasses this lock because
+        // callers such as OAuth/account regeneration explicitly request
+        // a fresh connection.
+        if (!force_create_connection && this.init_promise) {
+            console.log('[API INIT LOCK] Reusing in-flight initialization');
+            return this.init_promise;
         }
 
-        // Reset reconnection attempts counter on successful connection initialization
-        if (!force_create_connection) {
-            this.reconnection_attempts = 0;
-        }
+        const initialize = async () => {
+            this.toggleRunButton(true);
 
-        if (!this.api || this.api?.connection.readyState !== 1 || force_create_connection) {
-            if (this.api?.connection) {
-                ApiHelpers.disposeInstance();
-                setConnectionStatus(CONNECTION_STATUS.CLOSED);
-                this.api.disconnect();
-                this.api.connection.removeEventListener('open', this.onsocketopen.bind(this));
-                this.api.connection.removeEventListener('close', this.onsocketclose.bind(this));
+            if (this.api) {
+                this.unsubscribeAllSubscriptions();
             }
 
-            this.api = await generateDerivApiInstance();
+            // Reset reconnection attempts counter on successful connection initialization
+            if (!force_create_connection) {
+                this.reconnection_attempts = 0;
+            }
 
-            this.api?.connection.addEventListener('open', this.onsocketopen.bind(this));
-            this.api?.connection.addEventListener('close', this.onsocketclose.bind(this));
+            if (!this.api || this.api?.connection.readyState !== 1 || force_create_connection) {
+                if (this.api?.connection) {
+                    ApiHelpers.disposeInstance();
+                    setConnectionStatus(CONNECTION_STATUS.CLOSED);
 
-            // Store the current account ID used for this WebSocket connection
-            // This will be used to check if we need to regenerate the connection when the tab becomes active
-            const currentClientStore = globalObserver.getState('client.store');
-            if (currentClientStore) {
-                const active_login_id = getAccountId();
-                if (active_login_id) {
-                    currentClientStore.setWebSocketLoginId(active_login_id);
+                    // Remove the actual registered callbacks before disconnecting.
+                    this.api.connection.removeEventListener('open', this.socket_open_handler);
+                    this.api.connection.removeEventListener('close', this.socket_close_handler);
+
+                    this.api.disconnect();
+                }
+
+                this.api = await generateDerivApiInstance();
+
+                this.api?.connection.addEventListener('open', this.socket_open_handler);
+                this.api?.connection.addEventListener('close', this.socket_close_handler);
+
+                // Store the current account ID used for this WebSocket connection
+                // This will be used to check if we need to regenerate the connection when the tab becomes active
+                const currentClientStore = globalObserver.getState('client.store');
+                if (currentClientStore) {
+                    const active_login_id = getAccountId();
+                    if (active_login_id) {
+                        currentClientStore.setWebSocketLoginId(active_login_id);
+                    }
                 }
             }
+
+            const hasAccountID = V2GetActiveAccountId();
+
+            if (!this.has_active_symbols && !hasAccountID) {
+                this.active_symbols_promise = this.getActiveSymbols().then(() => undefined);
+            }
+
+            this.initEventListeners();
+
+            if (this.time_interval) clearInterval(this.time_interval);
+            this.time_interval = null;
+
+            console.log('[API INIT PROBE] before chart_api.init');
+            console.log('[API INIT PROBE] chart_api.api before =', !!chart_api.api);
+
+            await chart_api.init(force_create_connection);
+
+            console.log('[API INIT PROBE] after chart_api.init');
+            console.log('[API INIT PROBE] chart_api.api after =', !!chart_api.api);
+            console.log('[API INIT PROBE] chart socket readyState =', chart_api.api?.connection?.readyState ?? null);
+            console.log('[API INIT PROBE] main socket readyState =', this.api?.connection?.readyState ?? null);
+
+            // Synchronize the shared connection status when the socket was
+            // already OPEN before APIBase attached its "open" listener.
+            if (this.api?.connection?.readyState === 1) {
+                setConnectionStatus(CONNECTION_STATUS.OPENED);
+            }
+        };
+
+        if (force_create_connection) {
+            return initialize();
         }
 
-        const hasAccountID = V2GetActiveAccountId();
+        const promise = initialize();
 
-        if (!this.has_active_symbols && !hasAccountID) {
-            this.active_symbols_promise = this.getActiveSymbols().then(() => undefined);
-        }
+        this.init_promise = promise;
 
-        this.initEventListeners();
-
-        if (this.time_interval) clearInterval(this.time_interval);
-        this.time_interval = null;
-
-        console.log('[API INIT PROBE] before chart_api.init');
-        console.log('[API INIT PROBE] chart_api.api before =', !!chart_api.api);
-
-        await chart_api.init(force_create_connection);
-
-        console.log('[API INIT PROBE] after chart_api.init');
-        console.log('[API INIT PROBE] chart_api.api after =', !!chart_api.api);
-        console.log('[API INIT PROBE] chart socket readyState =', chart_api.api?.connection?.readyState ?? null);
-        console.log('[API INIT PROBE] main socket readyState =', this.api?.connection?.readyState ?? null);
-
-        // Synchronize the shared connection status when the socket was
-        // already OPEN before APIBase attached its "open" listener.
-        if (this.api?.connection?.readyState === 1) {
-            setConnectionStatus(CONNECTION_STATUS.OPENED);
+        try {
+            await promise;
+        } finally {
+            if (this.init_promise === promise) {
+                this.init_promise = null;
+            }
         }
     }
-
     getConnectionStatus() {
         if (this.api?.connection) {
             const ready_state = this.api.connection.readyState;
@@ -420,7 +456,7 @@ class APIBase {
 
             const apiResult = await Promise.race([activeSymbolsPromise, timeout]);
             console.log(
-    "ðŸ”¥ ACTIVE SYMBOLS RAW RESPONSE:",
+    "Ã°Å¸â€Â¥ ACTIVE SYMBOLS RAW RESPONSE:",
     JSON.stringify(apiResult, null, 2)
 );
 

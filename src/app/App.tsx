@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+﻿import { lazy, Suspense, useEffect, useState } from 'react';
 import React from 'react';
 
 import {
@@ -22,6 +22,7 @@ import { useLanguageFromURL } from '@/hooks/useLanguageFromURL';
 
 import { StoreProvider } from '@/hooks/useStore';
 
+
 import {
     isPreviewMode,
     PREVIEW_BASE_PATH
@@ -33,353 +34,281 @@ import {
 } from '@deriv-com/translations';
 
 import CoreStoreProvider from './CoreStoreProvider';
+import { MonehuntAIProvider } from '../monehunt-ai-core';
 import i18nInstance from './i18n';
 
+import CopyTradingPage from '../pages/copy-trading';
+import OnlyUpsDownsPage from '../pages/only-ups-downs';
+
 import './app-root.scss';
-
-
-import CopyTradingPage 
-from '../pages/copy-trading';
-
-import OnlyUpsDownsPage
-from '../pages/only-ups-downs';
+import MonehuntIntro from '@/components/monehunt-intro/monehunt-intro';
 
 const Layout = lazy(() => import('../components/layout'));
-
 const AppRoot = lazy(() => import('./app-root'));
 
-
+const DashboardPage = lazy(() => import('../pages/dashboard'));
+const AiLabPage = lazy(() => import('../pages/ai-lab'));
+const BotBuilderPage = lazy(() => import('../pages/bot-builder'));
+const ChartPage = lazy(() => import('../pages/chart'));
+const FreeBotsPage = lazy(() => import('../pages/free-bots'));
+const DCirclesPage = lazy(() => import('../pages/analysis'));
 
 const LanguageHandler = ({
     children
 }: {
     children: React.ReactNode;
 }) => {
-
     useLanguageFromURL();
 
     return <>{children}</>;
-
 };
 
+const MonehuntAppShell = () => {
+    const [showIntro, setShowIntro] = useState(false);
 
+    useEffect(() => {
+        const path = window.location.pathname;
+        const isRoot = path === '/' || path === '';
 
+        console.log('[MONEHUNT INTRO] App mounted', {
+            pathname: path,
+            showIntro: isRoot,
+        });
+
+        if (!isRoot) return;
+
+        setShowIntro(true);
+
+        const timer = window.setTimeout(() => {
+            console.log('[MONEHUNT INTRO] Complete');
+            setShowIntro(false);
+        }, 3200);
+
+        return () => window.clearTimeout(timer);
+    }, []);
+
+    return (
+        <>
+            {showIntro && <MonehuntIntro />}
+            <RouterProvider router={router} />
+        </>
+    );
+};
 const routerBasename =
-isPreviewMode()
-?
-PREVIEW_BASE_PATH
-:
-undefined;
-
-
-
+    isPreviewMode()
+        ? PREVIEW_BASE_PATH
+        : undefined;
 
 const router = createBrowserRouter(
-
-createRoutesFromElements(
-
-<Route
-
-path='/'
-
-element={
-
-<Suspense
-
-fallback={
-
-<ChunkLoader
-
-message={
-localize(
-'Please wait while we connect to the server...'
-)
-}
-
-/>
-
-}
-
->
-
-<TranslationProvider
-
-defaultLang='EN'
-
-i18nInstance={i18nInstance}
-
->
-
-<LanguageHandler>
-
-<StoreProvider>
-
-<LocalStorageSyncWrapper>
-
-<RoutePromptDialog />
-
-<CoreStoreProvider>
-
-<Layout />
-
-</CoreStoreProvider>
-
-</LocalStorageSyncWrapper>
-
-</StoreProvider>
-
-</LanguageHandler>
-
-</TranslationProvider>
-
-
-</Suspense>
-
-}
-
->
-
-
-<Route
-
-index
-
-element={<AppRoot />}
-
-/>
-
-
-
-<Route
-
-path='preview'
-
-element={<AppRoot />}
-
-/>
-
-
-
-
-{/* COPY TRADING */}
-
-<Route
-
-path='copy-trading'
-
-element={<CopyTradingPage />}
-
-/>
-
-
-
-
-
-
-
-
-    {/* ONLY UPS / DOWNS */}
-
-    <Route
-
-    path='only-ups-downs'
-
-    element={<OnlyUpsDownsPage />}
-
-    />
-
-{/* FOLLOWER ONBOARDING */}
-
-
-
-
-
-
-
-
-
-
-</Route>
-
-
-),
-
-{
-basename: routerBasename
-}
-
+    createRoutesFromElements(
+        <Route
+            path='/'
+            element={
+                <Suspense
+                    fallback={
+                        <ChunkLoader
+                            message={localize(
+                                'Please wait while we connect to the server...'
+                            )}
+                        />
+                    }
+                >
+                    <TranslationProvider
+                        defaultLang='EN'
+                        i18nInstance={i18nInstance}
+                    >
+                        <LanguageHandler>
+                            <StoreProvider>
+                                <LocalStorageSyncWrapper>
+                                    <RoutePromptDialog />
+                                    <CoreStoreProvider>
+                                        <MonehuntAIProvider>
+                                            <Layout />
+                                        </MonehuntAIProvider>
+                                    </CoreStoreProvider>
+                                </LocalStorageSyncWrapper>
+                            </StoreProvider>
+                        </LanguageHandler>
+                    </TranslationProvider>
+                </Suspense>
+            }
+        >
+            {/* MONEHUNT DASHBOARD */}
+            <Route
+                index
+                element={<DashboardPage />}
+            />
+
+            {/* MONEHUNT AI COMMAND CENTER */}
+            <Route
+                path='ai-lab'
+                element={<AiLabPage />}
+            />
+
+            <Route
+                path='only-ups-downs'
+                element={<OnlyUpsDownsPage />}
+            />
+
+            {/* MONEHUNT TRADING */}
+            <Route
+                path='bot-builder'
+                element={<BotBuilderPage />}
+            />
+
+            <Route
+                path='chart'
+                element={<ChartPage show_digits_stats={false} />}
+            />
+
+            <Route
+                path='free-bots'
+                element={<FreeBotsPage />}
+            />
+
+            <Route
+                path='d-circles'
+                element={<DCirclesPage />}
+            />
+
+            {/* EXISTING DERIV WORKSPACE */}
+            <Route
+                path='preview'
+                element={<AppRoot />}
+            />
+
+            {/* COPY TRADING */}
+            <Route
+                path='copy-trading'
+                element={<CopyTradingPage />}
+            />
+
+        </Route>
+    ),
+    {
+        basename: routerBasename
+    }
 );
-
-
-
-
-
 
 function App() {
+    React.useEffect(() => {
+        const originalPushState = window.history.pushState;
+        const originalReplaceState = window.history.replaceState;
+
+        window.history.pushState = function (...args) {
+            console.log('[MONEHUNT URL PROBE] pushState', {
+                args,
+                before: window.location.href,
+            });
+            return originalPushState.apply(this, args);
+        };
+
+        window.history.replaceState = function (...args) {
+            console.log('[MONEHUNT URL PROBE] replaceState', {
+                args,
+                before: window.location.href,
+            });
+            return originalReplaceState.apply(this, args);
+        };
+
+        const onPopState = () => {
+            console.log('[MONEHUNT URL PROBE] popstate', window.location.href);
+        };
+
+        window.addEventListener('popstate', onPopState);
+
+        console.log('[MONEHUNT URL PROBE] installed', window.location.href);
+
+        return () => {
+            window.history.pushState = originalPushState;
+            window.history.replaceState = originalReplaceState;
+            window.removeEventListener('popstate', onPopState);
+        };
+    }, []);
+
+    useAccountSwitching();
 
 
-useAccountSwitching();
+    React.useEffect(() => {
+        const urlParams =
+            new URLSearchParams(window.location.search);
 
+        if (!urlParams.has('code')) return;
 
+        const handleCallback = async () => {
+            try {
+                const authInfo =
+                    await handleOAuthCallback(
+                        window.location.href,
+                        {
+                            clientId:
+                                process.env.NEXT_PUBLIC_DERIV_APP_ID || '',
+                            redirectUri:
+                                window.location.origin,
+                            scopes: 'trade',
+                        }
+                    );
 
-React.useEffect(()=>{
+                const {
+                    DerivWSAccountsService
+                } = await import(
+                    '@/services/derivws-accounts.service'
+                );
 
+                const accounts =
+                    await DerivWSAccountsService.fetchAccountsList(
+                        authInfo.access_token
+                    );
 
-const urlParams =
-new URLSearchParams(
-window.location.search
-);
+                if (accounts && accounts.length > 0) {
+                    DerivWSAccountsService.storeAccounts(accounts);
 
+                    const firstAccount = accounts[0];
 
+                    localStorage.setItem(
+                        'active_loginid',
+                        firstAccount.account_id
+                    );
 
-if(!urlParams.has('code'))
-return;
+                    const isDemo =
+                        firstAccount.account_id.startsWith('VRT') ||
+                        firstAccount.account_id.startsWith('VRTC');
 
+                    localStorage.setItem(
+                        'account_type',
+                        isDemo ? 'demo' : 'real'
+                    );
 
+                    const { api_base } =
+                        await import('@/external/bot-skeleton');
 
-const handleCallback = async()=>{
+                    await api_base.init(true);
+                }
+            } catch (error) {
+                console.error(
+                    'OAuth callback error:',
+                    error
+                );
+            } finally {
+                cleanupUrl(window.location.origin);
+            }
+        };
 
+        handleCallback();
+    }, []);
 
-try{
-
-
-const authInfo =
-
-await handleOAuthCallback(
-
-window.location.href,
-
-{
-
-clientId:
-process.env.NEXT_PUBLIC_DERIV_APP_ID || '',
-
-
-redirectUri:
-window.location.origin,
-
-
-scopes:
-'trade',
-
+    return <MonehuntAppShell />;
 }
-
-);
-
-
-
-const {
-DerivWSAccountsService
-}
-=
-await import(
-'@/services/derivws-accounts.service'
-);
-
-
-
-const accounts =
-await DerivWSAccountsService.fetchAccountsList(
-authInfo.access_token
-);
-
-
-
-if(accounts && accounts.length > 0){
-
-
-DerivWSAccountsService.storeAccounts(
-accounts
-);
-
-
-
-const firstAccount =
-accounts[0];
-
-
-
-localStorage.setItem(
-'active_loginid',
-firstAccount.account_id
-);
-
-
-
-const isDemo =
-firstAccount.account_id.startsWith('VRT')
-||
-firstAccount.account_id.startsWith('VRTC');
-
-
-
-localStorage.setItem(
-'account_type',
-isDemo
-?
-'demo'
-:
-'real'
-);
-
-
-
-const {
-api_base
-}
-=
-await import('@/external/bot-skeleton');
-
-
-
-await api_base.init(true);
-
-
-}
-
-
-
-}
-catch(error){
-
-console.error(
-'OAuth callback error:',
-error
-);
-
-
-}
-finally{
-
-
-cleanupUrl(
-window.location.origin
-);
-
-
-}
-
-
-
-};
-
-
-
-handleCallback();
-
-
-
-},[]);
-
-
-
-
-
-return <RouterProvider router={router} />;
-
-
-}
-
-
 
 export default App;
+
+
+
+
+
+
+
+
+
+
+

@@ -1,4 +1,4 @@
-import {
+﻿import {
     evaluateOnlyUpsDownsStrategy,
 } from "../engine/only-ups-downs-strategy";
 
@@ -23,9 +23,12 @@ export interface OnlyUpsDownsScannerSnapshot {
 
     direction: OnlyUpsDownsDirection | null;
 
+    regime: OnlyUpsDownsEngineResult["regime"];
     structure: OnlyUpsDownsEngineResult["structure"];
     pressure: OnlyUpsDownsEngineResult["pressure"];
     reversal: OnlyUpsDownsEngineResult["reversal"];
+    continuation: OnlyUpsDownsEngineResult["continuation"];
+    stability: OnlyUpsDownsEngineResult["stability"];
 
     signal: OnlyUpsDownsSignal | null;
 
@@ -34,6 +37,7 @@ export interface OnlyUpsDownsScannerSnapshot {
      * the current signal cycle.
      */
     signalLocked: boolean;
+    signalCycleId: number;
 
     updatedAt: number;
 }
@@ -74,6 +78,21 @@ export class OnlyUpsDownsScanner {
      */
     private signalLocked = false;
 
+    /*
+     * Exact READY signal exposed for the current lifecycle cycle.
+     *
+     * The strategy can temporarily return null on a later snapshot
+     * while the READY lifecycle is still locked. Keep the original
+     * executable signal available to the UI until READY is exited.
+     */
+    private lockedSignal: OnlyUpsDownsSignal | null = null;
+    private signalCycleId = 0;
+
+    /*
+     * After a signal is consumed, require the raw strategy to leave
+     * READY before another READY can create a new signal cycle.
+     */
+    private readyRearmRequired = false;
     private readonly maxPoints: number;
 
     private readonly minimumPoints: number;
@@ -97,11 +116,54 @@ export class OnlyUpsDownsScanner {
         );
 
         this.horizon = options.horizon ?? "AUTO";
-    }
+    }    reset(): void {
+        console.warn(
+            "[OUD SIGNAL TRACE] scanner.reset() CALLED",
+            {
+                time: new Date().toISOString(),
+                signalLockedBefore: this.signalLocked,
+                signalCycleId: this.signalCycleId,
+                lockedSignalStatus: this.lockedSignal?.status ?? null,
+                lockedBotDirection: this.lockedSignal?.botDirection ?? null,
+                stack: new Error().stack,
+            }
+        );
 
-    reset(): void {
         this.prices = [];
         this.signalLocked = false;
+        this.lockedSignal = null;
+        this.readyRearmRequired = false;
+    }
+
+    /*
+     * CONSUME SIGNAL
+     *
+     * A READY signal remains latched while the UI is waiting for
+     * application. Only successful application/execution should
+     * explicitly consume it.
+     */
+    consumeSignal(): void {
+        console.warn(
+            "[OUD SIGNAL TRACE] scanner.consumeSignal() CALLED",
+            {
+                time: new Date().toISOString(),
+                signalLockedBefore: this.signalLocked,
+                signalCycleId: this.signalCycleId,
+                lockedSignalStatus: this.lockedSignal?.status ?? null,
+                lockedBotDirection: this.lockedSignal?.botDirection ?? null,
+                stack: new Error().stack,
+            }
+        );
+
+        this.signalLocked = false;
+        this.lockedSignal = null;
+
+        /*
+         * The raw strategy may still be READY immediately after
+         * consumption. Do not treat that same READY state as a
+         * new executable signal cycle.
+         */
+        this.readyRearmRequired = true;
     }
 
     addPrice(price: number): OnlyUpsDownsScannerSnapshot {
@@ -182,33 +244,61 @@ export class OnlyUpsDownsScanner {
          */
         const rawSignal = result.signal;
 
-        if (rawSignal?.status === "READY") {
+        
+        /*
+         * A consumed READY must first transition through a
+         * non-READY state before another READY can create a cycle.
+         */
+        if (rawSignal?.status !== "READY") {
+            this.readyRearmRequired = false;
+        }
+
+        if (
+            rawSignal?.status === "READY" &&
+            !this.readyRearmRequired
+        ) {
             if (!this.signalLocked) {
                 /*
                  * First READY state after a non-READY period.
                  * This is a new executable signal.
-                 *
-                 * Keep the READY signal visible while the
-                 * lifecycle remains locked so the page can
-                 * apply the signal.
                  */
                 this.signalLocked = true;
-            }
+                this.signalCycleId += 1;
 
-            /*
-             * If the lifecycle is already locked, keep exposing
-             * the current READY signal. The lock prevents this
-             * signal from becoming a NEW signal; it must not
-             * remove the signal from the UI.
-             */
-        } else {
-            /*
-             * WAIT / WATCH / any non-READY state releases the
-             * lifecycle lock so the next READY state is new.
-             */
-            this.signalLocked = false;
+                /*
+                 * Latch the exact READY signal for this lifecycle.
+                 * This prevents a transient null strategy result from
+                 * removing APPLY SIGNAL from the UI.
+                 */
+                this.lockedSignal = rawSignal;
+            }
         }
-        const signal = result.signal;
+
+        /*
+         * IMPORTANT:
+         *
+         * Do not release a latched READY signal merely because the
+         * raw strategy changes to WATCH/null.
+         *
+         * The READY signal remains available until:
+         *
+         *   1. successful application/execution calls consumeSignal(),
+         *      or
+         *   2. reset() clears the scanner lifecycle.
+         *
+         * This keeps APPLY SIGNAL available during transient strategy
+         * changes after a valid READY signal has been detected.
+         */
+
+        /*
+         * While locked, expose the latched READY signal.
+         * Otherwise expose the current strategy result.
+         */
+        const signal = this.signalLocked
+            ? this.lockedSignal
+            : this.readyRearmRequired
+                ? null
+                : rawSignal;
 
         const direction: OnlyUpsDownsDirection | null =
             signal?.botDirection === "ups"
@@ -225,11 +315,15 @@ export class OnlyUpsDownsScanner {
             prices,
             pointCount: prices.length,
             direction,
+            regime: result.regime,
             structure: result.structure,
             pressure: result.pressure,
             reversal: result.reversal,
+            continuation: result.continuation,
+            stability: result.stability,
             signal,
             signalLocked: this.signalLocked,
+            signalCycleId: this.signalCycleId,
             updatedAt: Date.now(),
         };
     }
@@ -240,3 +334,19 @@ export function createOnlyUpsDownsScanner(
 ): OnlyUpsDownsScanner {
     return new OnlyUpsDownsScanner(options);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

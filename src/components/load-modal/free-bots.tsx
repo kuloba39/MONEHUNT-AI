@@ -1,49 +1,40 @@
 ﻿import React from 'react';
 import { observer } from 'mobx-react-lite';
+import { useNavigate } from 'react-router-dom';
 import { FREE_BOTS } from '@/constants/free-bots';
-import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
-import { load } from '@/external/bot-skeleton';
-import { save_types } from '@/external/bot-skeleton';
 import './free-bots.scss';
 
+const FREE_BOT_LOAD_KEY = 'monehunt_free_bot_to_load';
+
 const FreeBots = observer(() => {
-    const { load_modal, blockly_store, dashboard } = useStore();
+    const { load_modal } = useStore();
+    const navigate = useNavigate();
 
     const { setSelectedStrategyId } = load_modal;
-    const { setLoading } = blockly_store;
 
-    const loadFreeBot = async (bot: any) => {
-        console.log('FREE BOT SELECTED:', bot);
+    const loadFreeBot = (bot: any) => {
+        console.log('[MONEHUNT FREE BOT] SELECTED:', bot.id);
+
+        if (!bot.xml) {
+            console.warn('[MONEHUNT FREE BOT] XML EMPTY:', bot.id);
+            return;
+        }
 
         setSelectedStrategyId(bot.id);
-        setLoading(true);
 
-        try {
-            if (!bot.xml) {
-                console.warn('FREE BOT XML EMPTY:', bot.id);
-                return;
-            }
+        sessionStorage.setItem(
+            FREE_BOT_LOAD_KEY,
+            JSON.stringify({
+                id: bot.id,
+                name: bot.name,
+                xml: bot.xml,
+            })
+        );
 
-            await load({
-                block_string: bot.xml,
-                file_name: bot.name,
-                strategy_id: bot.id,
-                from: save_types.LOCAL,
-                workspace: window.Blockly.derivWorkspace,
-                drop_event: null,
-                showIncompatibleStrategyDialog: null,
-                show_snackbar: true,
-            });
+        console.log('[MONEHUNT FREE BOT] OPENING TRADING WORKSPACE:', bot.id);
 
-            dashboard.setActiveTab(DBOT_TABS.BOT_BUILDER);
-
-            console.log('FREE BOT LOADED SUCCESSFULLY:', bot.id);
-        } catch (error) {
-            console.error('FREE BOT LOAD ERROR:', error);
-        } finally {
-            setLoading(false);
-        }
+        navigate('/preview');
     };
 
     return (
@@ -88,9 +79,7 @@ const FreeBots = observer(() => {
                             {bot.description}
                         </p>
 
-                        <button
-                            onClick={() => loadFreeBot(bot)}
-                        >
+                        <button onClick={() => loadFreeBot(bot)}>
                             Load Strategy
                         </button>
                     </div>
