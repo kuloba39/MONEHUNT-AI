@@ -1,4 +1,4 @@
-import { isMultiplierContract } from '@/components/shared';
+﻿import { isMultiplierContract } from '@/components/shared';
 import cloneThorough from '@/utils/clone';
 import JSInterpreter from '@deriv/js-interpreter';
 import { unrecoverable_errors } from '../../../constants/messages';
@@ -131,12 +131,19 @@ const Interpreter = () => {
         js_interpreter.setProperty(
             pseudo_bot_interface,
             'start',
-            js_interpreter.nativeToPseudo((...args) => {
+            createAsync(js_interpreter, async (...args) => {
                 const { start } = bot_interface;
                 if (shouldRestartOnError(bot)) {
                     $scope.startState = js_interpreter.takeStateSnapshot();
                 }
-                start(...args);
+
+                const tickReadyPromise = bot.tradeEngine?.tick_ready_promise;
+
+                if (tickReadyPromise) {
+                    await tickReadyPromise;
+                }
+
+                return start(...args);
             })
         );
 

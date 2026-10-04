@@ -1,4 +1,4 @@
-@use 'components/shared/styles/mixins' as *;
+﻿@use 'components/shared/styles/mixins' as *;
 
 /**
 * @define -panel
@@ -176,10 +176,22 @@
         overflow: hidden !important;
 
         .dc-tabs {
+            min-width: 0;
+
+            &__list {
+                min-width: 0;
+            }
+
             &__item {
-                overflow: hidden;
-                text-overflow: ellipsis;
-                padding: 0 0.8rem;
+                flex: 0 0 auto;
+                overflow: visible;
+                text-overflow: clip;
+                padding: 0 1rem;
+            }
+
+            .dc-themed-scrollbars-wrapper {
+                min-width: 0;
+                width: 100%;
             }
         }
     }
@@ -492,3 +504,4 @@
         }
     }
 }
+

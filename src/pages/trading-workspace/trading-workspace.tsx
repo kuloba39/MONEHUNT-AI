@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { ApiHelpers } from '@/external/bot-skeleton';
 import { getContractTypeOptions } from '@/components/shared/utils/common-data';
@@ -98,8 +98,10 @@ const TradingWorkspace = observer(() => {
                     '[MONEHUNT TRADING WORKSPACE] MOUNTING OFFICIAL DBOT WORKSPACE'
                 );
 
+                const mountStartedAt = performance.now();                 console.log('[MONEHUNT TIMING] app.onMount START', {                     t: mountStartedAt,                 });
                 await app.onMount();
 
+                console.log('[MONEHUNT TIMING] app.onMount END', {                     elapsedMs: Math.round(performance.now() - mountStartedAt),                 });
                 if (cancelled) return;
 
                 const workspace = dbot.workspace;
@@ -149,6 +151,7 @@ const TradingWorkspace = observer(() => {
                     }
                 );
 
+                const botLoadStartedAt = performance.now();                 console.log('[MONEHUNT TIMING] bot XML load START');
                 await load({
                     block_string: selectedBotForExecution.xml,
                     file_name: selectedBotForExecution.name,
@@ -160,6 +163,7 @@ const TradingWorkspace = observer(() => {
                     persist_to_recent: false,
                 });
 
+                console.log('[MONEHUNT TIMING] bot XML load END', {                     elapsedMs: Math.round(performance.now() - botLoadStartedAt),                 });
                 const allBlocks = workspace.getAllBlocks(false);
 
                 const tradeTypeBlock = allBlocks.find(
@@ -254,8 +258,10 @@ const TradingWorkspace = observer(() => {
                     return;
                 }
 
+                const symbolsStartedAt = performance.now();                 console.log('[MONEHUNT TIMING] active symbols START');
                 await activeSymbols.retrieveActiveSymbols(false);
 
+                console.log('[MONEHUNT TIMING] active symbols END', {                     elapsedMs: Math.round(performance.now() - symbolsStartedAt),                 });
                 if (cancelled) return;
 
                 const options = activeSymbols.getMarketDropdownOptions();
@@ -355,11 +361,13 @@ const TradingWorkspace = observer(() => {
 
         const loadTradeRuntimeOptions = async () => {
             try {
+                const runtimeOptionsStartedAt = performance.now();                 console.log('[MONEHUNT TIMING] contracts_for START', {                     symbol,                     tradeType,                 });
                 const [durations, predictions] = await Promise.all([
                     contractsFor.getDurations(symbol, tradeType),
                     contractsFor.getPredictionRange(symbol, tradeType),
                 ]);
 
+                console.log('[MONEHUNT TIMING] contracts_for END', {                     elapsedMs: Math.round(performance.now() - runtimeOptionsStartedAt),                 });
                 if (cancelled) return;
 
                 setDurationOptions(durations || []);

@@ -185,16 +185,21 @@ export default class TicksService {
         }
 
         if (subscriptionIds.length) {
-            Promise.all(
+            return Promise.all(
                 subscriptionIds.map(id =>
                     doUntilDone(() => api_base.api.forget(id))
                 )
-            ).catch(error => {
-                console.log(
-                    'Error forgetting tick subscriptions',
-                    error
-                );
-            });
+            )
+                .catch(error => {
+                    console.log(
+                        'Error forgetting tick subscriptions',
+                        error
+                    );
+                    throw error;
+                })
+                .finally(() => {
+                    this.subscriptions = new Map();
+                });
         }
 
         this.subscriptions = new Map();
@@ -390,15 +395,16 @@ export default class TicksService {
                     try {
                         this.forgetCandleSubscription()
                             .then(() => {
+                                this.ticks_history_promise = null;
                                 resolve();
                             })
                             .catch(reject);
                     } catch (e) {
                         console.log('Error in unsubscribeFromTicksService', e);
+                        reject(e);
                     }
                 })
                 .catch(reject);
-            this.ticks_history_promise = null;
         });
     }
 }

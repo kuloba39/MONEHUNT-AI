@@ -314,13 +314,19 @@ async initializeInterpreter() {
      * Runs the bot. Does a sanity check before attempting to generate the
      * JavaScript code that's fed to the interpreter.
      */
-    runBot() {
+    async runBot() {
         if (api_base.is_stopping) return;
 
         try {
             api_base.is_stopping = false;
             const code = this.generateCode();
             if (!this.interpreter.bot.tradeEngine.checkTicksPromiseExists()) this.interpreter = Interpreter();
+
+            const tickReadyPromise = this.interpreter?.bot?.tradeEngine?.tick_ready_promise;
+
+            if (tickReadyPromise) {
+                await tickReadyPromise;
+            }
 
             this.is_bot_running = true;
 

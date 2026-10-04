@@ -18,21 +18,39 @@ export default Engine =>
                 this.symbol = symbol;
                 const { ticksService } = this.$scope;
 
-                await ticksService.stopMonitor({
-                    symbol,
-                    key: tickListenerKey,
-                });
-                const callback = ticks => {
-                    if (this.is_proposal_subscription_required) {
-                        this.checkProposalReady();
-                    }
-                    const lastTick = ticks.slice(-1)[0];
-                    const { epoch } = lastTick;
-                    this.store.dispatch({ type: constants.NEW_TICK, payload: epoch });
-                };
+                this.tick_ready_promise = (async () => {
+                    await ticksService.stopMonitor({
+                        symbol,
+                        key: tickListenerKey,
+                    });
 
-                const key = await ticksService.monitor({ symbol, callback });
-                tickListenerKey = key;
+                    const callback = ticks => {
+                        if (this.is_proposal_subscription_required) {
+                            this.checkProposalReady();
+                        }
+
+                        const lastTick = ticks.slice(-1)[0];
+
+                        if (!lastTick) {
+                            return;
+                        }
+
+                        const { epoch } = lastTick;
+                        this.store.dispatch({
+                            type: constants.NEW_TICK,
+                            payload: epoch,
+                        });
+                    };
+
+                    const key = await ticksService.monitor({
+                        symbol,
+                        callback,
+                    });
+
+                    tickListenerKey = key;
+                })();
+
+                await this.tick_ready_promise;
             }
         }
 
@@ -55,32 +73,41 @@ export default Engine =>
             });
         }
 
-        getLastTick(raw, toString = false) {
-            return new Promise((resolve, reject) =>
-                this.$scope.ticksService
-                    .request({ symbol: this.symbol })
-                    .then(ticks => {
-                        try {
-                            let last_tick = raw ? getLast(ticks) : getLast(ticks).quote;
-                            if (!raw && toString) {
-                                last_tick = last_tick.toFixed(this.getPipSize());
-                            }
-                            resolve(last_tick);
-                        } catch (error) {
-                            reject(error);
-                        }
-                    })
-                    .catch(e => {
-                        if (e.code === 'MarketIsClosed') {
-                            const localizedError = {
-                                ...e,
-                                message: getLocalizedErrorMessage(e.code, e.details),
-                            };
-                            globalObserver.emit('Error', localizedError);
-                            resolve(e.code);
-                        }
-                    })
-            );
+        async getLastTick(raw, toString = false) {
+            try {
+                if (this.tick_ready_promise) {
+                    await this.tick_ready_promise;
+                }
+
+                const ticks = await this.$scope.ticksService.request({
+                    symbol: this.symbol,
+                });
+
+                const last = getLast(ticks);
+
+                if (!last) {
+                    throw new Error(`No tick data available for ${this.symbol}`);
+                }
+
+                let last_tick = raw ? last : last.quote;
+
+                if (!raw && toString) {
+                    last_tick = last_tick.toFixed(this.getPipSize());
+                }
+
+                return last_tick;
+            } catch (e) {
+                if (e.code === 'MarketIsClosed') {
+                    const localizedError = {
+                        ...e,
+                        message: getLocalizedErrorMessage(e.code, e.details),
+                    };
+                    globalObserver.emit('Error', localizedError);
+                    return e.code;
+                }
+
+                throw e;
+            }
         }
 
         getLastDigit() {

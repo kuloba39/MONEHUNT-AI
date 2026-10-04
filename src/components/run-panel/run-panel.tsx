@@ -1,4 +1,4 @@
-// @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
+﻿// @ts-nocheck â€” vendored bot code with known upstream type gaps; see AGENTS.md
 import React from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
@@ -147,7 +147,12 @@ const DrawerContent = ({ active_index, is_drawer_open, active_tour, setActiveTab
 
     return (
         <>
-            <Tabs active_index={active_index} onTabItemClick={setActiveTabIndex} top>
+            <Tabs
+                active_index={active_index}
+                onTabItemClick={setActiveTabIndex}
+                is_scrollable
+                top
+            >
                 <div id='db-run-panel-tab__summary' label={<Localize i18n_default_text='Summary' />}>
                     <Summary is_drawer_open={is_drawer_open} />
                 </div>
@@ -426,3 +431,4 @@ const RunPanel = observer(() => {
 });
 
 export default RunPanel;
+
