@@ -8,6 +8,7 @@ import { useApiBase } from '@/hooks/useApiBase';
 import { useLogout } from '@/hooks/useLogout';
 import { useStore } from '@/hooks/useStore';
 import { navigateToTransfer } from '@/utils/transfer-utils';
+import { isDemoAccount } from '@/utils/account-helpers';
 import { Localize } from '@deriv-com/translations';
 import { Header, useDevice, Wrapper } from '@deriv-com/ui';
 import { AppLogo } from '../app-logo';
@@ -23,14 +24,14 @@ const AppHeader = observer(() => {
         isDesktop,
         width: window.innerWidth,
     });
-    const { isAuthorizing, activeLoginid, setIsAuthorizing, authData } = useApiBase();
-    const { client } = useStore() ?? {};
+    const { isAuthorizing, activeLoginid, setIsAuthorizing, authData, accountList } = useApiBase();
+    const { client, run_panel } = useStore() ?? {};
     const [authTimeout, setAuthTimeout] = useState(false);
     const is_account_regenerating = client?.is_account_regenerating || false;
 
     // Detect OAuth callback on mount (before App.tsx cleans up the URL).
     // When ?code=...&state=... is present the full auth flow can take 7-15 s
-    // (token exchange → accounts fetch → OTP → WebSocket auth), so we must
+    // (token exchange â†’ accounts fetch â†’ OTP â†’ WebSocket auth), so we must
     // suppress the short fallback timeout and keep the spinner throughout.
     const [isOAuthPending, setIsOAuthPending] = useState(() => {
         const params = new URLSearchParams(window.location.search);
@@ -41,6 +42,37 @@ const AppHeader = observer(() => {
         allBalanceData: client?.all_accounts_balance,
         directBalance: client?.balance,
     });
+
+    const [isMonehuntAccountMenuOpen, setIsMonehuntAccountMenuOpen] = useState(false);
+
+    const isMonehuntAccountSwitchingDisabled =
+        Boolean(run_panel?.is_running) ||
+        Boolean(client?.is_running) ||
+        Boolean(client?.is_account_regenerating);
+
+    const handleMonehuntAccountSelect = useCallback(
+        (loginid: string) => {
+            if (
+                isMonehuntAccountSwitchingDisabled ||
+                loginid === activeLoginid
+            ) {
+                setIsMonehuntAccountMenuOpen(false);
+                return;
+            }
+
+            localStorage.setItem('active_loginid', loginid);
+            client?.checkAndRegenerateWebSocket();
+            setIsMonehuntAccountMenuOpen(false);
+        },
+        [
+            activeLoginid,
+            client,
+            isMonehuntAccountSwitchingDisabled,
+        ]
+    );
+
+    const monehuntAccountBalance = activeAccount?.balance || '--';
+    const monehuntAccountType = activeAccount?.isVirtual ? 'DEMO' : 'REAL';
 
     const handleLogout = useLogout();
 
@@ -236,6 +268,90 @@ const AppHeader = observer(() => {
 
     return (
         <>
+            <section className='monehunt-global-account-bar'>
+                <div className='monehunt-global-account-bar__brand'>
+                    MONEHUNT AI
+                </div>
+
+                <div className='monehunt-global-account-bar__account'>
+                    <button
+                        type='button'
+                        className='monehunt-global-account-bar__button'
+                        onClick={() => {
+                            if (!isMonehuntAccountSwitchingDisabled) {
+                                setIsMonehuntAccountMenuOpen(prev => !prev);
+                            }
+                        }}
+                        disabled={
+                            isMonehuntAccountSwitchingDisabled ||
+                            !accountList ||
+                            accountList.length <= 1
+                        }
+                        aria-haspopup='menu'
+                        aria-expanded={isMonehuntAccountMenuOpen}
+                    >
+                        <span className='monehunt-global-account-bar__balance'>
+                            {monehuntAccountBalance}
+                            {activeAccount?.currency
+                                ? ' ' + activeAccount.currency
+                                : ''}
+                        </span>
+
+                        <span className='monehunt-global-account-bar__type'>
+                            {monehuntAccountType}
+                        </span>
+
+                        {accountList && accountList.length > 1 && (
+                            <span
+                                className={clsx(
+                                    'monehunt-global-account-bar__chevron',
+                                    isMonehuntAccountMenuOpen &&
+                                        'monehunt-global-account-bar__chevron--open'
+                                )}
+                            >
+                                â–¼
+                            </span>
+                        )}
+                    </button>
+
+                    {isMonehuntAccountMenuOpen &&
+                        !isMonehuntAccountSwitchingDisabled &&
+                        accountList &&
+                        accountList.length > 1 && (
+                        <div
+                            className='monehunt-global-account-bar__menu'
+                            role='menu'
+                        >
+                            {accountList.map(account => {
+                                const isActive = account.loginid === activeLoginid;
+                                const isDemo = isDemoAccount(account.loginid);
+
+                                return (
+                                    <button
+                                        key={account.loginid}
+                                        type='button'
+                                        className={clsx(
+                                            'monehunt-global-account-bar__option',
+                                            isActive &&
+                                                'monehunt-global-account-bar__option--active'
+                                        )}
+                                        onClick={() =>
+                                            handleMonehuntAccountSelect(account.loginid)
+                                        }
+                                        role='menuitem'
+                                    >
+                                        <span>
+                                            {isActive ? 'âœ“ ' : ''}
+                                            {isDemo ? 'DEMO' : 'REAL'}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </section>
+
             <Header
                 className={clsx('app-header', {
                     'app-header--desktop': isDesktop,
@@ -256,5 +372,3 @@ const AppHeader = observer(() => {
 });
 
 export default AppHeader;
-
-

@@ -293,3 +293,100 @@
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+
+.monehunt-global-account-bar {
+    position: relative;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 54px;
+    padding: 8px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--general-main-1);
+}
+
+.monehunt-global-account-bar__brand {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.monehunt-global-account-bar__account {
+    position: relative;
+    z-index: 110;
+}
+
+.monehunt-global-account-bar__button {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 38px;
+    padding: 6px 11px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.16);
+    color: inherit;
+    cursor: pointer;
+}
+
+.monehunt-global-account-bar__button:disabled {
+    cursor: default;
+}
+
+.monehunt-global-account-bar__balance {
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.monehunt-global-account-bar__type {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    opacity: 0.8;
+}
+
+.monehunt-global-account-bar__chevron {
+    font-size: 8px;
+    opacity: 0.65;
+    transition: transform 0.15s ease;
+}
+
+.monehunt-global-account-bar__chevron--open {
+    transform: rotate(180deg);
+}
+
+.monehunt-global-account-bar__menu {
+    position: absolute;
+    top: calc(100% + 7px);
+    right: 0;
+    min-width: 195px;
+    padding: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    background: var(--general-main-2);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+.monehunt-global-account-bar__option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 18px;
+    padding: 10px 11px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.monehunt-global-account-bar__option:hover,
+.monehunt-global-account-bar__option--active {
+    background: rgba(0, 220, 170, 0.08);
+}

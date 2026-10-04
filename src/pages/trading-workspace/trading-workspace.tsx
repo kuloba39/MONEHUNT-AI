@@ -8,6 +8,7 @@ import {
     type MonehuntSelectedBot,
 } from '@/utils/monehunt-selected-bot';
 import { setMonehuntRuntimeConfig } from '@/utils/monehunt-runtime-config';
+import RunPanel from '@/components/run-panel';
 import { load } from '@/external/bot-skeleton/scratch/utils';
 import './trading-workspace.scss';
 
@@ -552,6 +553,7 @@ const TradingWorkspace = observer(() => {
         await store.run_panel.onRunButtonClick();
     };
     return (
+        <>
         <main className='monehunt-trading-workspace'>
             <section className='monehunt-trading-workspace__header'>
                 <div>
@@ -886,6 +888,9 @@ const TradingWorkspace = observer(() => {
                 }}
             />
         </main>
+
+        <RunPanel />
+    </>
     );
 });
 
