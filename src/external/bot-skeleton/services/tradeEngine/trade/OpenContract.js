@@ -11,6 +11,33 @@ export default Engine =>
                 if (data.msg_type === 'proposal_open_contract') {
                     const contract = data.proposal_open_contract;
 
+                    console.log('[TRANSACTION DEBUG] POC RECEIVED', {
+                        received_contract_id: contract?.contract_id,
+                        expected_contract_id: this.contractId,
+                        status: contract?.status,
+                        is_sold: contract?.is_sold,
+                        transaction_ids: contract?.transaction_ids,
+                    });
+
+                    if (!contract || !this.expectedContractId(contract?.contract_id)) {
+                        console.warn('[TRANSACTION DEBUG] POC REJECTED', {
+                            received_contract_id: contract?.contract_id,
+                            expected_contract_id: this.contractId,
+                            has_contract: Boolean(contract),
+                            id_match: Boolean(
+                                contract &&
+                                this.contractId &&
+                                contract.contract_id === this.contractId
+                            ),
+                        });
+                        return;
+                    }
+
+                    console.log('[TRANSACTION DEBUG] POC ACCEPTED -> BROADCAST bot.contract', {
+                        contract_id: contract.contract_id,
+                        transaction_ids: contract.transaction_ids,
+                    });
+
                     if (!contract || !this.expectedContractId(contract?.contract_id)) {
                         return;
                     }
