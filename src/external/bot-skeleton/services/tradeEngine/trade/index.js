@@ -1,4 +1,5 @@
 import { applyMiddleware, createStore } from 'redux';
+import { getMonehuntRuntimeConfig } from '../../../../../utils/monehunt-runtime-config';
 import { thunk } from 'redux-thunk';
 import { getLocalizedErrorMessage } from '@/constants/backend-error-messages';
 import { createError } from '../../../utils/error';
@@ -100,18 +101,48 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
 
     init(...args) {
         const [token, options] = expectInitArg(args);
-        const { symbol } = options;
+        const monehuntRuntimeConfig = getMonehuntRuntimeConfig();
 
-        this.initArgs = args;
-        this.options = options;
+        const effectiveOptions = {
+            ...options,
+        };
+
+        if (monehuntRuntimeConfig?.symbol) {
+            effectiveOptions.symbol = monehuntRuntimeConfig.symbol;
+        }
+
+        if (monehuntRuntimeConfig?.contractType) {
+            if (
+                monehuntRuntimeConfig.contractType === 'both' &&
+                Array.isArray(options?.contractTypes)
+            ) {
+                effectiveOptions.contractTypes = [...options.contractTypes];
+            } else {
+                effectiveOptions.contractTypes = [
+                    monehuntRuntimeConfig.contractType,
+                ];
+            }
+        }
+
+        const { symbol } = effectiveOptions;
+
+        this.initArgs = [token, effectiveOptions];
+        this.options = effectiveOptions;
+
+        console.log('[MONEHUNT RUNTIME BRIDGE] INIT:', {
+            configured: !!monehuntRuntimeConfig,
+            configuredSymbol: monehuntRuntimeConfig?.symbol ?? null,
+            configuredContractType:
+                monehuntRuntimeConfig?.contractType ?? null,
+            engineSymbol: effectiveOptions?.symbol ?? null,
+            engineContractTypes:
+                effectiveOptions?.contractTypes ?? null,
+        });
+
         this.startPromise = this.loginAndGetBalance(token);
 
         if (!this.checkTicksPromiseExists()) this.watchTicks(symbol);
     }
-    readyForNextPurchase() {
-        this.store.dispatch(readyForNextPurchase());
-    }
-
     start(tradeOptions) {
         if (!this.options) {
             throw createError('NotInitialized', getLocalizedErrorMessage('NotInitialized'));
@@ -119,15 +150,78 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
 
         globalObserver.emit('bot.running');
 
-        const validated_trade_options = this.validateTradeOptions(tradeOptions);
+        const monehuntRuntimeConfig = getMonehuntRuntimeConfig();
 
-        this.tradeOptions = { ...validated_trade_options, symbol: this.options.symbol };
+        const effectiveTradeOptions = {
+            ...tradeOptions,
+        };
+
+        if (monehuntRuntimeConfig?.stake !== undefined) {
+            effectiveTradeOptions.amount = monehuntRuntimeConfig.stake;
+        }
+
+        if (monehuntRuntimeConfig?.duration !== undefined) {
+            effectiveTradeOptions.duration = monehuntRuntimeConfig.duration;
+        }
+
+        if (monehuntRuntimeConfig?.durationUnit) {
+            effectiveTradeOptions.duration_unit =
+                monehuntRuntimeConfig.durationUnit;
+        }
+
+        if (monehuntRuntimeConfig?.prediction !== undefined) {
+            effectiveTradeOptions.prediction =
+                monehuntRuntimeConfig.prediction;
+        }
+
+        if (
+            monehuntRuntimeConfig?.takeProfit !== undefined ||
+            monehuntRuntimeConfig?.stopLoss !== undefined
+        ) {
+            effectiveTradeOptions.limit_order = {
+                ...(effectiveTradeOptions.limit_order || {}),
+            };
+
+            if (monehuntRuntimeConfig.takeProfit !== undefined) {
+                effectiveTradeOptions.take_profit =
+                    monehuntRuntimeConfig.takeProfit;
+                effectiveTradeOptions.limit_order.take_profit =
+                    monehuntRuntimeConfig.takeProfit;
+            }
+
+            if (monehuntRuntimeConfig.stopLoss !== undefined) {
+                effectiveTradeOptions.stop_loss =
+                    monehuntRuntimeConfig.stopLoss;
+                effectiveTradeOptions.limit_order.stop_loss =
+                    monehuntRuntimeConfig.stopLoss;
+            }
+        }
+
+        console.log('[MONEHUNT RUNTIME BRIDGE] START:', {
+            configured: !!monehuntRuntimeConfig,
+            stake: monehuntRuntimeConfig?.stake ?? null,
+            martingale: monehuntRuntimeConfig?.martingale ?? null,
+            duration: monehuntRuntimeConfig?.duration ?? null,
+            durationUnit: monehuntRuntimeConfig?.durationUnit ?? null,
+            prediction: monehuntRuntimeConfig?.prediction ?? null,
+            takeProfit: monehuntRuntimeConfig?.takeProfit ?? null,
+            stopLoss: monehuntRuntimeConfig?.stopLoss ?? null,
+            engineSymbol: this.options?.symbol ?? null,
+        });
+
+        const validated_trade_options =
+            this.validateTradeOptions(effectiveTradeOptions);
+
+        this.tradeOptions = {
+            ...validated_trade_options,
+            symbol: this.options.symbol,
+        };
+
         this.store.dispatch(start());
         this.checkLimits(validated_trade_options);
 
         this.makeDirectPurchaseDecision();
     }
-
     loginAndGetBalance(token) {
         if (this.token === token) {
             return Promise.resolve();

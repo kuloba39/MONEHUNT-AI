@@ -2,39 +2,46 @@
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import { FREE_BOTS } from '@/constants/free-bots';
-import { useStore } from '@/hooks/useStore';
+import { selectMonehuntBot, editMonehuntBot } from '@/utils/monehunt-selected-bot';
 import './free-bots.scss';
 
-const FREE_BOT_LOAD_KEY = 'monehunt_free_bot_to_load';
-
 const FreeBots = observer(() => {
-    const { load_modal } = useStore();
     const navigate = useNavigate();
 
-    const { setSelectedStrategyId } = load_modal;
-
-    const loadFreeBot = (bot: any) => {
-        console.log('[MONEHUNT FREE BOT] SELECTED:', bot.id);
+    const selectBot = (bot: any) => {
+        console.log('[MONEHUNT FREE BOT] SELECT:', bot.id);
 
         if (!bot.xml) {
             console.warn('[MONEHUNT FREE BOT] XML EMPTY:', bot.id);
             return;
         }
 
-        setSelectedStrategyId(bot.id);
+        selectMonehuntBot(bot);
 
-        sessionStorage.setItem(
-            FREE_BOT_LOAD_KEY,
-            JSON.stringify({
-                id: bot.id,
-                name: bot.name,
-                xml: bot.xml,
-            })
+        console.log(
+            '[MONEHUNT FREE BOT] OPENING TRADING WORKSPACE:',
+            bot.id
         );
 
-        console.log('[MONEHUNT FREE BOT] OPENING TRADING WORKSPACE:', bot.id);
-
         navigate('/preview');
+    };
+
+    const editBot = (bot: any) => {
+        console.log('[MONEHUNT FREE BOT] EDIT:', bot.id);
+
+        if (!bot.xml) {
+            console.warn('[MONEHUNT FREE BOT] XML EMPTY:', bot.id);
+            return;
+        }
+
+        editMonehuntBot(bot);
+
+        console.log(
+            '[MONEHUNT FREE BOT] OPENING BOT BUILDER:',
+            bot.id
+        );
+
+        navigate('/bot-builder');
     };
 
     return (
@@ -43,7 +50,7 @@ const FreeBots = observer(() => {
                 <h2>🚀 Premium Free Bots</h2>
 
                 <p>
-                    Select a ready-made strategy and customize it in Bot Builder
+                    Select a bot to trade, or edit its strategy in Bot Builder.
                 </p>
             </div>
 
@@ -79,9 +86,23 @@ const FreeBots = observer(() => {
                             {bot.description}
                         </p>
 
-                        <button onClick={() => loadFreeBot(bot)}>
-                            Load Strategy
-                        </button>
+                        <div className="free-bot-actions">
+                            <button
+                                type="button"
+                                className="free-bot-action free-bot-action--select"
+                                onClick={() => selectBot(bot)}
+                            >
+                                SELECT
+                            </button>
+
+                            <button
+                                type="button"
+                                className="free-bot-action free-bot-action--edit"
+                                onClick={() => editBot(bot)}
+                            >
+                                EDIT
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>

@@ -8,13 +8,15 @@ import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import { TBlocklyEvents } from 'Types';
+import { updateXmlValues } from '@/external/bot-skeleton/scratch/utils';
+import { MONEHUNT_BOT_BUILDER_EDIT_KEY } from '@/utils/monehunt-selected-bot';
 import LoadModal from '../../components/load-modal';
 import SaveModal from '../dashboard/bot-list/save-modal';
 import QuickStrategy1 from './quick-strategy';
 import WorkspaceWrapper from './workspace-wrapper';
 
 const BotBuilder = observer(() => {
-    const { dashboard, app, run_panel, toolbar, quick_strategy, blockly_store } = useStore();
+    const { dashboard, app, run_panel, toolbar, quick_strategy, blockly_store, load_modal, save_modal } = useStore();
     const { active_tab, active_tour, is_preview_on_popup } = dashboard;
     const { is_open } = quick_strategy;
     const { is_running } = run_panel;
@@ -28,6 +30,128 @@ const BotBuilder = observer(() => {
     // TODO: fix
     // const isMounted = useIsMounted();
     // const { data: remote_config_data } = useRemoteConfig(isMounted());
+    React.useEffect(() => {
+        const raw_edit_bot = sessionStorage.getItem(
+            MONEHUNT_BOT_BUILDER_EDIT_KEY
+        );
+
+        if (!raw_edit_bot) {
+            return;
+        }
+
+        let edit_bot;
+
+        try {
+            edit_bot = JSON.parse(raw_edit_bot);
+        } catch (error) {
+            console.error(
+                '[MONEHUNT BOT BUILDER] Invalid EDIT handoff:',
+                error
+            );
+
+            sessionStorage.removeItem(
+                MONEHUNT_BOT_BUILDER_EDIT_KEY
+            );
+
+            return;
+        }
+
+        if (!edit_bot?.xml) {
+            console.warn(
+                '[MONEHUNT BOT BUILDER] EDIT handoff has no XML:',
+                edit_bot
+            );
+
+            sessionStorage.removeItem(
+                MONEHUNT_BOT_BUILDER_EDIT_KEY
+            );
+
+            return;
+        }
+
+        let cancelled = false;
+        let attempts = 0;
+        const max_attempts = 100;
+
+        const consume_edit_handoff = async () => {
+            while (!cancelled && attempts < max_attempts) {
+                const workspace = window.Blockly?.derivWorkspace;
+
+                if (workspace) {
+                    try {
+                        // FREE BOT IDs must never become editable
+                        // user-bot IDs.
+                        const new_strategy_id =
+                            window.Blockly.utils.idGenerator.genUid();
+
+                        const converted_dom =
+                            window.Blockly.utils.xml.textToDom(
+                                edit_bot.xml
+                            );
+
+                        updateXmlValues({
+                            strategy_id: new_strategy_id,
+                            convertedDom: converted_dom,
+                            file_name:
+                                edit_bot.name || 'Untitled Strategy',
+                            from: undefined,
+                        });
+
+                        await load_modal.loadStrategyOnBotBuilder();
+
+                        if (cancelled) {
+                            return;
+                        }
+
+                        workspace.current_strategy_id =
+                            new_strategy_id;
+
+                        save_modal.updateBotName(
+                            edit_bot.name || 'Untitled Strategy'
+                        );
+
+                        sessionStorage.removeItem(
+                            MONEHUNT_BOT_BUILDER_EDIT_KEY
+                        );
+
+                        console.log(
+                            '[MONEHUNT BOT BUILDER] EDIT HANDOFF LOADED:',
+                            {
+                                source_bot_id: edit_bot.id,
+                                new_strategy_id,
+                                name: edit_bot.name,
+                            }
+                        );
+                    } catch (error) {
+                        console.error(
+                            '[MONEHUNT BOT BUILDER] EDIT HANDOFF LOAD FAILED:',
+                            error
+                        );
+                    }
+
+                    return;
+                }
+
+                attempts += 1;
+
+                await new Promise(resolve =>
+                    setTimeout(resolve, 100)
+                );
+            }
+
+            if (!cancelled) {
+                console.warn(
+                    '[MONEHUNT BOT BUILDER] EDIT HANDOFF TIMEOUT: Blockly workspace not ready.'
+                );
+            }
+        };
+
+        void consume_edit_handoff();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [load_modal, save_modal]);
     let deleted_block_id: null | string = null;
 
     React.useEffect(() => {

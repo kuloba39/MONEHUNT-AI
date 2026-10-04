@@ -351,3 +351,72 @@
     }
 
 }
+.free-bot-actions {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 10px;
+
+    margin-top: 20px;
+
+}
+
+.free-bot-action {
+
+    width: 100%;
+
+    margin-top: 0 !important;
+
+    padding: 12px;
+
+    border-radius: 12px;
+
+    border: 1px solid rgba(255,255,255,.16);
+
+    cursor: pointer;
+
+    font-weight: 800;
+
+    transition: .3s;
+
+}
+
+.free-bot-action:hover {
+
+    transform: translateY(-2px);
+
+}
+
+.free-bot-action--select {
+
+    background:
+
+    linear-gradient(
+        90deg,
+        #00e5ff,
+        #00c853
+    );
+
+    color: #000;
+
+}
+
+.free-bot-action--edit {
+
+    background: rgba(255,255,255,.08);
+
+    color: var(--text-general);
+
+}
+
+@media (max-width: 480px) {
+
+    .free-bot-actions {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}

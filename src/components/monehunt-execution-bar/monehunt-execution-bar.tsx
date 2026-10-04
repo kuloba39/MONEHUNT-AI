@@ -1,7 +1,7 @@
-﻿import React from 'react';
+import React from 'react';
 import { observer } from 'mobx-react-lite';
 import classNames from 'classnames';
-import { LabelPairedPlayLgFillIcon, LabelPairedSquareLgFillIcon } from '@deriv/quill-icons/LabelPaired';
+import { LabelPairedPlayLgFillIcon } from '@deriv/quill-icons/LabelPaired';
 import Button from '@/components/shared_ui/button';
 import ContractStageText from '@/components/trade-animation/contract-stage-text';
 import { contract_stages } from '@/constants/contract-stage';
@@ -61,14 +61,16 @@ const MonehuntExecutionBar = observer(() => {
         contract_stage === contract_stages.STARTING ||
         contract_stage === contract_stages.PURCHASE_SENT;
 
-    const handleRun = () => {
+
+    const handleExecutionToggle = () => {
+        if (is_running_state) {
+            if (is_stop_button_disabled) return;
+            onStopBotClick();
+            return;
+        }
+
         if (is_run_disabled) return;
         onRunButtonClick();
-    };
-
-    const handleStop = () => {
-        if (!is_running_state || is_stop_button_disabled) return;
-        onStopBotClick();
     };
 
     return (
@@ -101,27 +103,25 @@ const MonehuntExecutionBar = observer(() => {
 
                 <div className='monehunt-execution-bar__controls'>
                     <Button
-                        id='monehunt-global-run-button'
-                        className='monehunt-execution-bar__run'
-                        primary
+                        id='monehunt-global-execution-toggle'
+                        className={classNames(
+                            'monehunt-execution-bar__toggle',
+                            is_running_state
+                                ? 'monehunt-execution-bar__toggle--stop'
+                                : 'monehunt-execution-bar__toggle--run'
+                        )}
+                        primary={!is_running_state}
+                        secondary={is_running_state}
                         has_effect
-                        is_disabled={is_run_disabled}
-                        icon={<LabelPairedPlayLgFillIcon fill='#fff' />}
-                        onClick={handleRun}
+                        is_disabled={is_running_state ? is_stop_button_disabled : is_run_disabled}
+                        icon={
+                            is_running_state ? undefined : (
+                                <LabelPairedPlayLgFillIcon fill='#fff' />
+                            )
+                        }
+                        onClick={handleExecutionToggle}
                     >
-                        {localize('RUN')}
-                    </Button>
-
-                    <Button
-                        id='monehunt-global-stop-button'
-                        className='monehunt-execution-bar__stop'
-                        secondary
-                        has_effect
-                        is_disabled={!is_running_state || is_stop_button_disabled}
-                        icon={<LabelPairedSquareLgFillIcon />}
-                        onClick={handleStop}
-                    >
-                        {localize('STOP')}
+                        {localize(is_running_state ? 'STOP' : 'RUN')}
                     </Button>
                 </div>
             </div>

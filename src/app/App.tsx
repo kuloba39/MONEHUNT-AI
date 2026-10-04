@@ -1,4 +1,4 @@
-﻿import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import React from 'react';
 
 import {
@@ -49,6 +49,7 @@ const AppRoot = lazy(() => import('./app-root'));
 const DashboardPage = lazy(() => import('../pages/dashboard'));
 const AiLabPage = lazy(() => import('../pages/ai-lab'));
 const BotBuilderPage = lazy(() => import('../pages/bot-builder'));
+const TradingWorkspacePage = lazy(() => import('../pages/trading-workspace'));
 const ChartPage = lazy(() => import('../pages/chart'));
 const FreeBotsPage = lazy(() => import('../pages/free-bots'));
 const DCirclesPage = lazy(() => import('../pages/analysis'));
@@ -171,10 +172,10 @@ const router = createBrowserRouter(
                 element={<DCirclesPage />}
             />
 
-            {/* EXISTING DERIV WORKSPACE */}
+            {/* MONEHUNT TRADING WORKSPACE */}
             <Route
                 path='preview'
-                element={<AppRoot />}
+                element={<TradingWorkspacePage />}
             />
 
             {/* COPY TRADING */}
@@ -301,14 +302,3 @@ function App() {
 }
 
 export default App;
-
-
-
-
-
-
-
-
-
-
-

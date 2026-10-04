@@ -251,6 +251,59 @@ const RunPanel = observer(() => {
     const { run_panel, dashboard, transactions } = useStore();
     const { client } = useStore();
     const { isDesktop } = useDevice();
+
+    const [panelOffsetY, setPanelOffsetY] = React.useState(0);
+    const dragState = React.useRef<{ startY: number; startOffset: number } | null>(null);
+
+    const handlePanelDragStart = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (!isDesktop || event.button !== 0) return;
+
+        dragState.current = {
+            startY: event.clientY,
+            startOffset: panelOffsetY,
+        };
+
+        event.currentTarget.setPointerCapture(event.pointerId);
+        event.currentTarget.classList.add('run-panel__drag-handle--dragging');
+        event.preventDefault();
+    };
+
+    const handlePanelDragMove = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (!dragState.current || !isDesktop) return;
+
+        const drawer = document.querySelector('.run-panel__container') as HTMLElement | null;
+        const drawerHeight = drawer?.getBoundingClientRect().height || 0;
+
+        const baseTop = 10.4 * 16;
+        const minOffset = -baseTop + 8;
+        const maxOffset = Math.max(
+            minOffset,
+            window.innerHeight - drawerHeight - baseTop - 8
+        );
+
+        const nextOffset =
+            dragState.current.startOffset +
+            (event.clientY - dragState.current.startY);
+
+        setPanelOffsetY(
+            Math.min(
+                maxOffset,
+                Math.max(minOffset, nextOffset)
+            )
+        );
+    };
+
+    const handlePanelDragEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+        dragState.current = null;
+
+        event.currentTarget.classList.remove(
+            'run-panel__drag-handle--dragging'
+        );
+
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+    };
     const { currency } = client;
     const {
         active_index,
@@ -303,12 +356,32 @@ const RunPanel = observer(() => {
     const footer = <DrawerFooter is_clear_stat_disabled={is_clear_stat_disabled} onClearStatClick={onClearStatClick} />;
 
     const header = (
-        <DrawerHeader
-            is_clear_stat_disabled={is_clear_stat_disabled}
-            is_mobile={!isDesktop}
-            is_drawer_open={is_drawer_open}
-            onClearStatClick={onClearStatClick}
-        />
+        <>
+            {isDesktop && (
+                <div
+                    className='run-panel__drag-handle'
+                    role='button'
+                    tabIndex={0}
+                    aria-label='Move run panel vertically'
+                    onPointerDown={handlePanelDragStart}
+                    onPointerMove={handlePanelDragMove}
+                    onPointerUp={handlePanelDragEnd}
+                    onPointerCancel={handlePanelDragEnd}
+                >
+                    <span className='run-panel__drag-handle-bar' />
+                    <span className='run-panel__drag-handle-label'>
+                        MOVE PANEL
+                    </span>
+                </div>
+            )}
+
+            <DrawerHeader
+                is_clear_stat_disabled={is_clear_stat_disabled}
+                is_mobile={!isDesktop}
+                is_drawer_open={is_drawer_open}
+                onClearStatClick={onClearStatClick}
+            />
+        </>
     );
 
     const show_run_panel = [BOT_BUILDER, CHART].includes(active_tab) || active_tour;
@@ -316,7 +389,14 @@ const RunPanel = observer(() => {
 
     return (
         <>
-            <div className={!isDesktop && is_drawer_open ? 'run-panel__container--mobile' : 'run-panel'}>
+            <div
+                className={!isDesktop && is_drawer_open ? 'run-panel__container--mobile' : 'run-panel'}
+                style={
+                    isDesktop
+                        ? ({ '--run-panel-offset-y': `${panelOffsetY}px` } as React.CSSProperties)
+                        : undefined
+                }
+            >
                 <Drawer
                     anchor='right'
                     className={classNames('run-panel', {
