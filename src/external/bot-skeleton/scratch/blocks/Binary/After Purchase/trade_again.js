@@ -36,6 +36,7 @@ window.Blockly.Blocks.trade_again = {
 
 window.Blockly.JavaScript.javascriptGenerator.forBlock.trade_again = () => {
     const code = `
+        Bot.readyForNextPurchase();\n
         Bot.isTradeAgain(true);\n
         return true;\n
     `;

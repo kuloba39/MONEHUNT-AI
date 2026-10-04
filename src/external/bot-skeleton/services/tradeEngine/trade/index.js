@@ -53,22 +53,32 @@ const watchScope = ({ store, stopScope, passScope, passFlag }) => {
     if (store.getState().scope === stopScope) {
         return Promise.resolve(false);
     }
+
     return new Promise(resolve => {
         const unsubscribe = store.subscribe(() => {
             const newState = store.getState();
 
-            if (newState.newTick === prevTick) return;
-            prevTick = newState.newTick;
-
+            // State transitions such as PROPOSALS_READY,
+            // OPEN_CONTRACT, SELL and READY_FOR_NEXT_PURCHASE
+            // are not guaranteed to arrive with a NEW_TICK.
+            // Evaluate the state transition first so the bot cannot
+            // hang waiting for an unrelated market tick.
             if (newState.scope === passScope && newState[passFlag]) {
                 unsubscribe();
                 resolve(true);
+                return;
             }
 
             if (newState.scope === stopScope) {
                 unsubscribe();
                 resolve(false);
+                return;
             }
+
+            // Ignore duplicate tick notifications only after the
+            // relevant state transitions have been evaluated.
+            if (newState.newTick === prevTick) return;
+            prevTick = newState.newTick;
         });
     });
 };
