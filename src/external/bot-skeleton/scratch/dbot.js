@@ -234,6 +234,12 @@ class DBot {
     /** Saves the current workspace to local storage
      * and update saved status if strategy changes  */
     async saveRecentWorkspace() {
+        if (this?.workspace?.__monehunt_skip_recent_save) {
+            console.log('[MONEHUNT FREE BOT] AUTO-SAVE SKIPPED:', {
+                strategy_id: this.workspace?.current_strategy_id,
+            });
+            return;
+        }
         const current_xml_dom = this?.workspace ? Blockly?.Xml?.workspaceToDom(this.workspace) : null;
         try {
             const recent_files = await getSavedWorkspaces();

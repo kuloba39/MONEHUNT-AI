@@ -150,6 +150,7 @@ export const load = async ({
     workspace,
     showIncompatibleStrategyDialog,
     show_snackbar = true,
+    persist_to_recent = true,
 }) => {
     if (!DBotStore?.instance || !workspace) return;
     const { setLoading, load_modal } = DBotStore.instance;
@@ -215,6 +216,7 @@ export const load = async ({
             Array.from(blockly_xml).map(xml_block => xml_block.getAttribute('type'))
         );
         updateXmlValues({ strategy_id, convertedDom: xml, file_name, from });
+        workspace.__monehunt_skip_recent_save = persist_to_recent === false;
         if (is_collection) {
             loadBlocks(xml, drop_event, event_group, workspace);
         } else {
@@ -227,7 +229,14 @@ export const load = async ({
                 save_modal.updateBotName(file_name);
                 workspace.clearUndo();
                 workspace.current_strategy_id = strategy_id || window.Blockly.utils.idGenerator.genUid();
-                await saveWorkspaceToRecent(xml, from);
+                if (persist_to_recent !== false) {
+                    await saveWorkspaceToRecent(xml, from);
+                } else {
+                    console.log('[MONEHUNT FREE BOT] PERSISTENCE SKIPPED:', {
+                        strategy_id,
+                        file_name,
+                    });
+                }
             }
         }
 

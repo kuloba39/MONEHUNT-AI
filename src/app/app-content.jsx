@@ -164,6 +164,7 @@ const AppContent = observer(() => {
                     drop_event: null,
                     showIncompatibleStrategyDialog: null,
                     show_snackbar: true,
+                    persist_to_recent: false,
                 });
 
                 console.log('[MONEHUNT FREE BOT] LOADED SUCCESSFULLY:', bot.id);
