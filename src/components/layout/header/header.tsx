@@ -309,7 +309,7 @@ const AppHeader = observer(() => {
                                         'monehunt-global-account-bar__chevron--open'
                                 )}
                             >
-                                â–¼
+                                ▼
                             </span>
                         )}
                     </button>
@@ -341,7 +341,7 @@ const AppHeader = observer(() => {
                                         role='menuitem'
                                     >
                                         <span>
-                                            {isActive ? 'âœ“ ' : ''}
+                                            {isActive ? '✓ ' : ''}
                                             {isDemo ? 'DEMO' : 'REAL'}
                                         </span>
                                     </button>
