@@ -443,6 +443,10 @@ const TradingWorkspace = observer(() => {
 
         const parsedStake = Number(stake);
         const parsedMartingale = Number(martingale);
+        const parsedTakeProfit =
+            takeProfit.trim() === '' ? undefined : Number(takeProfit);
+        const parsedStopLoss =
+            stopLoss.trim() === '' ? undefined : Number(stopLoss);
         const parsedPrediction =
             prediction.trim() === '' ? undefined : Number(prediction);
         const parsedDuration = Number(duration);
