@@ -78,6 +78,7 @@ export class OUDExecutionController {
      */
     private lastSeenSignalCycleId = 0;
     private lastConsumedSignalCycleId = 0;
+    private runStartSignalCycleId = 0;
     private signalExecutionInFlight = false;
 
     private listeners = new Set<
@@ -403,6 +404,12 @@ export class OUDExecutionController {
             return false;
         }
 
+        const live = this.getLive();
+        const snapshot = live?.getSnapshot();
+        const currentSignalCycleId = Number(snapshot?.signalCycleId);
+        this.runStartSignalCycleId = Number.isFinite(currentSignalCycleId)
+            ? Math.max(0, currentSignalCycleId)
+            : 0;
         this.setState({
             lifecycle: 'RUNNING',
             status: 'WAITING',
@@ -490,6 +497,13 @@ export class OUDExecutionController {
             if (
                 cycleId <=
                 this.lastConsumedSignalCycleId
+            ) {
+                return;
+            }
+
+            if (
+                cycleId <=
+                this.runStartSignalCycleId
             ) {
                 return;
             }
