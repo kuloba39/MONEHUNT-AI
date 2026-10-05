@@ -81,6 +81,16 @@ export class OUDExecutionController {
     private runStartSignalCycleId = 0;
     private signalExecutionInFlight = false;
 
+    /*
+     * A locked READY signal may already exist when RUN is pressed.
+     * Require the same cycle + direction + strategy to persist across
+     * two monitoring observations before purchasing.
+     */
+    private signalConfirmationCycleId = 0;
+    private signalConfirmationDirection: OUDDirection | null = null;
+    private signalConfirmationMode: string | null = null;
+    private signalConfirmationCount = 0;
+    private static readonly REQUIRED_SIGNAL_CONFIRMATIONS = 2;
     private listeners = new Set<
         (state: OUDExecutionState) => void
     >();
@@ -464,6 +474,11 @@ export class OUDExecutionController {
     private startSignalMonitoring() {
         this.stopSignalMonitoring();
 
+        this.signalConfirmationCycleId = 0;
+        this.signalConfirmationDirection = null;
+        this.signalConfirmationMode = null;
+        this.signalConfirmationCount = 0;
+
         this.signalMonitorTimer = setInterval(() => {
             if (
                 this.state.lifecycle !== 'RUNNING' ||
@@ -491,6 +506,10 @@ export class OUDExecutionController {
                 !Number.isFinite(cycleId) ||
                 cycleId <= 0
             ) {
+                this.signalConfirmationCycleId = 0;
+                this.signalConfirmationDirection = null;
+                this.signalConfirmationMode = null;
+                this.signalConfirmationCount = 0;
                 return;
             }
 
@@ -498,13 +517,10 @@ export class OUDExecutionController {
                 cycleId <=
                 this.lastConsumedSignalCycleId
             ) {
-                return;
-            }
-
-            if (
-                cycleId <=
-                this.runStartSignalCycleId
-            ) {
+                this.signalConfirmationCycleId = 0;
+                this.signalConfirmationDirection = null;
+                this.signalConfirmationMode = null;
+                this.signalConfirmationCount = 0;
                 return;
             }
 
@@ -516,6 +532,36 @@ export class OUDExecutionController {
                         : null;
 
             if (!direction) {
+                this.signalConfirmationCycleId = 0;
+                this.signalConfirmationDirection = null;
+                this.signalConfirmationMode = null;
+                this.signalConfirmationCount = 0;
+                return;
+            }
+
+            const signalMode =
+                typeof signal.mode === 'string'
+                    ? signal.mode
+                    : '';
+
+            const sameConfirmation =
+                this.signalConfirmationCycleId === cycleId &&
+                this.signalConfirmationDirection === direction &&
+                this.signalConfirmationMode === signalMode;
+
+            if (sameConfirmation) {
+                this.signalConfirmationCount += 1;
+            } else {
+                this.signalConfirmationCycleId = cycleId;
+                this.signalConfirmationDirection = direction;
+                this.signalConfirmationMode = signalMode;
+                this.signalConfirmationCount = 1;
+            }
+
+            if (
+                this.signalConfirmationCount <
+                OUDExecutionController.REQUIRED_SIGNAL_CONFIRMATIONS
+            ) {
                 return;
             }
 
