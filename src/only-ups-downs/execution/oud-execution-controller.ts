@@ -55,7 +55,7 @@ const normalizeStake = (value: number) => {
         return 0;
     }
 
-    return numeric;
+    return Number(numeric.toFixed(2));
 };
 
 const getContractType = (direction: OUDDirection) =>
