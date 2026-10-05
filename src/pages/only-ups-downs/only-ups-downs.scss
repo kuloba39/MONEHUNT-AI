@@ -1336,3 +1336,542 @@
 }
 
 
+
+/* =========================================================
+   NATIVE OUD — CLEAN AUTONOMOUS BOT UI
+   ---------------------------------------------------------
+   UI-only styling.
+   Execution / scanner / FREE BOTS remain untouched.
+   ========================================================= */
+
+.only-ups-downs-tick-movement {
+    width: 100%;
+    margin: 0 0 18px;
+    padding: 18px 20px;
+    border: 1px solid var(--general-section-1, #e5e7eb);
+    border-radius: 16px;
+    background: var(--general-main-1, #ffffff);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+}
+
+.only-ups-downs-tick-movement__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.only-ups-downs-tick-movement__eyebrow {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    opacity: 0.55;
+}
+
+.only-ups-downs-tick-movement__header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 850;
+    letter-spacing: 0.02em;
+}
+
+.only-ups-downs-tick-movement__market {
+    padding: 6px 10px;
+    border: 1px solid var(--general-section-1, #e5e7eb);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+
+.only-ups-downs-tick-movement__ticks {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    min-height: 58px;
+    padding: 0 8px;
+    overflow: hidden;
+}
+
+.only-ups-downs-tick-movement__tick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: 25px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.only-ups-downs-tick-movement__tick.is-up {
+    color: #16a34a;
+}
+
+.only-ups-downs-tick-movement__tick.is-down {
+    color: #2563eb;
+}
+
+.only-ups-downs-tick-movement__tick.is-neutral {
+    opacity: 0.35;
+}
+
+
+/* =========================================================
+   NATIVE OUD BOT
+   ========================================================= */
+
+.only-ups-downs-native-bot {
+    width: 100%;
+    margin: 0 0 18px;
+    padding: 22px;
+    border: 1px solid var(--general-section-1, #e5e7eb);
+    border-radius: 16px;
+    background: var(--general-main-1, #ffffff);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+}
+
+.only-ups-downs-native-bot__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.only-ups-downs-native-bot__eyebrow {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    opacity: 0.55;
+}
+
+.only-ups-downs-native-bot__header h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 850;
+}
+
+.only-ups-downs-native-bot__status {
+    flex: 0 0 auto;
+    padding: 7px 12px;
+    border: 1px solid var(--general-section-1, #e5e7eb);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+}
+
+.only-ups-downs-native-bot__status.is-running {
+    border-color: #16a34a;
+    color: #16a34a;
+}
+
+.only-ups-downs-native-bot__status.is-paused {
+    border-color: #d97706;
+    color: #d97706;
+}
+
+.only-ups-downs-native-bot__status.is-stopped {
+    border-color: #dc2626;
+    color: #dc2626;
+}
+
+
+/* Settings */
+
+.only-ups-downs-native-bot__settings {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.only-ups-downs-native-bot__field {
+    min-width: 0;
+}
+
+.only-ups-downs-native-bot__field > label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    opacity: 0.58;
+}
+
+.only-ups-downs-native-bot__field input,
+.only-ups-downs-native-bot__field select {
+    width: 100%;
+    min-height: 42px;
+    padding: 8px 11px;
+    border: 1px solid var(--general-section-1, #d1d5db);
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 750;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.only-ups-downs-native-bot__field input:focus,
+.only-ups-downs-native-bot__field select:focus {
+    border-color: var(--brand-primary, #10b981);
+}
+
+.only-ups-downs-native-bot__field input:disabled,
+.only-ups-downs-native-bot__field select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* Segmented controls */
+
+.only-ups-downs-native-bot__segmented {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    min-height: 42px;
+    padding: 4px;
+    border: 1px solid var(--general-section-1, #e5e7eb);
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.only-ups-downs-native-bot__segmented button {
+    min-width: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: inherit;
+    font-size: 11px;
+    font-weight: 850;
+    cursor: pointer;
+}
+
+.only-ups-downs-native-bot__segmented button.is-active {
+    background: var(--brand-primary, #10b981);
+    color: #ffffff;
+}
+
+
+/* Native bot status information */
+
+.only-ups-downs-native-bot__status-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.only-ups-downs-native-bot__status-grid > div {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--general-section-1, #e5e7eb);
+    border-radius: 10px;
+}
+
+.only-ups-downs-native-bot__status-grid span {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.52;
+}
+
+.only-ups-downs-native-bot__status-grid strong {
+    display: block;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 850;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* Start / Pause / Stop */
+
+.only-ups-downs-native-bot__controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.only-ups-downs-native-bot__control {
+    min-height: 48px;
+    border: 1px solid var(--general-section-1, #d1d5db);
+    border-radius: 11px;
+    background: transparent;
+    color: inherit;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition:
+        transform 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.only-ups-downs-native-bot__control:hover:not(:disabled) {
+    transform: translateY(-1px);
+    opacity: 0.88;
+}
+
+.only-ups-downs-native-bot__control--run {
+    border-color: var(--brand-primary, #10b981);
+    background: var(--brand-primary, #10b981);
+    color: #ffffff;
+}
+
+.only-ups-downs-native-bot__control:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+    .only-ups-downs-native-bot__settings {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .only-ups-downs-native-bot__status-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .only-ups-downs-tick-movement,
+    .only-ups-downs-native-bot {
+        margin-left: 0;
+        margin-right: 0;
+        padding: 16px;
+        border-radius: 13px;
+    }
+
+    .only-ups-downs-tick-movement__header,
+    .only-ups-downs-native-bot__header {
+        align-items: flex-start;
+    }
+
+    .only-ups-downs-tick-movement__header h2 {
+        font-size: 16px;
+    }
+
+    .only-ups-downs-tick-movement__tick {
+        font-size: 21px;
+    }
+
+    .only-ups-downs-native-bot__header h2 {
+        font-size: 19px;
+    }
+
+    .only-ups-downs-native-bot__settings {
+        grid-template-columns: 1fr;
+    }
+
+    .only-ups-downs-native-bot__status-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .only-ups-downs-native-bot__controls {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 420px) {
+    .only-ups-downs-tick-movement__ticks {
+        gap: 2px;
+        padding: 0;
+    }
+
+    .only-ups-downs-tick-movement__tick {
+        font-size: 18px;
+    }
+
+    .only-ups-downs-native-bot__status-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .only-ups-downs-native-bot__segmented {
+        min-height: 40px;
+    }
+}
+
+/* =========================================================
+   NATIVE OUD — PERFORMANCE
+   ========================================================= */
+
+.only-ups-downs-native-performance {
+    width: 100%;
+    margin: 0 0 18px;
+    padding: 20px 22px;
+    border: 1px solid var(--general-section-1, #e5e7eb);
+    border-radius: 16px;
+    background: var(--general-main-1, #ffffff);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+}
+
+.only-ups-downs-native-performance__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.only-ups-downs-native-performance__header > div > span,
+.only-ups-downs-native-performance__recent > span {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    opacity: 0.55;
+}
+
+.only-ups-downs-native-performance__header h2 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 850;
+}
+
+.only-ups-downs-native-performance__reset {
+    min-height: 38px;
+    padding: 7px 12px;
+    border: 1px solid var(--general-section-1, #d1d5db);
+    border-radius: 9px;
+    background: transparent;
+    color: inherit;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+}
+
+.only-ups-downs-native-performance__reset:hover:not(:disabled) {
+    opacity: 0.8;
+}
+
+.only-ups-downs-native-performance__reset:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.only-ups-downs-native-performance__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.only-ups-downs-native-performance__grid > div {
+    min-width: 0;
+    padding: 13px;
+    border: 1px solid var(--general-section-1, #e5e7eb);
+    border-radius: 10px;
+}
+
+.only-ups-downs-native-performance__grid span {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    opacity: 0.52;
+}
+
+.only-ups-downs-native-performance__grid strong {
+    display: block;
+    overflow: hidden;
+    font-size: 15px;
+    font-weight: 850;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.only-ups-downs-native-performance__recent {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--general-section-1, #e5e7eb);
+}
+
+.only-ups-downs-native-performance__trade-list {
+    display: grid;
+    gap: 6px;
+    margin-top: 9px;
+}
+
+.only-ups-downs-native-performance__trade {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 38px;
+    padding: 6px 10px;
+    border: 1px solid var(--general-section-1, #e5e7eb);
+    border-radius: 9px;
+    box-sizing: border-box;
+}
+
+.only-ups-downs-native-performance__trade strong {
+    font-size: 17px;
+    text-align: center;
+}
+
+.only-ups-downs-native-performance__trade span {
+    font-size: 11px;
+    font-weight: 750;
+}
+
+@media (max-width: 1100px) {
+    .only-ups-downs-native-performance__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .only-ups-downs-native-performance {
+        margin-left: 0;
+        margin-right: 0;
+        padding: 16px;
+        border-radius: 13px;
+    }
+
+    .only-ups-downs-native-performance__header h2 {
+        font-size: 17px;
+    }
+
+    .only-ups-downs-native-performance__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 420px) {
+    .only-ups-downs-native-performance__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .only-ups-downs-native-performance__trade {
+        grid-template-columns: 30px 1fr auto;
+    }
+}
+

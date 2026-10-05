@@ -1,8 +1,10 @@
 ﻿import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 import type {
     OUDDirection,
+    OUDDirectionMode,
     OUDExecuteParams,
     OUDExecutionState,
+    OUDStrategyMode,
     OUDTradeRecord,
 } from './oud-execution-types';
 import type { OnlyUpsDownsLive } from '@/only-ups-downs/live/only-ups-downs-live';
@@ -10,7 +12,8 @@ import type { OnlyUpsDownsLive } from '@/only-ups-downs/live/only-ups-downs-live
 const MIN_DURATION = 2;
 const MAX_DURATION = 5;
 const MAX_HISTORY = 10;
-const MAX_RECOVERY = 6;
+const DEFAULT_MAX_RECOVERY = 6;
+const DEFAULT_MARTINGALE_MULTIPLIER = 1.6;
 
 const normalizeDuration = (duration: number) => {
     const value = Number(duration);
@@ -23,6 +26,36 @@ const normalizeDuration = (duration: number) => {
         MAX_DURATION,
         Math.max(MIN_DURATION, Math.floor(value)),
     );
+};
+
+const normalizeMultiplier = (value: number) => {
+    const numeric = Number(value);
+
+    if (!Number.isFinite(numeric) || numeric < 1) {
+        return DEFAULT_MARTINGALE_MULTIPLIER;
+    }
+
+    return Math.min(10, numeric);
+};
+
+const normalizeMaxMartingaleLevel = (value: number) => {
+    const numeric = Number(value);
+
+    if (!Number.isFinite(numeric) || numeric < 0) {
+        return DEFAULT_MAX_RECOVERY;
+    }
+
+    return Math.min(20, Math.floor(numeric));
+};
+
+const normalizeStake = (value: number) => {
+    const numeric = Number(value);
+
+    if (!Number.isFinite(numeric) || numeric <= 0) {
+        return 0;
+    }
+
+    return numeric;
 };
 
 const getContractType = (direction: OUDDirection) =>
@@ -65,13 +98,34 @@ export class OUDExecutionController {
             status: 'WAITING',
             direction: null,
             market: '',
+
+            directionMode: 'BOTH',
+            strategyMode: 'BOTH',
+
+            martingaleEnabled: false,
+            martingaleMultiplier:
+                DEFAULT_MARTINGALE_MULTIPLIER,
+            maxMartingaleLevel:
+                DEFAULT_MAX_RECOVERY,
+
+            baseStake: 10,
             stake: 10,
+            currentStake: 10,
+
             duration: MIN_DURATION,
             recoveryLevel: 0,
+
             contractId: null,
             lastResult: null,
             profit: null,
             error: null,
+
+            totalTrades: 0,
+            wins: 0,
+            losses: 0,
+            totalProfit: 0,
+            winRate: 0,
+
             tradeHistory: [],
         };
 
@@ -129,14 +183,23 @@ export class OUDExecutionController {
     }
 
     setStake(stake: number) {
-        const value = Number(stake);
+        const value = normalizeStake(stake);
 
-        if (!Number.isFinite(value) || value <= 0) {
+        if (!value) {
             return;
         }
 
         this.setState({
-            stake: value,
+            baseStake: value,
+            currentStake: value,
+            stake:
+                this.state.lifecycle === 'RUNNING' &&
+                this.state.martingaleEnabled
+                    ? this.calculateNextStake(
+                          this.state.recoveryLevel,
+                          value,
+                      )
+                    : value,
         });
     }
 
@@ -146,19 +209,170 @@ export class OUDExecutionController {
         });
     }
 
+    setDirectionMode(mode: OUDDirectionMode) {
+        if (
+            mode !== 'UP' &&
+            mode !== 'DOWN' &&
+            mode !== 'BOTH'
+        ) {
+            return;
+        }
+
+        this.setState({
+            directionMode: mode,
+        });
+    }
+
+    setStrategyMode(mode: OUDStrategyMode) {
+        if (
+            mode !== 'REVERSAL' &&
+            mode !== 'CONTINUATION' &&
+            mode !== 'BOTH'
+        ) {
+            return;
+        }
+
+        this.setState({
+            strategyMode: mode,
+        });
+    }
+
+    setMartingaleEnabled(enabled: boolean) {
+        const value = Boolean(enabled);
+
+        this.setState({
+            martingaleEnabled: value,
+            recoveryLevel: value
+                ? this.state.recoveryLevel
+                : 0,
+            currentStake: value
+                ? this.calculateNextStake(
+                      this.state.recoveryLevel,
+                      this.state.baseStake,
+                  )
+                : this.state.baseStake,
+            stake: value
+                ? this.calculateNextStake(
+                      this.state.recoveryLevel,
+                      this.state.baseStake,
+                  )
+                : this.state.baseStake,
+        });
+    }
+
+    setMartingaleMultiplier(multiplier: number) {
+        const value = normalizeMultiplier(multiplier);
+
+        this.setState({
+            martingaleMultiplier: value,
+            currentStake:
+                this.state.martingaleEnabled
+                    ? this.calculateNextStake(
+                          this.state.recoveryLevel,
+                          this.state.baseStake,
+                      )
+                    : this.state.baseStake,
+            stake:
+                this.state.martingaleEnabled
+                    ? this.calculateNextStake(
+                          this.state.recoveryLevel,
+                          this.state.baseStake,
+                      )
+                    : this.state.baseStake,
+        });
+    }
+
+    setMaxMartingaleLevel(level: number) {
+        const value =
+            normalizeMaxMartingaleLevel(level);
+
+        const recoveryLevel = Math.min(
+            this.state.recoveryLevel,
+            value,
+        );
+
+        this.setState({
+            maxMartingaleLevel: value,
+            recoveryLevel,
+            currentStake:
+                this.state.martingaleEnabled
+                    ? this.calculateNextStake(
+                          recoveryLevel,
+                          this.state.baseStake,
+                      )
+                    : this.state.baseStake,
+            stake:
+                this.state.martingaleEnabled
+                    ? this.calculateNextStake(
+                          recoveryLevel,
+                          this.state.baseStake,
+                      )
+                    : this.state.baseStake,
+        });
+    }
+
+    private calculateNextStake(
+        recoveryLevel = this.state.recoveryLevel,
+        baseStake = this.state.baseStake,
+    ) {
+        const normalizedBase =
+            normalizeStake(baseStake);
+
+        if (!normalizedBase) {
+            return 0;
+        }
+
+        if (!this.state.martingaleEnabled) {
+            return normalizedBase;
+        }
+
+        const level = Math.min(
+            Math.max(0, Math.floor(recoveryLevel)),
+            this.state.maxMartingaleLevel,
+        );
+
+        const calculated =
+            normalizedBase *
+            Math.pow(
+                this.state.martingaleMultiplier,
+                level,
+            );
+
+        if (!Number.isFinite(calculated)) {
+            return normalizedBase;
+        }
+
+        return Number(
+            calculated.toFixed(8),
+        );
+    }
+
+    private directionAllowed(
+        direction: OUDDirection,
+    ) {
+        return (
+            this.state.directionMode === 'BOTH' ||
+            this.state.directionMode === direction
+        );
+    }
+
+    private strategyAllowed(
+        signalMode: string | undefined,
+    ) {
+        if (this.state.strategyMode === 'BOTH') {
+            return true;
+        }
+
+        return signalMode === this.state.strategyMode;
+    }
+
     setSignal(
         direction: OUDDirection | null,
         market: string,
         signalCycleId = 0,
     ) {
-        /*
-         * The OUD scanner is the execution authority.
-         *
-         * RUN only arms the controller. A purchase is allowed
-         * only when the existing scanner exposes a valid
-         * executable direction for a new signal cycle.
-         */
-        const normalizedCycleId = Number(signalCycleId);
+        const normalizedCycleId =
+            Number(signalCycleId);
 
         if (
             Number.isFinite(normalizedCycleId) &&
@@ -193,6 +407,24 @@ export class OUDExecutionController {
             lifecycle: 'RUNNING',
             status: 'WAITING',
             error: null,
+            recoveryLevel:
+                this.state.martingaleEnabled
+                    ? this.state.recoveryLevel
+                    : 0,
+            currentStake:
+                this.state.martingaleEnabled
+                    ? this.calculateNextStake(
+                          this.state.recoveryLevel,
+                          this.state.baseStake,
+                      )
+                    : this.state.baseStake,
+            stake:
+                this.state.martingaleEnabled
+                    ? this.calculateNextStake(
+                          this.state.recoveryLevel,
+                          this.state.baseStake,
+                      )
+                    : this.state.baseStake,
         });
 
         this.startSignalMonitoring();
@@ -201,10 +433,6 @@ export class OUDExecutionController {
     }
 
     pause() {
-        /*
-         * PAUSE blocks future entries but allows an active
-         * Deriv contract to finish normally.
-         */
         this.stopSignalMonitoring();
 
         this.setState({
@@ -216,10 +444,6 @@ export class OUDExecutionController {
     }
 
     stop() {
-        /*
-         * STOP blocks future entries.
-         * An already purchased contract is allowed to finish.
-         */
         this.stopSignalMonitoring();
 
         this.setState({
@@ -251,7 +475,8 @@ export class OUDExecutionController {
             }
 
             const signal = snapshot.signal;
-            const cycleId = Number(snapshot.signalCycleId);
+            const cycleId =
+                Number(snapshot.signalCycleId);
 
             if (
                 !snapshot.signalLocked ||
@@ -262,10 +487,12 @@ export class OUDExecutionController {
                 return;
             }
 
-            if (cycleId <= this.lastConsumedSignalCycleId) {
+            if (
+                cycleId <=
+                this.lastConsumedSignalCycleId
+            ) {
                 return;
             }
-
 
             const direction =
                 signal.botDirection === 'ups'
@@ -278,7 +505,31 @@ export class OUDExecutionController {
                 return;
             }
 
-            const market = live.getSymbol() || this.state.market;
+            /*
+             * Direction is a hard user configuration gate.
+             */
+            if (!this.directionAllowed(direction)) {
+                return;
+            }
+
+            /*
+             * Strategy is a hard user configuration gate.
+             *
+             * Scanner remains the signal authority.
+             * The controller only decides whether the
+             * scanner's READY signal matches user settings.
+             */
+            if (
+                !this.strategyAllowed(
+                    signal.mode,
+                )
+            ) {
+                return;
+            }
+
+            const market =
+                live.getSymbol() ||
+                this.state.market;
 
             if (!market) {
                 return;
@@ -287,17 +538,25 @@ export class OUDExecutionController {
             this.lastSeenSignalCycleId = cycleId;
             this.signalExecutionInFlight = true;
 
+            const nextStake =
+                this.calculateNextStake(
+                    this.state.recoveryLevel,
+                    this.state.baseStake,
+                );
+
             this.setState({
                 status: 'SIGNAL_READY',
                 direction,
                 market,
+                currentStake: nextStake,
+                stake: nextStake,
                 error: null,
             });
 
             void this.execute({
                 direction,
                 market,
-                stake: this.state.stake,
+                stake: nextStake,
                 duration: this.state.duration,
             }).finally(() => {
                 this.signalExecutionInFlight = false;
@@ -372,7 +631,9 @@ export class OUDExecutionController {
                 !this.state.contractId
             ) {
                 this.setState({
-                    contractId: String(contract.contract_id),
+                    contractId: String(
+                        contract.contract_id,
+                    ),
                     status: 'CONTRACT_ACTIVE',
                 });
             }
@@ -404,12 +665,13 @@ export class OUDExecutionController {
                 ? 'WIN'
                 : 'LOSS';
 
-            const nextRecoveryLevel = hasProfit
-                ? 0
-                : Math.min(
-                      MAX_RECOVERY,
-                      this.state.recoveryLevel + 1,
-                  );
+            const nextRecoveryLevel =
+                hasProfit || !this.state.martingaleEnabled
+                    ? 0
+                    : Math.min(
+                          this.state.maxMartingaleLevel,
+                          this.state.recoveryLevel + 1,
+                      );
 
             const record: OUDTradeRecord = {
                 id: Date.now(),
@@ -427,13 +689,38 @@ export class OUDExecutionController {
                     this.state.contractId,
             };
 
-            /*
-             * Preserve the user's lifecycle choice.
-             *
-             * RUNNING stays RUNNING.
-             * PAUSED stays PAUSED.
-             * STOPPED stays STOPPED.
-             */
+            const nextTotalTrades =
+                this.state.totalTrades + 1;
+
+            const nextWins =
+                this.state.wins +
+                (hasProfit ? 1 : 0);
+
+            const nextLosses =
+                this.state.losses +
+                (hasProfit ? 0 : 1);
+
+            const nextTotalProfit =
+                this.state.totalProfit +
+                (Number.isFinite(profitValue)
+                    ? profitValue
+                    : 0);
+
+            const nextWinRate =
+                nextTotalTrades > 0
+                    ? (nextWins /
+                          nextTotalTrades) *
+                      100
+                    : 0;
+
+            const nextStake =
+                this.state.martingaleEnabled
+                    ? this.calculateNextStake(
+                          nextRecoveryLevel,
+                          this.state.baseStake,
+                      )
+                    : this.state.baseStake;
+
             this.setState({
                 status: hasProfit
                     ? 'WON'
@@ -445,14 +732,24 @@ export class OUDExecutionController {
                         : null,
                 recoveryLevel:
                     nextRecoveryLevel,
+                currentStake: nextStake,
+                stake: nextStake,
+                totalTrades:
+                    nextTotalTrades,
+                wins: nextWins,
+                losses: nextLosses,
+                totalProfit:
+                    Number(
+                        nextTotalProfit.toFixed(8),
+                    ),
+                winRate:
+                    Number(
+                        nextWinRate.toFixed(2),
+                    ),
             });
 
             this.addTradeRecord(record);
 
-            /*
-             * The completed contract no longer occupies the
-             * controller. Keep the lifecycle untouched.
-             */
             this.setState({
                 contractId: null,
             });
@@ -487,19 +784,22 @@ export class OUDExecutionController {
             this.signalExecutionInFlight = false;
         }
     }
+
     private async executeInternal(
         params: OUDExecuteParams,
         requireRunning: boolean,
         consumeScannerSignal: boolean,
     ) {
         /*
-         * Native execution is user-controlled.
-         * Scanner readiness is deliberately NOT required.
+         * Native execution is scanner-driven.
+         *
+         * The controller may prepare the TradeEngine only
+         * after the scanner has produced an accepted signal.
          */
         if (
-                requireRunning &&
-                this.state.lifecycle !== 'RUNNING'
-            ) {
+            requireRunning &&
+            this.state.lifecycle !== 'RUNNING'
+        ) {
             return false;
         }
 
@@ -514,12 +814,11 @@ export class OUDExecutionController {
             params.duration,
         );
 
-        const stake = Number(params.stake);
+        const stake = normalizeStake(
+            params.stake,
+        );
 
-        if (
-            !Number.isFinite(stake) ||
-            stake <= 0
-        ) {
+        if (!stake) {
             this.setState({
                 status: 'ERROR',
                 error: 'Invalid stake.',
@@ -584,6 +883,7 @@ export class OUDExecutionController {
                 direction,
                 market: params.market,
                 stake,
+                currentStake: stake,
                 duration,
                 contractId: null,
                 lastResult: null,
@@ -624,7 +924,6 @@ export class OUDExecutionController {
              * Set this before TradeEngine.start(), because start()
              * immediately evaluates proposal requirements.
              */
-
             this.tradeEngine.start({
                 amount: stake,
                 currency: this.currency,
@@ -636,9 +935,6 @@ export class OUDExecutionController {
             await this.tradeEngine.watch('before');
 
             /*
-             * Lifecycle may have changed while the asynchronous
-             * TradeEngine preparation was running.
-             *
              * PAUSE / STOP must prevent a new purchase.
              * An already-purchased contract is allowed to finish.
              */
@@ -706,12 +1002,11 @@ export class OUDExecutionController {
             /*
              * Consume the scanner signal only after Deriv
              * has confirmed a real contract_id.
-             *
-             * If preparation or purchase fails, the locked
-             * scanner signal remains available for retry.
              */
             const live = this.getLive();
-            const liveSnapshot = live?.getSnapshot();
+            const liveSnapshot =
+                live?.getSnapshot();
+
             const consumedCycleId = Number(
                 liveSnapshot?.signalCycleId,
             );
@@ -721,9 +1016,11 @@ export class OUDExecutionController {
                 live &&
                 Number.isFinite(consumedCycleId) &&
                 consumedCycleId > 0 &&
-                consumedCycleId > this.lastConsumedSignalCycleId
+                consumedCycleId >
+                    this.lastConsumedSignalCycleId
             ) {
                 live.consumeSignal();
+
                 this.lastConsumedSignalCycleId =
                     consumedCycleId;
             }
@@ -789,8 +1086,17 @@ export class OUDExecutionController {
             lastResult: null,
             profit: null,
             recoveryLevel: 0,
+            currentStake:
+                this.state.baseStake,
+            stake:
+                this.state.baseStake,
             error: null,
             tradeHistory: [],
+            totalTrades: 0,
+            wins: 0,
+            losses: 0,
+            totalProfit: 0,
+            winRate: 0,
         });
 
         return true;
@@ -798,6 +1104,7 @@ export class OUDExecutionController {
 
     destroy() {
         this.stopPolling();
+        this.stopSignalMonitoring();
         this.lastSeenSignalCycleId = 0;
         this.lastConsumedSignalCycleId = 0;
         this.signalExecutionInFlight = false;
@@ -806,11 +1113,3 @@ export class OUDExecutionController {
 }
 
 export default OUDExecutionController;
-
-
-
-
-
-
-
-

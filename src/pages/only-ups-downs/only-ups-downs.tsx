@@ -64,13 +64,25 @@ const OnlyUpsDowns = () => {
             status: 'WAITING',
             direction: null,
             market: '',
+            directionMode: 'BOTH',
+            strategyMode: 'BOTH',
+            martingaleEnabled: false,
+            martingaleMultiplier: 1.6,
+            maxMartingaleLevel: 6,
+            baseStake: 10,
             stake: 10,
+            currentStake: 10,
             duration: 2,
             recoveryLevel: 0,
             contractId: null,
             lastResult: null,
             profit: null,
             error: null,
+            totalTrades: 0,
+            wins: 0,
+            losses: 0,
+            totalProfit: 0,
+            winRate: 0,
             tradeHistory: [],
         });
 
@@ -141,6 +153,39 @@ const [oudManualDirection, setOudManualDirection] =
 
     const [analysisHorizon, setAnalysisHorizon] =
         useState<OnlyUpsDownsAnalysisHorizon>('AUTO');
+    
+
+    /*
+     * Native OUD BOT timeframe.
+     *
+     * This is intentionally separate from analysisHorizon.
+     * The existing FREE BOTS / Apply Signal scanner lifecycle
+     * remains untouched.
+     */
+    const [oudTimeframe, setOudTimeframe] =
+        useState<'SHORT' | 'LONG'>('SHORT');
+
+    /*
+     * Native OUD BOT execution configuration.
+     *
+     * These controls belong only to the native execution bot.
+     * FREE BOTS / Apply Signal remains completely separate.
+     */
+    const [oudDirectionMode, setOudDirectionMode] =
+        useState<'UP' | 'DOWN' | 'BOTH'>('BOTH');
+
+    const [oudStrategyMode, setOudStrategyMode] =
+        useState<'REVERSAL' | 'CONTINUATION' | 'BOTH'>('BOTH');
+
+    const [oudMartingaleEnabled, setOudMartingaleEnabled] =
+        useState(false);
+
+    const [oudMartingaleMultiplier, setOudMartingaleMultiplier] =
+        useState('1.6');
+
+    const [oudMaxMartingaleLevel, setOudMaxMartingaleLevel] =
+        useState('6');
+
     const [snapshot, setSnapshot] = useState<OnlyUpsDownsScannerSnapshot>(
         emptySnapshot(),
     );
@@ -440,6 +485,37 @@ const [oudManualDirection, setOudManualDirection] =
 
         controller.setStake(stake);
         controller.setDuration(duration);
+        controller.setDirectionMode(oudDirectionMode);
+        controller.setStrategyMode(oudStrategyMode);
+        controller.setMartingaleEnabled(
+            oudMartingaleEnabled,
+        );
+
+        const multiplier = Number(oudMartingaleMultiplier);
+        if (
+            !Number.isFinite(multiplier) ||
+            multiplier < 1
+        ) {
+            return;
+        }
+
+        controller.setMartingaleMultiplier(
+            multiplier,
+        );
+
+        const maxMartingaleLevel =
+            Number(oudMaxMartingaleLevel);
+
+        if (
+            !Number.isInteger(maxMartingaleLevel) ||
+            maxMartingaleLevel < 0
+        ) {
+            return;
+        }
+
+        controller.setMaxMartingaleLevel(
+            maxMartingaleLevel,
+        );
 
         /*
          * RUN only arms the native OUD execution controller.
@@ -1348,10 +1424,508 @@ onChange={(event) => {
             </div>
 
             {/* =====================================================
+            {/* =====================================================
+    TICK MOVEMENT
+   ===================================================== */}
+
+<section className='only-ups-downs-tick-movement'>
+    <div className='only-ups-downs-tick-movement__header'>
+        <div>
+            <span className='only-ups-downs-tick-movement__eyebrow'>
+                LIVE TICKS
+            </span>
+            <h2>TICK MOVEMENT</h2>
+        </div>
+
+        <span className='only-ups-downs-tick-movement__market'>
+            {symbol || '—'}
+        </span>
+    </div>
+
+    <div className='only-ups-downs-tick-movement__ticks'>
+        {snapshot.prices.slice(-12).map((price, index, values) => {
+            const previous = values[index - 1];
+
+            if (previous === undefined) {
+                return (
+                    <span
+                        key={`${price}-${index}`}
+                        className='only-ups-downs-tick-movement__tick is-neutral'
+                    >
+                        →
+                    </span>
+                );
+            }
+
+            return (
+                <span
+                    key={`${price}-${index}`}
+                    className={
+                        price > previous
+                            ? 'only-ups-downs-tick-movement__tick is-up'
+                            : price < previous
+                                ? 'only-ups-downs-tick-movement__tick is-down'
+                                : 'only-ups-downs-tick-movement__tick is-neutral'
+                    }
+                >
+                    {price > previous
+                        ? '↑'
+                        : price < previous
+                            ? '↓'
+                            : '→'}
+                </span>
+            );
+        })}
+    </div>
+</section>
+
+{/* =====================================================
+    NATIVE OUD BOT
+   ===================================================== */}
+
+<section className='only-ups-downs-native-bot'>
+    <div className='only-ups-downs-native-bot__header'>
+        <div>
+            <div className='only-ups-downs-native-bot__eyebrow'>
+                AUTONOMOUS EXECUTION
+            </div>
+            <h2>OUD BOT</h2>
+        </div>
+
+        <div
+            className={
+                `only-ups-downs-native-bot__status ` +
+                `is-${oudExecutionState.lifecycle.toLowerCase()}`
+            }
+        >
+            {oudExecutionState.lifecycle}
+        </div>
+    </div>
+
+    <div className='only-ups-downs-native-bot__settings'>
+        <div className='only-ups-downs-native-bot__field'>
+            <label>Market</label>
+            <select
+                value={symbol}
+                disabled={
+                    oudExecutionState.status === 'PURCHASING' ||
+                    oudExecutionState.status === 'CONTRACT_ACTIVE'
+                }
+                onChange={event => {
+                    const nextSymbol = event.target.value;
+
+                    if (!nextSymbol) {
+                        return;
+                    }
+
+                    setSymbol(nextSymbol);
+                    setAppliedSignalKey(null);
+                    setAutoApplySignals(false);
+
+                    try {
+                        localStorage.setItem(
+                            ONLY_UPS_DOWNS_MARKET_STORAGE_KEY,
+                            nextSymbol,
+                        );
+                    } catch {
+                        // Ignore storage failures.
+                    }
+                }}
+            >
+                {symbols.map(item => (
+                    <option
+                        key={item.symbol}
+                        value={item.symbol}
+                    >
+                        {item.display_name || item.symbol}
+                    </option>
+                ))}
+            </select>
+        </div>
+
+        <div className='only-ups-downs-native-bot__field'>
+            <label>Timeframe</label>
+            <div className='only-ups-downs-native-bot__segmented'>
+                <button
+                    type='button'
+                    className={
+                        oudTimeframe === 'SHORT'
+                            ? 'is-active'
+                            : ''
+                    }
+                    onClick={() => setOudTimeframe('SHORT')}
+                >
+                    SHORT
+                </button>
+
+                <button
+                    type='button'
+                    className={
+                        oudTimeframe === 'LONG'
+                            ? 'is-active'
+                            : ''
+                    }
+                    onClick={() => setOudTimeframe('LONG')}
+                >
+                    LONG
+                </button>
+            </div>
+        </div>
+
+        <div className='only-ups-downs-native-bot__field'>
+            <label>Duration</label>
+            <select
+                value={oudDuration}
+                disabled={
+                    oudExecutionState.status === 'PURCHASING' ||
+                    oudExecutionState.status === 'CONTRACT_ACTIVE'
+                }
+                onChange={event =>
+                    setOudDuration(Number(event.target.value))
+                }
+            >
+                <option value={2}>2 ticks</option>
+                <option value={3}>3 ticks</option>
+                <option value={4}>4 ticks</option>
+                <option value={5}>5 ticks</option>
+            </select>
+        </div>
+
+        <div className='only-ups-downs-native-bot__field'>
+            <label>Direction</label>
+            <div className='only-ups-downs-native-bot__segmented'>
+                {(['UP', 'DOWN', 'BOTH'] as const).map(mode => (
+                    <button
+                        key={mode}
+                        type='button'
+                        className={
+                            oudDirectionMode === mode
+                                ? 'is-active'
+                                : ''
+                        }
+                        onClick={() =>
+                            setOudDirectionMode(mode)
+                        }
+                    >
+                        {mode === 'UP'
+                            ? '↑ UP'
+                            : mode === 'DOWN'
+                                ? '↓ DOWN'
+                                : 'BOTH'}
+                    </button>
+                ))}
+            </div>
+        </div>
+
+        <div className='only-ups-downs-native-bot__field'>
+            <label>Strategy</label>
+            <div className='only-ups-downs-native-bot__segmented'>
+                {(
+                    [
+                        'REVERSAL',
+                        'CONTINUATION',
+                        'BOTH',
+                    ] as const
+                ).map(mode => (
+                    <button
+                        key={mode}
+                        type='button'
+                        className={
+                            oudStrategyMode === mode
+                                ? 'is-active'
+                                : ''
+                        }
+                        onClick={() =>
+                            setOudStrategyMode(mode)
+                        }
+                    >
+                        {mode === 'REVERSAL'
+                            ? 'REV'
+                            : mode === 'CONTINUATION'
+                                ? 'CONT'
+                                : 'BOTH'}
+                    </button>
+                ))}
+            </div>
+        </div>
+
+        <div className='only-ups-downs-native-bot__field'>
+            <label>Martingale</label>
+            <div className='only-ups-downs-native-bot__segmented'>
+                <button
+                    type='button'
+                    className={
+                        !oudMartingaleEnabled
+                            ? 'is-active'
+                            : ''
+                    }
+                    onClick={() =>
+                        setOudMartingaleEnabled(false)
+                    }
+                >
+                    OFF
+                </button>
+
+                <button
+                    type='button'
+                    className={
+                        oudMartingaleEnabled
+                            ? 'is-active'
+                            : ''
+                    }
+                    onClick={() =>
+                        setOudMartingaleEnabled(true)
+                    }
+                >
+                    ON
+                </button>
+            </div>
+        </div>
+
+        <div className='only-ups-downs-native-bot__field'>
+            <label>Stake</label>
+            <input
+                type='number'
+                min='0.01'
+                step='0.01'
+                value={oudStakeInput}
+                disabled={
+                    oudExecutionState.status === 'PURCHASING' ||
+                    oudExecutionState.status === 'CONTRACT_ACTIVE'
+                }
+                onChange={event =>
+                    setOudStakeInput(event.target.value)
+                }
+            />
+        </div>
+
+        <div className='only-ups-downs-native-bot__field'>
+            <label>Multiplier</label>
+            <input
+                type='number'
+                min='1'
+                step='0.1'
+                value={oudMartingaleMultiplier}
+                disabled={
+                    oudExecutionState.status === 'PURCHASING' ||
+                    oudExecutionState.status === 'CONTRACT_ACTIVE'
+                }
+                onChange={event =>
+                    setOudMartingaleMultiplier(
+                        event.target.value,
+                    )
+                }
+            />
+        </div>
+
+        <div className='only-ups-downs-native-bot__field'>
+            <label>Max Level</label>
+            <input
+                type='number'
+                min='0'
+                step='1'
+                value={oudMaxMartingaleLevel}
+                disabled={
+                    oudExecutionState.status === 'PURCHASING' ||
+                    oudExecutionState.status === 'CONTRACT_ACTIVE'
+                }
+                onChange={event =>
+                    setOudMaxMartingaleLevel(
+                        event.target.value,
+                    )
+                }
+            />
+        </div>
+    </div>
+
+    <div className='only-ups-downs-native-bot__controls'>
+        <button
+            type='button'
+            className='only-ups-downs-native-bot__control only-ups-downs-native-bot__control--run'
+            disabled={
+                oudExecutionState.status === 'PURCHASING' ||
+                oudExecutionState.status === 'CONTRACT_ACTIVE'
+            }
+            onClick={handleOudRun}
+        >
+            ▶ START
+        </button>
+
+        <button
+            type='button'
+            className='only-ups-downs-native-bot__control'
+            disabled={
+                oudExecutionState.lifecycle !== 'RUNNING'
+            }
+            onClick={handleOudPause}
+        >
+            ⏸ PAUSE
+        </button>
+
+        <button
+            type='button'
+            className='only-ups-downs-native-bot__control'
+            disabled={
+                oudExecutionState.lifecycle === 'STOPPED'
+            }
+            onClick={handleOudStop}
+        >
+            ■ STOP
+        </button>
+    </div>
+
+    <div className='only-ups-downs-native-bot__status-grid'>
+        <div>
+            <span>Status</span>
+            <strong>{oudExecutionState.lifecycle}</strong>
+        </div>
+
+        <div>
+            <span>Signal</span>
+            <strong>
+                {signalDirection === 'UP'
+                    ? '↑ UP'
+                    : signalDirection === 'DOWN'
+                        ? '↓ DOWN'
+                        : 'WAIT'}
+            </strong>
+        </div>
+
+        <div>
+            <span>Last Result</span>
+            <strong>
+                {oudExecutionState.lastResult || '—'}
+            </strong>
+        </div>
+
+        <div>
+            <span>Current Stake</span>
+            <strong>
+                {oudExecutionState.currentStake.toFixed(2)}
+            </strong>
+        </div>
+    </div>
+</section>
+
+{/* =====================================================
+    OUD PERFORMANCE
+   ===================================================== */}
+
+<section className='only-ups-downs-native-performance'>
+    <div className='only-ups-downs-native-performance__header'>
+        <div>
+            <span>BOT RESULTS</span>
+            <h2>PERFORMANCE</h2>
+        </div>
+
+        <button
+            type='button'
+            className='only-ups-downs-native-performance__reset'
+            disabled={
+                oudExecutionState.status === 'PURCHASING' ||
+                oudExecutionState.status === 'CONTRACT_ACTIVE'
+            }
+            onClick={handleOudReset}
+        >
+            ↻ RESET
+        </button>
+    </div>
+
+    <div className='only-ups-downs-native-performance__grid'>
+        <div>
+            <span>Total P/L</span>
+            <strong>
+                {oudExecutionState.totalProfit >= 0
+                    ? '+'
+                    : ''}
+                {oudExecutionState.totalProfit.toFixed(2)}
+            </strong>
+        </div>
+
+        <div>
+            <span>Total Trades</span>
+            <strong>{oudExecutionState.totalTrades}</strong>
+        </div>
+
+        <div>
+            <span>Wins</span>
+            <strong>{oudExecutionState.wins}</strong>
+        </div>
+
+        <div>
+            <span>Losses</span>
+            <strong>{oudExecutionState.losses}</strong>
+        </div>
+
+        <div>
+            <span>Win Rate</span>
+            <strong>
+                {oudExecutionState.winRate.toFixed(1)}%
+            </strong>
+        </div>
+
+        <div>
+            <span>Current Level</span>
+            <strong>
+                {oudExecutionState.recoveryLevel} /{' '}
+                {oudExecutionState.maxMartingaleLevel}
+            </strong>
+        </div>
+
+        <div>
+            <span>Current Stake</span>
+            <strong>
+                {oudExecutionState.currentStake.toFixed(2)}
+            </strong>
+        </div>
+
+        <div>
+            <span>Last Result</span>
+            <strong>
+                {oudExecutionState.lastResult || '—'}
+            </strong>
+        </div>
+    </div>
+
+    {oudExecutionState.tradeHistory.length > 0 && (
+        <div className='only-ups-downs-native-performance__recent'>
+            <span>RECENT TRADES</span>
+
+            <div className='only-ups-downs-native-performance__trade-list'>
+                {oudExecutionState.tradeHistory
+                    .slice(0, 5)
+                    .map(trade => (
+                        <div
+                            key={trade.id}
+                            className='only-ups-downs-native-performance__trade'
+                        >
+                            <strong>
+                                {trade.direction === 'UP'
+                                    ? '↑'
+                                    : '↓'}
+                            </strong>
+
+                            <span>
+                                {trade.result}
+                            </span>
+
+                            <span>
+                                {trade.profit === null
+                                    ? '—'
+                                    : `${trade.profit >= 0 ? '+' : ''}${trade.profit.toFixed(2)}`}
+                            </span>
+                        </div>
+                    ))}
+            </div>
+        </div>
+    )}
+</section>
+
+
+            {/* =====================================================
                 EXISTING TRADINGVIEW / SMARTCHART
                 DO NOT MODIFY THIS BLOCK
                ===================================================== */}
-
             <div className='only-ups-downs-page__chart-card'>
                 <div className='only-ups-downs-page__chart-header'>
                     <h2>LIVE MARKET CHART</h2>
@@ -1363,289 +1937,7 @@ onChange={(event) => {
                 </div>
             </div>
 
-            {/* =====================================================
-    NATIVE OUD BOT
-   ===================================================== */}
-
-            <section className='only-ups-downs-native-bot'>
-                <div className='only-ups-downs-native-bot__header'>
-                    <div>
-                        <div className='only-ups-downs-native-bot__eyebrow'>
-                            NATIVE EXECUTION
-                        </div>
-                        <h2>OUD BOT</h2>
-                    </div>
-
-                    <div
-                        className={
-                            `only-ups-downs-native-bot__status ` +
-                            `is-${oudExecutionState.lifecycle.toLowerCase()}`
-                        }
-                    >
-                        {oudExecutionState.lifecycle}
-                    </div>
-                </div>
-
-                <div className='only-ups-downs-native-bot__grid'>
-                    <div>
-                        <span>Status</span>
-                        <strong>
-                            {oudExecutionState.lifecycle}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>Signal</span>
-                        <strong>
-                            {signalDirection === 'UP'
-                                ? '▲ UP'
-                                : signalDirection === 'DOWN'
-                                    ? '▼ DOWN'
-                                    : 'WAIT'}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>Market</span>
-                        <strong>
-                            {symbol || '—'}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>Stake</span>
-                        <input
-                            type='number'
-                            min='0.01'
-                            step='0.01'
-                            value={oudStakeInput}
-                            disabled={
-                                oudExecutionState.status === 'PURCHASING' ||
-                                oudExecutionState.status === 'CONTRACT_ACTIVE'
-                            }
-                            onChange={event =>
-                                setOudStakeInput(event.target.value)
-                            }
-                        />
-                    </div>
-
-                    <div>
-                        <span>Duration</span>
-                        <select
-                            value={oudDuration}
-                            disabled={
-                                oudExecutionState.status === 'PURCHASING' ||
-                                oudExecutionState.status === 'CONTRACT_ACTIVE'
-                            }
-                            onChange={event =>
-                                setOudDuration(
-                                    Number(event.target.value),
-                                )
-                            }
-                        >
-                            <option value={2}>2 ticks</option>
-                            <option value={3}>3 ticks</option>
-                            <option value={4}>4 ticks</option>
-                            <option value={5}>5 ticks</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <span>Recovery</span>
-                        <strong>
-                            {oudExecutionState.recoveryLevel} / 6
-                        </strong>
-                    </div>
-                </div>
-
-                <div className='only-ups-downs-native-bot__direction'>
-                    <span>Direction</span>
-
-                    <div className='only-ups-downs-native-bot__direction-buttons'>
-                        <button
-                            type='button'
-                            className={
-                                oudManualDirection === 'UP'
-                                    ? 'only-ups-downs-native-bot__direction-button is-active'
-                                    : 'only-ups-downs-native-bot__direction-button'
-                            }
-                            onClick={() =>
-                                handleOudManualTrade('UP')
-                            }
-                            disabled={
-                                oudExecutionState.status === 'PURCHASING' ||
-                                oudExecutionState.status === 'CONTRACT_ACTIVE'
-                            }
-                        >
-                            ▲ UP
-                        </button>
-
-                        <button
-                            type='button'
-                            className={
-                                oudManualDirection === 'DOWN'
-                                    ? 'only-ups-downs-native-bot__direction-button is-active'
-                                    : 'only-ups-downs-native-bot__direction-button'
-                            }
-                            onClick={() =>
-                                handleOudManualTrade('DOWN')
-                            }
-                            disabled={
-                                oudExecutionState.status === 'PURCHASING' ||
-                                oudExecutionState.status === 'CONTRACT_ACTIVE'
-                            }
-                        >
-                            ▼ DOWN
-                        </button>
-                    </div>
-                </div>
-
-                <div className='only-ups-downs-native-bot__controls'>
-                    <button
-                        type='button'
-                        className='only-ups-downs-native-bot__control only-ups-downs-native-bot__control--run'
-                        disabled={
-                            oudExecutionState.status === 'PURCHASING' ||
-                            oudExecutionState.status === 'CONTRACT_ACTIVE'
-                        }
-                        onClick={() => void handleOudRun()}
-                    >
-                        ▶ RUN
-                    </button>
-
-                    <button
-                        type='button'
-                        className='only-ups-downs-native-bot__control'
-                        disabled={
-                            oudExecutionState.lifecycle === 'PAUSED'
-                        }
-                        onClick={handleOudPause}
-                    >
-                        ⏸ PAUSE
-                    </button>
-
-                    <button
-                        type='button'
-                        className='only-ups-downs-native-bot__control'
-                        disabled={
-                            oudExecutionState.lifecycle === 'STOPPED'
-                        }
-                        onClick={handleOudStop}
-                    >
-                        ■ STOP
-                    </button>
-                </div>
-
-                <div className='only-ups-downs-native-bot__execution-status'>
-                    <div>
-                        <span>Execution</span>
-                        <strong>
-                            {oudExecutionState.status}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>Last Result</span>
-                        <strong>
-                            {oudExecutionState.lastResult || '—'}
-                        </strong>
-                    </div>
-
-                    <div>
-                        <span>Profit</span>
-                        <strong>
-                            {oudExecutionState.profit === null
-                                ? '—'
-                                : `${oudExecutionState.profit >= 0 ? '+' : ''}${oudExecutionState.profit.toFixed(2)}`}
-                        </strong>
-                    </div>
-                </div>
-
-                <div className='only-ups-downs-native-bot__trades'>
-                    <div className='only-ups-downs-native-bot__section-title'>
-                        Last Trades
-                    </div>
-
-                    {oudExecutionState.tradeHistory.length === 0 ? (
-                        <div className='only-ups-downs-native-bot__empty'>
-                            No completed trades yet.
-                        </div>
-                    ) : (
-                        <div className='only-ups-downs-native-bot__table-wrap'>
-                            <table className='only-ups-downs-native-bot__table'>
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Direction</th>
-                                        <th>Stake</th>
-                                        <th>Result</th>
-                                        <th>Profit</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-                                    {oudExecutionState.tradeHistory.map(
-                                        (trade, index) => (
-                                            <tr key={trade.id}>
-                                                <td>{index + 1}</td>
-                                                <td>
-                                                    {trade.direction === 'UP'
-                                                        ? '▲ UP'
-                                                        : '▼ DOWN'}
-                                                </td>
-                                                <td>
-                                                    {trade.stake.toFixed(2)}
-                                                </td>
-                                                <td>
-                                                    {trade.result}
-                                                </td>
-                                                <td>
-                                                    {trade.profit === null
-                                                        ? '—'
-                                                        : `${trade.profit >= 0 ? '+' : ''}${trade.profit.toFixed(2)}`}
-                                                </td>
-                                            </tr>
-                                        ),
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
-
-                <div className='only-ups-downs-native-bot__result'>
-                    <div>
-                        <span>Last Contract</span>
-                        <strong>
-                            {oudExecutionState.contractId || '—'}
-                        </strong>
-                    </div>
-
-                    {oudExecutionState.error && (
-                        <div>
-                            <span>Error</span>
-                            <strong>
-                                {oudExecutionState.error}
-                            </strong>
-                        </div>
-                    )}
-                </div>
-
-                <div className='only-ups-downs-native-bot__reset'>
-                    <button
-                        type='button'
-                        className='only-ups-downs-native-bot__reset-button'
-                        disabled={
-                            oudExecutionState.status === 'PURCHASING' ||
-                            oudExecutionState.status === 'CONTRACT_ACTIVE'
-                        }
-                        onClick={handleOudReset}
-                    >
-                        ↻ RESET
-                    </button>
-                </div>
-            </section>
-            {/* =====================================================
+{/* =====================================================
                 ONLY UPS / ONLY DOWNS COMMAND CENTER
                ===================================================== */}
 
@@ -2036,6 +2328,19 @@ onChange={(event) => {
 };
 
 export default OnlyUpsDowns;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

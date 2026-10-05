@@ -1,5 +1,12 @@
 ﻿export type OUDDirection = 'UP' | 'DOWN';
 
+export type OUDDirectionMode = 'UP' | 'DOWN' | 'BOTH';
+
+export type OUDStrategyMode =
+    | 'REVERSAL'
+    | 'CONTINUATION'
+    | 'BOTH';
+
 export type OUDLifecycleStatus =
     | 'RUNNING'
     | 'PAUSED'
@@ -27,15 +34,47 @@ export interface OUDTradeRecord {
 export interface OUDExecutionState {
     lifecycle: OUDLifecycleStatus;
     status: OUDExecutionStatus;
+
     direction: OUDDirection | null;
     market: string;
+
+    /*
+     * User configuration.
+     */
+    directionMode: OUDDirectionMode;
+    strategyMode: OUDStrategyMode;
+    martingaleEnabled: boolean;
+    martingaleMultiplier: number;
+    maxMartingaleLevel: number;
+
+    /*
+     * Stake tracking.
+     *
+     * baseStake = user's configured starting stake.
+     * stake = actual stake used for the current/last trade.
+     */
+    baseStake: number;
     stake: number;
+    currentStake: number;
+
     duration: number;
     recoveryLevel: number;
+
     contractId: string | null;
     lastResult: string | null;
     profit: number | null;
     error: string | null;
+
+    /*
+     * Cumulative performance.
+     * These are independent of the 10-trade display history.
+     */
+    totalTrades: number;
+    wins: number;
+    losses: number;
+    totalProfit: number;
+    winRate: number;
+
     tradeHistory: OUDTradeRecord[];
 }
 
