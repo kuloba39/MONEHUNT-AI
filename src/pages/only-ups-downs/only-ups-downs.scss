@@ -1392,21 +1392,33 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
-    min-height: 58px;
-    padding: 0 8px;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 6px;
     overflow: hidden;
 }
 
 .only-ups-downs-tick-movement__tick {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex: 1 1 0;
     min-width: 0;
-    font-size: 25px;
+    height: 28px;
+    font-size: 18px;
     font-weight: 900;
     line-height: 1;
+    opacity: 0.9;
+}
+
+.only-ups-downs-tick-movement__tick::before {
+    content: '';
+    width: 2px;
+    height: 14px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.45;
 }
 
 .only-ups-downs-tick-movement__tick.is-up {
@@ -1418,7 +1430,8 @@
 }
 
 .only-ups-downs-tick-movement__tick.is-neutral {
-    opacity: 0.35;
+    color: #9ca3af;
+    opacity: 0.45;
 }
 
 
