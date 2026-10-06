@@ -7,6 +7,11 @@ export type OUDStrategyMode =
     | 'CONTINUATION'
     | 'BOTH';
 
+
+export type OUDTradeStrategy =
+    | 'REVERSAL'
+    | 'CONTINUATION'
+    | 'MANUAL';
 export type OUDLifecycleStatus =
     | 'RUNNING'
     | 'PAUSED'
@@ -83,4 +88,70 @@ export interface OUDExecuteParams {
     market: string;
     stake: number;
     duration: number;
+}
+
+/*
+ * ============================================================
+ * NATIVE OUD EXECUTION ARCHITECTURE
+ * ============================================================
+ *
+ * These types separate:
+ *
+ *   1. USER CONFIGURATION
+ *   2. SCANNER SIGNAL
+ *   3. ACTIVE TRADE
+ *   4. TRADE RESULT
+ *
+ * The active trade direction is immutable once created.
+ */
+
+/**
+ * Exact scanner signal accepted by the execution layer.
+ *
+ * signalCycleId comes directly from the OUD scanner.
+ * One cycle represents one READY signal lifecycle.
+ */
+export interface OUDSignal {
+    signalCycleId: number;
+    direction: OUDDirection;
+    strategy: Exclude<OUDStrategyMode, 'BOTH'>;
+    market: string;
+    confidence: number | null;
+    timestamp: number;
+}
+
+/**
+ * Immutable trade snapshot created from one OUDSignal.
+ *
+ * Once this object exists, its direction must never be
+ * replaced by a later scanner update.
+ */
+export interface OUDActiveTrade {
+    tradeId: number;
+    signalCycleId: number;
+    direction: OUDDirection;
+    strategy: OUDTradeStrategy;
+    market: string;
+    stake: number;
+    duration: number;
+    contractType: 'RUNHIGH' | 'RUNLOW';
+    contractId: string | null;
+}
+
+/**
+ * Final result of one active trade.
+ *
+ * Direction comes from the immutable active trade,
+ * never from the current scanner state.
+ */
+export interface OUDTradeResult {
+    tradeId: number;
+    signalCycleId: number;
+    direction: OUDDirection;
+    strategy: OUDTradeStrategy;
+    market: string;
+    result: 'WIN' | 'LOSS';
+    profit: number | null;
+    contractId: string | null;
+    timestamp: string;
 }

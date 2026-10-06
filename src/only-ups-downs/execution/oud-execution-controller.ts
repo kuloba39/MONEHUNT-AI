@@ -1,4 +1,4 @@
-import { api_base } from '@/external/bot-skeleton/services/api/api-base';
+﻿import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 import type {
     OUDDirection,
     OUDDirectionMode,
@@ -8,6 +8,18 @@ import type {
     OUDTradeRecord,
 } from './oud-execution-types';
 import type { OnlyUpsDownsLive } from '@/only-ups-downs/live/only-ups-downs-live';
+import { OUDSignalGate } from './oud-signal-gate';
+import {
+    createOUDActiveTrade,
+    createOUDManualTrade,
+} from './oud-active-trade';
+import { OUDTradeExecutor } from './oud-trade-executor';
+import { OUDContractMonitor } from './oud-contract-monitor';
+import { processOUDTradeResult } from './oud-result-engine';
+import type {
+    OUDActiveTrade,
+    OUDTradeResult,
+} from './oud-execution-types';
 
 const MIN_DURATION = 2;
 const MAX_DURATION = 5;
@@ -86,6 +98,17 @@ export class OUDExecutionController {
      * Require the same cycle + direction + strategy to persist across
      * two monitoring observations before purchasing.
      */
+    /*
+     * Native OUD execution architecture.
+     *
+     * The controller orchestrates these components but does not
+     * own their individual responsibilities.
+     */
+    private readonly signalGate: OUDSignalGate;
+    private tradeExecutor: OUDTradeExecutor | null = null;
+    private readonly contractMonitor: OUDContractMonitor;
+
+    private activeTrade: OUDActiveTrade | null = null;
     private signalConfirmationCycleId = 0;
     private signalConfirmationDirection: OUDDirection | null = null;
     private signalConfirmationMode: string | null = null;
@@ -103,6 +126,17 @@ export class OUDExecutionController {
         this.dbot = dbot;
         this.currency = currency || 'USD';
         this.getLive = getLive;
+        /*
+         * Native signal gate.
+         *
+         * It receives the scanner's already-confirmed signal and
+         * enforces the user's direction/strategy configuration
+         * plus one-trade-per-signal-cycle protection.
+         */
+        this.signalGate = new OUDSignalGate(
+            'BOTH',
+            'BOTH',
+        );
 
         this.state = {
             lifecycle: 'STOPPED',
@@ -141,12 +175,29 @@ export class OUDExecutionController {
         };
 
         this.refreshEngine();
+        /*
+         * Native contract monitor.
+         *
+         * It observes the existing TradeEngine contract state.
+         * It does not create another Deriv WebSocket subscription.
+         */
+        this.contractMonitor = new OUDContractMonitor({
+            tradeEngine: this.tradeEngine,
+            onResult: result => {
+                this.handleNativeTradeResult(result);
+            },
+        });
     }
 
     private refreshEngine() {
         this.tradeEngine =
             this.dbot?.interpreter?.bot?.tradeEngine ?? null;
 
+        if (this.contractMonitor) {
+            this.contractMonitor.setTradeEngine(
+                this.tradeEngine,
+            );
+        }
         return this.tradeEngine;
     }
 
@@ -495,6 +546,7 @@ export class OUDExecutionController {
         this.signalMonitorTimer = setInterval(() => {
             if (
                 this.state.lifecycle !== 'RUNNING' ||
+                this.activeTrade ||
                 this.state.status === 'PURCHASING' ||
                 this.state.status === 'CONTRACT_ACTIVE' ||
                 this.signalExecutionInFlight
@@ -553,9 +605,18 @@ export class OUDExecutionController {
             }
 
             const signalMode =
-                typeof signal.mode === 'string'
+                signal.mode === 'REVERSAL' ||
+                signal.mode === 'CONTINUATION'
                     ? signal.mode
-                    : '';
+                    : null;
+
+            if (!signalMode) {
+                this.signalConfirmationCycleId = 0;
+                this.signalConfirmationDirection = null;
+                this.signalConfirmationMode = null;
+                this.signalConfirmationCount = 0;
+                return;
+            }
 
             const sameConfirmation =
                 this.signalConfirmationCycleId === cycleId &&
@@ -578,40 +639,6 @@ export class OUDExecutionController {
                 return;
             }
 
-            console.log('[OUD GATE DEBUG]', {
-                userDirectionMode: this.state.directionMode,
-                scannerDirection: direction,
-                signalBotDirection: signal.botDirection,
-                signalMode,
-                confirmationCount: this.signalConfirmationCount,
-                requiredConfirmations: OUDExecutionController.REQUIRED_SIGNAL_CONFIRMATIONS,
-                directionAllowed: this.directionAllowed(direction),
-                strategyAllowed: this.strategyAllowed(signal.mode),
-                signalCycleId: cycleId,
-            });
-
-            /*
-             * Direction is a hard user configuration gate.
-             */
-            if (!this.directionAllowed(direction)) {
-                return;
-            }
-
-            /*
-             * Strategy is a hard user configuration gate.
-             *
-             * Scanner remains the signal authority.
-             * The controller only decides whether the
-             * scanner's READY signal matches user settings.
-             */
-            if (
-                !this.strategyAllowed(
-                    signal.mode,
-                )
-            ) {
-                return;
-            }
-
             const market =
                 live.getSymbol() ||
                 this.state.market;
@@ -620,8 +647,39 @@ export class OUDExecutionController {
                 return;
             }
 
-            this.lastSeenSignalCycleId = cycleId;
-            this.signalExecutionInFlight = true;
+            const gateResult =
+                this.signalGate.evaluate({
+                    direction,
+                    strategy: signalMode,
+                    market,
+                    confidence:
+                        signal.confidence ?? null,
+                    signalCycleId: cycleId,
+                });
+
+            console.log('[OUD NATIVE SIGNAL GATE]', {
+                allowed: gateResult.allowed,
+                reason: gateResult.reason,
+                direction,
+                strategy: signalMode,
+                market,
+                signalCycleId: cycleId,
+                confirmationCount:
+                    this.signalConfirmationCount,
+            });
+
+            if (
+                !gateResult.allowed ||
+                !gateResult.signal
+            ) {
+                return;
+            }
+
+            const acceptedSignal =
+                gateResult.signal;
+
+            this.lastSeenSignalCycleId =
+                acceptedSignal.signalCycleId;
 
             const nextStake =
                 this.calculateNextStake(
@@ -629,33 +687,198 @@ export class OUDExecutionController {
                     this.state.baseStake,
                 );
 
+            const activeTrade =
+                createOUDActiveTrade(
+                    acceptedSignal,
+                    {
+                        stake: nextStake,
+                        duration: this.state.duration,
+                    },
+                );
+
+            this.activeTrade =
+                activeTrade;
+
+            this.signalExecutionInFlight = true;
+
             this.setState({
                 status: 'SIGNAL_READY',
-                direction,
-                market,
-                currentStake: nextStake,
-                stake: nextStake,
+                direction:
+                    activeTrade.direction,
+                market:
+                    activeTrade.market,
+                currentStake:
+                    activeTrade.stake,
+                stake:
+                    activeTrade.stake,
+                duration:
+                    activeTrade.duration,
+                contractId: null,
                 error: null,
             });
 
-            console.log('[OUD EXECUTE DIRECTION DEBUG]', {
-                userDirectionMode: this.state.directionMode,
-                signalDirection: direction,
-                signalBotDirection: signal.botDirection,
-                signalCycleId: cycleId,
-            });
+            console.log(
+                '[OUD NATIVE SIGNAL ACCEPTED]',
+                {
+                    tradeId:
+                        activeTrade.tradeId,
+                    signalCycleId:
+                        activeTrade.signalCycleId,
+                    direction:
+                        activeTrade.direction,
+                    strategy:
+                        activeTrade.strategy,
+                    contractType:
+                        activeTrade.contractType,
+                    market:
+                        activeTrade.market,
+                    stake:
+                        activeTrade.stake,
+                },
+            );
 
-            void this.execute({
-                direction,
-                market,
-                stake: nextStake,
-                duration: this.state.duration,
-            }).finally(() => {
-                this.signalExecutionInFlight = false;
-            });
+            void (async () => {
+                try {
+                    this.refreshEngine();
+
+                    const token =
+                        api_base.token;
+
+                    if (!this.tradeEngine) {
+                        throw new Error(
+                            'OUD TradeEngine is not initialized.',
+                        );
+                    }
+
+                    if (
+                        !api_base.api ||
+                        !api_base.is_authorized
+                    ) {
+                        throw new Error(
+                            'Trading API is not authorized.',
+                        );
+                    }
+
+                    if (!token) {
+                        throw new Error(
+                            'No authorized trading token is available.',
+                        );
+                    }
+
+                    this.tradeExecutor =
+                        new OUDTradeExecutor({
+                            tradeEngine:
+                                this.tradeEngine,
+                            token,
+                            currency:
+                                this.currency,
+                            isRunning: () =>
+                                this.state.lifecycle ===
+                                'RUNNING',
+                        });
+
+                    this.setState({
+                        status: 'PURCHASING',
+                        direction:
+                            activeTrade.direction,
+                        market:
+                            activeTrade.market,
+                        stake:
+                            activeTrade.stake,
+                        currentStake:
+                            activeTrade.stake,
+                        duration:
+                            activeTrade.duration,
+                        contractId: null,
+                        error: null,
+                    });
+
+                    const execution =
+                        await this.tradeExecutor.execute(
+                            activeTrade,
+                        );
+
+                    const purchasedTrade =
+                        execution.trade;
+
+                    this.activeTrade =
+                        purchasedTrade;
+
+                    this.setState({
+                        status:
+                            'CONTRACT_ACTIVE',
+                        direction:
+                            purchasedTrade.direction,
+                        market:
+                            purchasedTrade.market,
+                        stake:
+                            purchasedTrade.stake,
+                        currentStake:
+                            purchasedTrade.stake,
+                        duration:
+                            purchasedTrade.duration,
+                        contractId:
+                            execution.contractId,
+                        error: null,
+                    });
+
+                    /*
+                     * Consume the scanner signal only after
+                     * Deriv has confirmed the real contract.
+                     */
+                    live.consumeSignal();
+
+                    this.lastConsumedSignalCycleId =
+                        acceptedSignal.signalCycleId;
+
+                    this.contractMonitor.start(
+                        purchasedTrade,
+                    );
+
+                    console.log(
+                        '[OUD NATIVE PURCHASED]',
+                        {
+                            tradeId:
+                                purchasedTrade.tradeId,
+                            signalCycleId:
+                                purchasedTrade.signalCycleId,
+                            direction:
+                                purchasedTrade.direction,
+                            contractType:
+                                purchasedTrade.contractType,
+                            contractId:
+                                execution.contractId,
+                        },
+                    );
+                } catch (error) {
+                    this.activeTrade = null;
+
+                    this.signalGate.releaseCycle(
+                        acceptedSignal.signalCycleId,
+                    );
+
+                    const message =
+                        error instanceof Error
+                            ? error.message
+                            : String(error);
+
+                    console.error(
+                        '[OUD NATIVE EXECUTION] failed:',
+                        error,
+                    );
+
+                    this.setState({
+                        status: 'ERROR',
+                        error: message,
+                        contractId: null,
+                    });
+                } finally {
+                    this.signalExecutionInFlight =
+                        false;
+                }
+            })();
         }, 150);
     }
-
     canExecute() {
         return (
             this.state.lifecycle === 'RUNNING' &&
@@ -680,6 +903,130 @@ export class OUDExecutionController {
         }
     }
 
+    private handleNativeTradeResult(
+        result: OUDTradeResult,
+    ) {
+        const activeTrade = this.activeTrade;
+
+        if (!activeTrade) {
+            console.warn(
+                '[OUD RESULT] Result received without an active trade.',
+                result,
+            );
+            return;
+        }
+
+        if (
+            result.tradeId !==
+            activeTrade.tradeId
+        ) {
+            console.warn(
+                '[OUD RESULT] Ignoring result for another trade.',
+                {
+                    resultTradeId: result.tradeId,
+                    activeTradeId: activeTrade.tradeId,
+                },
+            );
+            return;
+        }
+
+        const processed =
+            processOUDTradeResult(
+                result,
+                {
+                    martingaleEnabled:
+                        this.state.martingaleEnabled,
+                    martingaleMultiplier:
+                        this.state.martingaleMultiplier,
+                    maxMartingaleLevel:
+                        this.state.maxMartingaleLevel,
+                    baseStake:
+                        this.state.baseStake,
+                    currentRecoveryLevel:
+                        this.state.recoveryLevel,
+                    previousTotalTrades:
+                        this.state.totalTrades,
+                    previousWins:
+                        this.state.wins,
+                    previousLosses:
+                        this.state.losses,
+                    previousTotalProfit:
+                        this.state.totalProfit,
+                },
+            );
+
+        const record: OUDTradeRecord = {
+            id: Date.now(),
+            timestamp:
+                result.timestamp,
+            direction:
+                result.direction,
+            stake:
+                activeTrade.stake,
+            result:
+                result.result,
+            profit:
+                result.profit,
+            contractId:
+                result.contractId,
+        };
+
+        this.addTradeRecord(record);
+
+        this.setState({
+            status:
+                result.result === 'WIN'
+                    ? 'WON'
+                    : 'LOST',
+            direction:
+                result.direction,
+            market:
+                result.market,
+            lastResult:
+                result.result,
+            profit:
+                result.profit,
+            recoveryLevel:
+                processed.recoveryLevel,
+            currentStake:
+                processed.nextStake,
+            stake:
+                processed.nextStake,
+            totalTrades:
+                processed.totalTrades,
+            wins:
+                processed.wins,
+            losses:
+                processed.losses,
+            totalProfit:
+                processed.totalProfit,
+            winRate:
+                processed.winRate,
+            contractId: null,
+        });
+
+        this.activeTrade = null;
+
+        console.log(
+            '[OUD RESULT] Native trade completed.',
+            {
+                tradeId:
+                    result.tradeId,
+                signalCycleId:
+                    result.signalCycleId,
+                direction:
+                    result.direction,
+                result:
+                    result.result,
+                profit:
+                    result.profit,
+                nextStake:
+                    processed.nextStake,
+                recoveryLevel:
+                    processed.recoveryLevel,
+            },
+        );
+    }
     private addTradeRecord(
         record: OUDTradeRecord,
     ) {
@@ -1166,6 +1513,10 @@ export class OUDExecutionController {
         }
 
         this.stopPolling();
+        this.contractMonitor.stop();
+        this.signalGate.clear();
+        this.activeTrade = null;
+        this.tradeExecutor = null;
         this.lastSeenSignalCycleId = 0;
         this.lastConsumedSignalCycleId = 0;
         this.signalExecutionInFlight = false;
@@ -1197,6 +1548,10 @@ export class OUDExecutionController {
     destroy() {
         this.stopPolling();
         this.stopSignalMonitoring();
+        this.contractMonitor.destroy();
+        this.signalGate.clear();
+        this.activeTrade = null;
+        this.tradeExecutor = null;
         this.lastSeenSignalCycleId = 0;
         this.lastConsumedSignalCycleId = 0;
         this.signalExecutionInFlight = false;
@@ -1205,3 +1560,17 @@ export class OUDExecutionController {
 }
 
 export default OUDExecutionController;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
