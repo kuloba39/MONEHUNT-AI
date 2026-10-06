@@ -486,6 +486,10 @@ const [oudManualDirection, setOudManualDirection] =
         controller.setStake(stake);
         controller.setDuration(duration);
         controller.setDirectionMode(oudDirectionMode);
+        console.log('[OUD DIRECTION DEBUG]', {
+            uiDirectionMode: oudDirectionMode,
+            controllerDirectionMode: controller.getState().directionMode,
+        });
         controller.setStrategyMode(oudStrategyMode);
         controller.setMartingaleEnabled(
             oudMartingaleEnabled,

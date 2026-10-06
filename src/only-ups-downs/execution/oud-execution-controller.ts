@@ -1,4 +1,4 @@
-﻿import { api_base } from '@/external/bot-skeleton/services/api/api-base';
+import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 import type {
     OUDDirection,
     OUDDirectionMode,
@@ -393,6 +393,19 @@ export class OUDExecutionController {
                 normalizedCycleId;
         }
 
+        if (
+            direction === null &&
+            (
+                this.state.status === 'PURCHASING' ||
+                this.state.status === 'CONTRACT_ACTIVE'
+            )
+        ) {
+            this.setState({
+                market,
+            });
+            return;
+        }
+
         this.setState({
             market,
             direction,
@@ -565,6 +578,18 @@ export class OUDExecutionController {
                 return;
             }
 
+            console.log('[OUD GATE DEBUG]', {
+                userDirectionMode: this.state.directionMode,
+                scannerDirection: direction,
+                signalBotDirection: signal.botDirection,
+                signalMode,
+                confirmationCount: this.signalConfirmationCount,
+                requiredConfirmations: OUDExecutionController.REQUIRED_SIGNAL_CONFIRMATIONS,
+                directionAllowed: this.directionAllowed(direction),
+                strategyAllowed: this.strategyAllowed(signal.mode),
+                signalCycleId: cycleId,
+            });
+
             /*
              * Direction is a hard user configuration gate.
              */
@@ -611,6 +636,13 @@ export class OUDExecutionController {
                 currentStake: nextStake,
                 stake: nextStake,
                 error: null,
+            });
+
+            console.log('[OUD EXECUTE DIRECTION DEBUG]', {
+                userDirectionMode: this.state.directionMode,
+                signalDirection: direction,
+                signalBotDirection: signal.botDirection,
+                signalCycleId: cycleId,
             });
 
             void this.execute({
