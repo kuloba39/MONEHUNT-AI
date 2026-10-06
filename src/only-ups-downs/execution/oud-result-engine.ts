@@ -128,7 +128,7 @@ export function processOUDTradeResult(
                           safeMultiplier,
                           nextRecoveryLevel,
                       )
-                  ).toFixed(8),
+                  ).toFixed(2),
               )
             : safeBaseStake;
 

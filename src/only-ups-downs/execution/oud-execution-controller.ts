@@ -404,9 +404,7 @@ export class OUDExecutionController {
             return normalizedBase;
         }
 
-        return Number(
-            calculated.toFixed(8),
-        );
+        return normalizeStake(calculated);
     }
 
     private directionAllowed(
