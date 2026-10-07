@@ -602,6 +602,22 @@ export class OUDExecutionController {
                 return;
             }
 
+            if (!this.directionAllowed(direction)) {
+                console.log('[OUD NATIVE SIGNAL FILTER]', {
+                    allowed: false,
+                    reason: 'DIRECTION_MODE_MISMATCH',
+                    selectedDirectionMode: this.state.directionMode,
+                    signalDirection: direction,
+                    signalCycleId: cycleId,
+                });
+
+                this.signalConfirmationCycleId = 0;
+                this.signalConfirmationDirection = null;
+                this.signalConfirmationMode = null;
+                this.signalConfirmationCount = 0;
+                return;
+            }
+
             const signalMode =
                 signal.mode === 'REVERSAL' ||
                 signal.mode === 'CONTINUATION'
@@ -609,6 +625,22 @@ export class OUDExecutionController {
                     : null;
 
             if (!signalMode) {
+                this.signalConfirmationCycleId = 0;
+                this.signalConfirmationDirection = null;
+                this.signalConfirmationMode = null;
+                this.signalConfirmationCount = 0;
+                return;
+            }
+
+            if (!this.strategyAllowed(signalMode)) {
+                console.log('[OUD NATIVE SIGNAL FILTER]', {
+                    allowed: false,
+                    reason: 'STRATEGY_MODE_MISMATCH',
+                    selectedStrategyMode: this.state.strategyMode,
+                    signalStrategy: signalMode,
+                    signalCycleId: cycleId,
+                });
+
                 this.signalConfirmationCycleId = 0;
                 this.signalConfirmationDirection = null;
                 this.signalConfirmationMode = null;
@@ -1558,6 +1590,7 @@ export class OUDExecutionController {
 }
 
 export default OUDExecutionController;
+
 
 
 
