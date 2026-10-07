@@ -1447,36 +1447,33 @@ onChange={(event) => {
     </div>
 
     <div className='only-ups-downs-tick-movement__ticks'>
-        {snapshot.prices.slice(-12).map((price, index, values) => {
+        {snapshot.prices.slice(-7).map((price, index, values) => {
             const previous = values[index - 1];
-
             if (previous === undefined) {
-                return (
-                    <span
-                        key={`${price}-${index}`}
-                        className='only-ups-downs-tick-movement__tick is-neutral'
-                    >
-                        →
-                    </span>
-                );
+                return null;
             }
+
+            const movement =
+                price > previous
+                    ? '↑'
+                    : price < previous
+                        ? '↓'
+                        : '0';
+
+            const movementClass =
+                movement === '↑'
+                    ? 'is-up'
+                    : movement === '↓'
+                        ? 'is-down'
+                        : 'is-neutral';
 
             return (
                 <span
-                    key={`${price}-${index}`}
-                    className={
-                        price > previous
-                            ? 'only-ups-downs-tick-movement__tick is-up'
-                            : price < previous
-                                ? 'only-ups-downs-tick-movement__tick is-down'
-                                : 'only-ups-downs-tick-movement__tick is-neutral'
-                    }
+                    key={'tick-' + snapshot.pointCount + '-' + index + '-' + price}
+                    className={'only-ups-downs-tick-movement__tick ' + movementClass}
+                    aria-label={'Tick movement: ' + movement}
                 >
-                    {price > previous
-                        ? '↑'
-                        : price < previous
-                            ? '↓'
-                            : '→'}
+                    {movement}
                 </span>
             );
         })}

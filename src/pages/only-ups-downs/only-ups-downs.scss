@@ -1389,10 +1389,11 @@
 }
 
 .only-ups-downs-tick-movement__ticks {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 6px;
     min-height: 42px;
     padding: 0 6px;
     overflow: hidden;
@@ -1403,22 +1404,39 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex: 1 1 0;
-    min-width: 0;
+    flex: 0 0 auto;
+    width: 42px;
     height: 28px;
-    font-size: 18px;
+    margin-left: 0;
+    font-size: 22px;
     font-weight: 900;
     line-height: 1;
     opacity: 0.9;
+    animation: none;
+}
+
+.only-ups-downs-tick-movement__tick:last-child {
+    animation: only-ups-downs-tick-enter 420ms ease-out both;
 }
 
 .only-ups-downs-tick-movement__tick::before {
-    content: '';
-    width: 2px;
-    height: 14px;
-    border-radius: 999px;
-    background: currentColor;
-    opacity: 0.45;
+    display: none;
+}
+
+@keyframes only-ups-downs-tick-enter {
+    from {
+        transform: translateX(calc(100% + 320px));
+        opacity: 0;
+    }
+
+    45% {
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 0.9;
+    }
 }
 
 .only-ups-downs-tick-movement__tick.is-up {
@@ -1887,4 +1905,3 @@
         grid-template-columns: 30px 1fr auto;
     }
 }
-
