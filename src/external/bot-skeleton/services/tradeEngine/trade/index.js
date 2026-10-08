@@ -18,7 +18,7 @@ import Sell from './Sell';
 import Ticks from './Ticks';
 import Total from './Total';
 
-const watchBefore = store => {
+const watchBefore = (store, getPrevTick, setPrevTick) => {
     const state = store.getState();
 
     // Fast path: when the bot is already ready to purchase,
@@ -35,21 +35,28 @@ const watchBefore = store => {
         stopScope: constants.DURING_PURCHASE,
         passScope: constants.BEFORE_PURCHASE,
         passFlag: 'proposalsReady',
+        getPrevTick,
+        setPrevTick,
     });
 };
-const watchDuring = store =>
+const watchDuring = (store, getPrevTick, setPrevTick) =>
     watchScope({
         store,
         stopScope: constants.STOP,
         passScope: constants.DURING_PURCHASE,
         passFlag: 'openContract',
+        getPrevTick,
+        setPrevTick,
     });
 
-/* The watchScope function is called randomly and resets the prevTick
- * which leads to the same problem we try to solve. So prevTick is isolated
- */
-let prevTick;
-const watchScope = ({ store, stopScope, passScope, passFlag }) => {
+const watchScope = ({
+    store,
+    stopScope,
+    passScope,
+    passFlag,
+    getPrevTick,
+    setPrevTick,
+}) => {
     // in case watch is called after stop is fired
     if (store.getState().scope === stopScope) {
         return Promise.resolve(false);
@@ -78,8 +85,8 @@ const watchScope = ({ store, stopScope, passScope, passFlag }) => {
 
             // Ignore duplicate tick notifications only after the
             // relevant state transitions have been evaluated.
-            if (newState.newTick === prevTick) return;
-            prevTick = newState.newTick;
+            if (newState.newTick === getPrevTick()) return;
+            setPrevTick(newState.newTick);
         });
     });
 };
@@ -96,6 +103,10 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
         };
         this.subscription_id_for_accumulators = null;
         this.is_proposal_requested_for_accumulators = false;
+
+        // Tick watcher state belongs to this TradeEngine instance.
+        this.prevTick = undefined;
+
         this.store = createStore(rootReducer, applyMiddleware(thunk));
     }
 
@@ -263,10 +274,24 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
     }
 
     watch(watchName) {
+        const getPrevTick = () => this.prevTick;
+        const setPrevTick = tick => {
+            this.prevTick = tick;
+        };
+
         if (watchName === 'before') {
-            return watchBefore(this.store);
+            return watchBefore(
+                this.store,
+                getPrevTick,
+                setPrevTick,
+            );
         }
-        return watchDuring(this.store);
+
+        return watchDuring(
+            this.store,
+            getPrevTick,
+            setPrevTick,
+        );
     }
 
     makeDirectPurchaseDecision() {
