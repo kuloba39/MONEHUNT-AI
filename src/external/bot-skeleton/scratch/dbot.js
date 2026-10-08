@@ -315,34 +315,56 @@ async initializeInterpreter() {
      * JavaScript code that's fed to the interpreter.
      */
     async runBot() {
-        if (api_base.is_stopping) return;
+    if (api_base.is_stopping) return;
 
-        try {
-            api_base.is_stopping = false;
-            const code = this.generateCode();
-            if (!this.interpreter.bot.tradeEngine.checkTicksPromiseExists()) this.interpreter = Interpreter();
+    try {
+        api_base.is_stopping = false;
 
-            const tickReadyPromise = this.interpreter?.bot?.tradeEngine?.tick_ready_promise;
+        const code = this.generateCode();
 
-            if (tickReadyPromise) {
-                await tickReadyPromise;
-            }
+        console.log('[MONEHUNT EXECUTION CONTROLLER] RUN:', {
+            hasInterpreter: !!this.interpreter,
+            hasGeneratedCode: !!code,
+        });
 
-            this.is_bot_running = true;
+        this.is_bot_running = true;
 
-            api_base.setIsRunning(true);
-            this.interpreter.run(code).catch(error => {
-                globalObserver.emit('Error', error);
-                this.stopBot();
-            });
-        } catch (error) {
+        api_base.setIsRunning(true);
+
+        /*
+         * IMPORTANT:
+         *
+         * Do not check tick readiness here.
+         *
+         * The XML has not executed yet, so TradeEngine.init() has not
+         * necessarily created tick_ready_promise.
+         *
+         * The generated bot lifecycle is responsible for:
+         *
+         *   Bot.init()
+         *      -> TradeEngine.init()
+         *      -> watchTicks()
+         *      -> TicksService.monitor()
+         *      -> tick history/cache
+         *      -> tick_ready_promise
+         *      -> Bot.start()
+         *
+         * The interpreter's Bot.start wrapper already waits for
+         * tradeEngine.tick_ready_promise before allowing the strategy
+         * to start.
+         */
+        this.interpreter.run(code).catch(error => {
             globalObserver.emit('Error', error);
+            this.stopBot();
+        });
+    } catch (error) {
+        globalObserver.emit('Error', error);
 
-            if (this.interpreter) {
-                this.stopBot();
-            }
+        if (this.interpreter) {
+            this.stopBot();
         }
     }
+}
 
     /**
      * Generates the code that is passed to the interpreter.
