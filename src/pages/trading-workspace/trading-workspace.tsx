@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { ApiHelpers } from '@/external/bot-skeleton';
 import { getContractTypeOptions } from '@/components/shared/utils/common-data';
@@ -158,6 +158,7 @@ const TradingWorkspace = observer(() => {
                     strategy_id: selectedBotForExecution.id,
                     from: 'monehunt-trading-workspace',
                     workspace,
+                    drop_event: null,
                     showIncompatibleStrategyDialog: false,
                     show_snackbar: false,
                     persist_to_recent: false,

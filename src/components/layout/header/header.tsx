@@ -5,6 +5,7 @@ import { generateOAuthURL } from '@/components/shared';
 import Button from '@/components/shared_ui/button';
 import useActiveAccount from '@/hooks/api/account/useActiveAccount';
 import { useApiBase } from '@/hooks/useApiBase';
+import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 import { useLogout } from '@/hooks/useLogout';
 import { useStore } from '@/hooks/useStore';
 import { navigateToTransfer } from '@/utils/transfer-utils';
@@ -31,7 +32,7 @@ const AppHeader = observer(() => {
 
     // Detect OAuth callback on mount (before App.tsx cleans up the URL).
     // When ?code=...&state=... is present the full auth flow can take 7-15 s
-    // (token exchange â†’ accounts fetch â†’ OTP â†’ WebSocket auth), so we must
+    // (token exchange Ã¢â€ â€™ accounts fetch Ã¢â€ â€™ OTP Ã¢â€ â€™ WebSocket auth), so we must
     // suppress the short fallback timeout and keep the spinner throughout.
     const [isOAuthPending, setIsOAuthPending] = useState(() => {
         const params = new URLSearchParams(window.location.search);
@@ -47,7 +48,7 @@ const AppHeader = observer(() => {
 
     const isMonehuntAccountSwitchingDisabled =
         Boolean(run_panel?.is_running) ||
-        Boolean(client?.is_running) ||
+        Boolean(api_base.is_running) ||
         Boolean(client?.is_account_regenerating);
 
     const handleMonehuntAccountSelect = useCallback(
@@ -309,7 +310,7 @@ const AppHeader = observer(() => {
                                         'monehunt-global-account-bar__chevron--open'
                                 )}
                             >
-                                ▼
+                                â–¼
                             </span>
                         )}
                     </button>
@@ -341,7 +342,7 @@ const AppHeader = observer(() => {
                                         role='menuitem'
                                     >
                                         <span>
-                                            {isActive ? '✓ ' : ''}
+                                            {isActive ? 'âœ“ ' : ''}
                                             {isDemo ? 'DEMO' : 'REAL'}
                                         </span>
                                     </button>

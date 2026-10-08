@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChunkLoader from '@/components/loader/chunk-loader';
 import TradingViewComponent from '@/components/trading-view-chart/trading-view';
 import chart_api from '@/external/bot-skeleton/services/api/chart-api';
@@ -1447,36 +1447,64 @@ onChange={(event) => {
     </div>
 
     <div className='only-ups-downs-tick-movement__ticks'>
-        {snapshot.prices.slice(-7).map((price, index, values) => {
-            const previous = values[index - 1];
-            if (previous === undefined) {
-                return null;
+        {(() => {
+            const prices = snapshot.prices;
+
+            const movements: Array<{
+                movement: '↑' | '↓';
+                price: number;
+                index: number;
+            }> = [];
+
+            for (let index = prices.length - 1; index > 0; index -= 1) {
+                const price = prices[index];
+                const previous = prices[index - 1];
+
+                if (price === previous) {
+                    continue;
+                }
+
+                movements.unshift({
+                    movement: price > previous ? '↑' : '↓',
+                    price,
+                    index,
+                });
+
+                if (movements.length >= 7) {
+                    break;
+                }
             }
 
-            const movement =
-                price > previous
-                    ? '↑'
-                    : price < previous
-                        ? '↓'
-                        : '0';
+            return movements.map(({ movement, price, index }) => {
+                const movementClass =
+                    movement === '↑'
+                        ? 'is-up'
+                        : 'is-down';
 
-            const movementClass =
-                movement === '↑'
-                    ? 'is-up'
-                    : movement === '↓'
-                        ? 'is-down'
-                        : 'is-neutral';
-
-            return (
-                <span
-                    key={'tick-' + snapshot.pointCount + '-' + index + '-' + price}
-                    className={'only-ups-downs-tick-movement__tick ' + movementClass}
-                    aria-label={'Tick movement: ' + movement}
-                >
-                    {movement}
-                </span>
-            );
-        })}
+                return (
+                    <span
+                        key={
+                            'tick-' +
+                            snapshot.pointCount +
+                            '-' +
+                            index +
+                            '-' +
+                            price
+                        }
+                        className={
+                            'only-ups-downs-tick-movement__tick ' +
+                            movementClass
+                        }
+                        aria-label={
+                            'Tick movement: ' +
+                            (movement === '↑' ? 'UP' : 'DOWN')
+                        }
+                    >
+                        {movement}
+                    </span>
+                );
+            });
+        })()}
     </div>
 </section>
 
@@ -2329,57 +2357,3 @@ onChange={(event) => {
 };
 
 export default OnlyUpsDowns;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
