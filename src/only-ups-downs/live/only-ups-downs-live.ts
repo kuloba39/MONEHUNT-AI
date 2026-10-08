@@ -23,6 +23,27 @@ export class OnlyUpsDownsLive {
     private readonly subscriptionIds =
         new Set<string>();
 
+    /**
+     * Subscribe requests that have been sent to Deriv but
+     * whose subscription response has not arrived yet.
+     *
+     * The old implementation only tracked subscription IDs
+     * after the response arrived. That created a race where
+     * stop() could run before the ID was known, leaving the
+     * old Deriv stream alive.
+     */
+    private readonly pendingSubscriptionRequestIds =
+        new Set<number>();
+
+    /**
+     * Every start/stop cycle receives a new generation.
+     *
+     * Any asynchronous operation belonging to an older
+     * generation is considered stale and must not become
+     * the active stream.
+     */
+    private lifecycleGeneration = 0;
+
     private historyRequestId:
         number | null = null;
 
@@ -48,7 +69,17 @@ export class OnlyUpsDownsLive {
     }
 
     async start(symbol: string): Promise<void> {
+        /*
+         * Invalidate the previous lifecycle first.
+         *
+         * stop() also increments the generation, so any
+         * asynchronous work from the previous start() becomes
+         * stale immediately.
+         */
         this.stop();
+
+        const generation =
+            this.lifecycleGeneration;
 
         this.symbol = symbol;
 
@@ -64,7 +95,10 @@ export class OnlyUpsDownsLive {
         this.subscription =
             api.onMessage().subscribe(
                 ({ data }: any) => {
-                    this.handleMessage(data);
+                    this.handleMessage(
+                        data,
+                        generation,
+                    );
                 },
             );
 
@@ -102,7 +136,15 @@ export class OnlyUpsDownsLive {
             );
         }
 
+        /*
+         * The history request is asynchronous.
+         *
+         * The page may have already stopped/restarted this
+         * live instance while Deriv was processing history.
+         */
         if (
+            generation !==
+                this.lifecycleGeneration ||
             this.symbol !== symbol ||
             !api_base?.api
         ) {
@@ -114,6 +156,10 @@ export class OnlyUpsDownsLive {
             Math.floor(
                 Math.random() * 1000000,
             );
+
+        this.pendingSubscriptionRequestIds.add(
+            reqId,
+        );
 
         try {
             await api.send({
@@ -127,6 +173,21 @@ export class OnlyUpsDownsLive {
                     1,
             });
         } catch (error: any) {
+            /*
+             * The request is no longer pending once send()
+             * has completed/rejected.
+             */
+            this.pendingSubscriptionRequestIds.delete(
+                reqId,
+            );
+
+            if (
+                generation !==
+                    this.lifecycleGeneration
+            ) {
+                return;
+            }
+
             if (
                 error?.error?.code ===
                 'AlreadySubscribed'
@@ -147,8 +208,38 @@ export class OnlyUpsDownsLive {
 
     private handleMessage(
         data: any,
+        generation: number,
     ): void {
         if (!data) {
+            return;
+        }
+
+        /*
+         * Ignore every message delivered to an obsolete
+         * listener/generation.
+         *
+         * This is important because onMessage() is global and
+         * asynchronous.
+         */
+        if (
+            generation !==
+            this.lifecycleGeneration
+        ) {
+            /*
+             * A stale subscription response can still arrive
+             * after stop(). If it contains a subscription ID,
+             * immediately forget it so the old Deriv stream
+             * cannot remain alive.
+             */
+            if (
+                data.subscription?.id &&
+                data.echo_req?.ticks
+            ) {
+                this.forgetSubscription(
+                    String(data.subscription.id),
+                );
+            }
+
             return;
         }
 
@@ -169,12 +260,40 @@ export class OnlyUpsDownsLive {
             return;
         }
 
+        /*
+         * Deriv has acknowledged a tick subscription.
+         *
+         * Only accept the subscription if the request still
+         * belongs to the active lifecycle.
+         */
         if (
             data.subscription?.id &&
             data.echo_req?.ticks === this.symbol
         ) {
+            const subscriptionId =
+                String(data.subscription.id);
+
+            /*
+             * We no longer need to track the request ID once
+             * Deriv has returned its subscription ID.
+             */
+            const requestId =
+                Number(data.echo_req?.req_id);
+
+            if (
+                Number.isFinite(requestId)
+            ) {
+                this.pendingSubscriptionRequestIds.delete(
+                    requestId,
+                );
+            }
+
+            /*
+             * If this message belongs to the active lifecycle,
+             * keep the subscription.
+             */
             this.subscriptionIds.add(
-                data.subscription.id,
+                subscriptionId,
             );
         }
 
@@ -182,6 +301,17 @@ export class OnlyUpsDownsLive {
             data?.error &&
             data?.echo_req?.ticks
         ) {
+            const requestId =
+                Number(data.echo_req?.req_id);
+
+            if (
+                Number.isFinite(requestId)
+            ) {
+                this.pendingSubscriptionRequestIds.delete(
+                    requestId,
+                );
+            }
+
             console.error(
                 'ONLY UPS / DOWNS DERIV LIVE ERROR',
                 {
@@ -277,7 +407,40 @@ export class OnlyUpsDownsLive {
         this.symbol = symbol;
     }
 
+    /**
+     * Forget one Deriv subscription safely.
+     */
+    private forgetSubscription(
+        subscriptionId: string,
+    ): void {
+        if (!subscriptionId) {
+            return;
+        }
+
+        if (!api_base?.api) {
+            return;
+        }
+
+        try {
+            void api_base.api.send({
+                forget:
+                    subscriptionId,
+            });
+        } catch {
+            // Ignore cleanup errors.
+        }
+    }
+
     stop(): void {
+        /*
+         * Invalidate the current lifecycle FIRST.
+         *
+         * This must happen before unsubscribing because any
+         * asynchronous Deriv response arriving afterward must
+         * be treated as stale.
+         */
+        this.lifecycleGeneration += 1;
+
         if (
             this.subscription
         ) {
@@ -286,22 +449,36 @@ export class OnlyUpsDownsLive {
         }
 
         if (api_base?.api) {
+            /*
+             * Forget every subscription ID already received.
+             */
             for (
                 const subscriptionId
                 of this.subscriptionIds
             ) {
-                try {
-                    api_base.api.send({
-                        forget:
-                            subscriptionId,
-                    });
-                } catch {
-                    // Ignore cleanup errors.
-                }
+                this.forgetSubscription(
+                    subscriptionId,
+                );
             }
+
+            /*
+             * Clear known active IDs.
+             */
+            this.subscriptionIds.clear();
+
+            /*
+             * Pending request IDs cannot themselves be sent
+             * through `forget`, because Deriv's `forget`
+             * requires the subscription ID, not req_id.
+             *
+             * The lifecycle generation protects us here:
+             * when the delayed subscription response arrives,
+             * handleMessage() sees the stale generation and
+             * immediately sends `forget` for the returned ID.
+             */
+            this.pendingSubscriptionRequestIds.clear();
         }
 
-        this.subscriptionIds.clear();
         this.historyRequestId = null;
         this.symbol = null;
     }
@@ -329,5 +506,3 @@ export class OnlyUpsDownsLive {
         );
     }
 }
-
-
