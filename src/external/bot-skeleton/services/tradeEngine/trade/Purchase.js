@@ -20,6 +20,21 @@ export default Engine =>
             }
 
 
+            const armContractId = response => {
+                const contractId = response?.buy?.contract_id;
+
+                if (contractId) {
+                    this.contractId = contractId;
+
+                    console.log('[TRANSACTION DEBUG] CONTRACT ID ARMED', {
+                        contract_id: contractId,
+                    });
+                }
+
+                return response;
+            };
+
+
             const onSuccess = response => {
 
                 const { buy } = response;
@@ -249,7 +264,7 @@ export default Engine =>
                 ){
 
                     return doUntilDone(action)
-                        .then(onSuccess);
+                        .then(armContractId).then(onSuccess);
 
                 }
 
@@ -325,7 +340,7 @@ export default Engine =>
                     delayIndex++
 
                 )
-                .then(onSuccess);
+                .then(armContractId).then(onSuccess);
 
             }
 
@@ -386,7 +401,7 @@ export default Engine =>
             ){
 
                 return doUntilDone(action)
-                    .then(onSuccess);
+                    .then(armContractId).then(onSuccess);
 
             }
 
@@ -459,7 +474,7 @@ export default Engine =>
 
 
             )
-            .then(onSuccess);
+            .then(armContractId).then(onSuccess);
 
         }
 
