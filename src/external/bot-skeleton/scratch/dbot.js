@@ -262,7 +262,47 @@ class DBot {
     }
 
     shouldRunBot() {
-    return this.before_run_funcs.every(func => !!func());
+    const results = this.before_run_funcs.map((func, index) => {
+        let result = false;
+
+        try {
+            result = !!func();
+        } catch (error) {
+            console.error('[MONEHUNT RUN GATE ERROR]', {
+                index,
+                functionName: func?.name || 'anonymous',
+                error,
+            });
+
+            return {
+                index,
+                functionName: func?.name || 'anonymous',
+                result: false,
+                error: true,
+            };
+        }
+
+        console.log('[MONEHUNT RUN GATE]', {
+            index,
+            functionName: func?.name || 'anonymous',
+            result,
+        });
+
+        return {
+            index,
+            functionName: func?.name || 'anonymous',
+            result,
+        };
+    });
+
+    const canRun = results.every(item => item.result);
+
+    console.log('[MONEHUNT RUN GATES RESULT]', {
+        canRun,
+        results,
+    });
+
+    return canRun;
 }
 
 setRuntimeVariable(variable_name, value) {

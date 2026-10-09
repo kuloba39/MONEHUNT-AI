@@ -14,10 +14,33 @@ export default Engine =>
 
         purchase(contract_type) {
 
-            // Prevent duplicate purchase
-            if (this.store.getState().scope !== BEFORE_PURCHASE) {
-                return Promise.resolve();
-            }
+    const purchaseState = this.store.getState();
+
+    console.log('[MONEHUNT PURCHASE GATE]', {
+        contract_type,
+        scope: purchaseState.scope,
+        proposalsReady: purchaseState.proposalsReady,
+        expectedScope: BEFORE_PURCHASE,
+        tradeOptions: this.tradeOptions,
+        symbol: this.tradeOptions?.symbol || this.options?.symbol || null,
+    });
+
+    // Prevent duplicate purchase
+    if (purchaseState.scope !== BEFORE_PURCHASE) {
+        console.warn('[MONEHUNT PURCHASE BLOCKED]', {
+            contract_type,
+            actualScope: purchaseState.scope,
+            expectedScope: BEFORE_PURCHASE,
+        });
+
+        return Promise.resolve();
+    }
+
+    console.log('[MONEHUNT PURCHASE ENTERED]', {
+        contract_type,
+        scope: purchaseState.scope,
+        proposalMode: this.is_proposal_subscription_required,
+    });
 
 
             const armContractId = response => {

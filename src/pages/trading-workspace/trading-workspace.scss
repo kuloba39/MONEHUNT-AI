@@ -399,3 +399,45 @@
         width: 100%;
     }
 }
+
+.monehunt-trading-workspace__workspace-toggle {
+    min-height: 46px;
+    padding: 0 18px;
+    border: 1px solid rgba(0, 214, 163, 0.4);
+    border-radius: 11px;
+    background: rgba(0, 214, 163, 0.08);
+    color: var(--text-prominent);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: 0.06em;
+}
+
+.monehunt-trading-workspace__workspace-close {
+    position: fixed;
+    top: 128px;
+    right: 36px;
+    z-index: 10002;
+    min-height: 36px;
+    padding: 0 14px;
+    border: 1px solid rgba(0, 214, 163, 0.5);
+    border-radius: 8px;
+    background: #071b16;
+    color: #00d6a3;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: 0.06em;
+}
+
+.monehunt-trading-workspace__workspace-toggle:hover,
+.monehunt-trading-workspace__workspace-close:hover {
+    filter: brightness(1.15);
+}
+
+@media (max-width: 768px) {
+    .monehunt-trading-workspace__workspace-close {
+        top: 128px;
+        right: 28px;
+    }
+}

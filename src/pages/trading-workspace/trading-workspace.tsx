@@ -42,6 +42,26 @@ const TradingWorkspace = observer(() => {
     const [takeProfit, setTakeProfit] = React.useState('');
     const [stopLoss, setStopLoss] = React.useState('');
     const [error, setError] = React.useState('');
+    const [showBotWorkspace, setShowBotWorkspace] = React.useState(false);
+
+    React.useEffect(() => {
+        if (!showBotWorkspace) return;
+
+        const workspace = dbot.workspace;
+        const blockly = (window as any).Blockly;
+
+        if (!workspace || !blockly?.svgResize) return;
+
+        const resizeWorkspace = () => blockly.svgResize(workspace);
+        const frame = window.requestAnimationFrame(resizeWorkspace);
+
+        window.addEventListener('resize', resizeWorkspace);
+
+        return () => {
+            window.cancelAnimationFrame(frame);
+            window.removeEventListener('resize', resizeWorkspace);
+        };
+    }, [showBotWorkspace, dbot]);
 
     React.useEffect(() => {
         const readSelectedBot = () => {
@@ -861,6 +881,16 @@ const TradingWorkspace = observer(() => {
                                 EXECUTE
                             </button>
 
+                            {!showBotWorkspace && (
+                                <button
+                                    type='button'
+                                    className='monehunt-trading-workspace__workspace-toggle'
+                                    onClick={() => setShowBotWorkspace(true)}
+                                >
+                                    SHOW BOT WORKSPACE
+                                </button>
+                            )}
+
                             <span>
                                 Uses the existing MONEHUNT bot execution path.
                             </span>
@@ -884,8 +914,21 @@ const TradingWorkspace = observer(() => {
 
             <div
                 id='scratch_div'
-                aria-hidden='true'
-                style={{
+                aria-hidden={!showBotWorkspace}
+                style={showBotWorkspace ? {
+                    position: 'fixed',
+                    left: '24px',
+                    top: '120px',
+                    width: 'calc(100vw - 48px)',
+                    height: 'calc(100vh - 144px)',
+                    overflow: 'hidden',
+                    opacity: 1,
+                    pointerEvents: 'auto',
+                    zIndex: 10000,
+                    background: 'var(--general-main-1)',
+                    border: '1px solid rgba(0, 214, 163, 0.35)',
+                    borderRadius: '12px',
+                } : {
                     position: 'fixed',
                     left: '-10000px',
                     top: 0,
@@ -896,6 +939,16 @@ const TradingWorkspace = observer(() => {
                     pointerEvents: 'none',
                 }}
             />
+
+            {showBotWorkspace && (
+                <button
+                    type='button'
+                    className='monehunt-trading-workspace__workspace-close'
+                    onClick={() => setShowBotWorkspace(false)}
+                >
+                    CLOSE BOT WORKSPACE
+                </button>
+            )}
         </main>
 
         <RunPanel />

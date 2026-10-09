@@ -1,4 +1,4 @@
-﻿// @ts-nocheck â€” vendored bot code with known upstream type gaps; see AGENTS.md
+// @ts-nocheck â€” vendored bot code with known upstream type gaps; see AGENTS.md
 import React from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
@@ -279,7 +279,7 @@ const RunPanel = observer(() => {
         const drawer = document.querySelector('.run-panel__container') as HTMLElement | null;
         const drawerHeight = drawer?.getBoundingClientRect().height || 0;
 
-        const baseTop = 10.4 * 16;
+        const baseTop = 8.5 * 16;
         const minOffset = -baseTop + 8;
         const maxOffset = Math.max(
             minOffset,
@@ -362,23 +362,21 @@ const RunPanel = observer(() => {
 
     const header = (
         <>
-            {isDesktop && (
-                <div
-                    className='run-panel__drag-handle'
-                    role='button'
-                    tabIndex={0}
-                    aria-label='Move run panel vertically'
-                    onPointerDown={handlePanelDragStart}
-                    onPointerMove={handlePanelDragMove}
-                    onPointerUp={handlePanelDragEnd}
-                    onPointerCancel={handlePanelDragEnd}
-                >
-                    <span className='run-panel__drag-handle-bar' />
-                    <span className='run-panel__drag-handle-label'>
-                        MOVE PANEL
-                    </span>
-                </div>
-            )}
+            <div
+    className='run-panel__drag-handle'
+    role={isDesktop ? 'button' : undefined}
+    tabIndex={isDesktop ? 0 : undefined}
+    aria-label={isDesktop ? 'Move run panel vertically' : undefined}
+    onPointerDown={isDesktop ? handlePanelDragStart : undefined}
+    onPointerMove={isDesktop ? handlePanelDragMove : undefined}
+    onPointerUp={isDesktop ? handlePanelDragEnd : undefined}
+    onPointerCancel={isDesktop ? handlePanelDragEnd : undefined}
+>
+    <span className='run-panel__drag-handle-bar' />
+    <span className='run-panel__drag-handle-label'>
+        {isDesktop ? 'MOVE PANEL' : 'SUMMARY'}
+    </span>
+</div>
 
             <DrawerHeader
                 is_clear_stat_disabled={is_clear_stat_disabled}
@@ -418,6 +416,19 @@ const RunPanel = observer(() => {
                 >
                     {content}
                 </Drawer>
+                {!isDesktop && !is_drawer_open && (
+                    <button
+                        type='button'
+                        className='run-panel__mobile-summary-toggle'
+                        aria-label='Open summary panel'
+                        aria-expanded={false}
+                        onClick={() => toggleDrawer(true)}
+                    >
+                        <span className='run-panel__mobile-summary-grip' />
+                        <span>SUMMARY</span>
+                        <span className='run-panel__mobile-summary-arrow' aria-hidden='true'>↑</span>
+                    </button>
+                )}
                 {!isDesktop && <MobileDrawerFooter />}
             </div>
 
@@ -431,4 +442,3 @@ const RunPanel = observer(() => {
 });
 
 export default RunPanel;
-

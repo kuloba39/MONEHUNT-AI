@@ -180,10 +180,18 @@ export default class RunPanelStore {
         const is_ios = mobileOSDetect() === 'iOS';
         this.dbot.saveRecentWorkspace();
         this.dbot.unHighlightAllBlocks();
-        if (!client.is_logged_in) {
-            this.showLoginDialog();
-            return;
-        }
+        console.log('[MONEHUNT EXECUTION PRE-RUN]', {
+    isLoggedIn: client.is_logged_in,
+    hasDbot: !!this.dbot,
+    hasWorkspace: !!this.dbot?.workspace,
+    hasShouldRunBot: typeof this.dbot?.shouldRunBot === 'function',
+});
+
+if (!client.is_logged_in) {
+    console.warn('[MONEHUNT EXECUTION BLOCKED] CLIENT NOT LOGGED IN');
+    this.showLoginDialog();
+    return;
+}
 
         /**
          * Due to Apple's policy on cellular data usage in ios audioElement.play() should be initially called on

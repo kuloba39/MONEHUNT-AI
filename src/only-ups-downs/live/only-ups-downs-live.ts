@@ -1,4 +1,4 @@
-﻿import { api_base } from '@/external/bot-skeleton/services/api/api-base';
+import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 
 import {
     createOnlyUpsDownsScanner,
@@ -364,28 +364,30 @@ export class OnlyUpsDownsLive {
             return;
         }
 
-        const prices =
-            response?.history?.prices;
+        const prices = response?.history?.prices;
 
         if (!Array.isArray(prices)) {
             return;
         }
 
-        for (
-            const rawPrice of prices
-        ) {
-            const price =
-                Number(rawPrice);
+        const validPrices: number[] = [];
+
+        for (const rawPrice of prices) {
+            const price = Number(rawPrice);
 
             if (
                 Number.isFinite(price) &&
                 price > 0
             ) {
-                this.scanner.addPrice(price);
+                validPrices.push(price);
             }
         }
-    }
 
+        // Process historical prices as one batch.
+        if (validPrices.length > 0) {
+            this.scanner.addPrices(validPrices);
+        }
+    }
     addPrice(price: number): void {
         if (
             Number.isFinite(price) &&

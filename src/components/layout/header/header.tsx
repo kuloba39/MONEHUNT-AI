@@ -169,7 +169,7 @@ const AppHeader = observer(() => {
     }, [authData?.currency]);
 
     const renderAccountSection = useCallback(
-        (position: 'left' | 'right' = 'right') => {
+        (position: 'left' | 'right' | 'center' = 'right') => {
             // Show account switcher and logout when user is fully authenticated
             if (activeLoginid && !is_account_regenerating) {
                 if (position === 'left' && !isDesktop) {
@@ -203,8 +203,7 @@ const AppHeader = observer(() => {
             }
             // Show login button only when fully settled (not during OAuth flow)
             else if (
-                position === 'right' &&
-                !isOAuthPending &&
+                position === 'center' && !isOAuthPending &&
                 ((!is_account_regenerating && !isAuthorizing && !activeLoginid) || authTimeout)
             ) {
                 // Disable auth buttons until the OAuth app id is configured, so the
@@ -223,7 +222,7 @@ const AppHeader = observer(() => {
                 );
             }
             // Default: Show spinner during loading states or when authorizing
-            else if (position === 'right') {
+            else if (position === 'center') {
                 return (
                     <div className='auth-actions auth-actions--loading'>
                         <svg
@@ -272,6 +271,10 @@ const AppHeader = observer(() => {
             <section className='monehunt-global-account-bar'>
                 <div className='monehunt-global-account-bar__brand'>
                     MONEHUNT AI
+                </div>
+
+                <div className='monehunt-global-account-bar__auth'>
+                    {renderAccountSection('center')}
                 </div>
 
                 <div className='monehunt-global-account-bar__account'>

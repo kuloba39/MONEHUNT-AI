@@ -86,6 +86,6 @@ window.Blockly.Blocks.purchase = {
 window.Blockly.JavaScript.javascriptGenerator.forBlock.purchase = block => {
     const purchaseList = block.getFieldValue('PURCHASE_LIST');
 
-    const code = `Bot.purchase('${purchaseList}');\n`;
+    const code = `console.log('[MONEHUNT BLOCKLY PURCHASE EXECUTED]', { purchaseList: '${purchaseList}' });\nBot.purchase('${purchaseList}');\n`;
     return code;
 };

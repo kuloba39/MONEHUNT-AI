@@ -1,13 +1,16 @@
-﻿@use 'components/shared/styles/mixins' as *;
+@use 'components/shared/styles/mixins' as *;
 
 .layout {
     display: flex;
     flex-direction: column;
 
-    min-height: 100vh;
-    height: auto;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
 
     .deriv-header {
+        flex: 0 0 auto;
         background: var(--general-main-1);
         height: 5.6rem;
     }

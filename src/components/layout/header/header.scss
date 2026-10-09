@@ -497,3 +497,48 @@
         font-size: 0.85rem;
     }
 }
+
+/* Center authentication actions in the global account bar. */
+.monehunt-global-account-bar__auth {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 105;
+}
+
+.monehunt-global-account-bar__auth .auth-actions {
+    justify-content: center;
+    gap: 0.8rem;
+    margin: 0;
+    padding: 0;
+}
+
+.monehunt-global-account-bar__auth .auth-actions button {
+    margin-inline-end: 0;
+    white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+    .monehunt-global-account-bar {
+        flex-wrap: wrap;
+        row-gap: 0.5rem;
+        min-height: auto;
+    }
+
+    .monehunt-global-account-bar__auth {
+        position: static;
+        order: 3;
+        transform: none;
+        width: 100%;
+        padding-bottom: 0.3rem;
+    }
+
+    .monehunt-global-account-bar__auth .auth-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+}
