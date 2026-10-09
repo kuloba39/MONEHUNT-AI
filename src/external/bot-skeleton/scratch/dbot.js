@@ -202,8 +202,9 @@ class DBot {
                 window.dispatchEvent(new Event('resize'));
                 window.addEventListener('dragover', DBot.handleDragOver);
                 window.addEventListener('drop', e => DBot.handleDropOver(e, handleFileChange));
-                // disable overflow
-                el_scratch_div.parentNode.style.overflow = 'hidden';
+// Keep the application page scrollable.
+// Do not set overflow on the parent of scratch_div,
+// because that parent is .main-body.
                 resolve();
             } catch (error) {
                 // TODO: Handle error.
