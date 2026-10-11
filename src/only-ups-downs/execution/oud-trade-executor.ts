@@ -34,6 +34,37 @@ export class OUDTradeExecutor {
         private readonly options: OUDTradeExecutorOptions,
     ) {}
 
+    private async waitForPreviousSettlement(
+        tradeEngine: any,
+        isRunning: () => boolean,
+    ): Promise<void> {
+        const timeoutMs = 5000;
+        const deadline = Date.now() + timeoutMs;
+
+        while (Date.now() < deadline) {
+            if (!isRunning()) {
+                throw new Error(
+                    'OUD TradeExecutor: lifecycle stopped while waiting for previous settlement.',
+                );
+            }
+
+            const scope = tradeEngine.store?.getState?.()?.scope;
+            const contractId = tradeEngine.contractId;
+
+            if ((scope === 'STOP' || scope === 'BEFORE_PURCHASE') && !contractId) {
+                return;
+            }
+
+            await new Promise<void>(resolve => setTimeout(resolve, 50));
+        }
+
+        const scope = tradeEngine.store?.getState?.()?.scope ?? 'UNKNOWN';
+        const contractId = tradeEngine.contractId ?? '';
+        throw new Error(
+            `OUD TradeExecutor: previous trade did not settle within ${timeoutMs}ms. Scope: ${scope}; contractId: ${contractId || 'none'}.`,
+        );
+    }
+
     async execute(
         trade: OUDActiveTrade,
     ): Promise<OUDTradeExecutionResult> {
@@ -43,6 +74,10 @@ export class OUDTradeExecutor {
             currency,
             isRunning,
         } = this.options;
+
+        const executionStartedAt = Date.now();
+        const logTiming = (stage: string) => console.info('[OUD EXECUTION TIMING]', { tradeId: trade.tradeId, stage, elapsedMs: Date.now() - executionStartedAt, at: new Date().toISOString() });
+        logTiming('execute:start');
 
         if (!tradeEngine) {
             throw new Error(
@@ -66,6 +101,10 @@ export class OUDTradeExecutor {
          * Reuse MONEHUNT's existing TradeEngine.
          * No second API/WebSocket connection is created.
          */
+        // Wait for the shared engine to finish any previous contract.
+        await this.waitForPreviousSettlement(tradeEngine, isRunning);
+        logTiming('settlement:ready');
+
         tradeEngine.init(token, {
             symbol: trade.market,
             contractTypes: [
@@ -81,6 +120,7 @@ export class OUDTradeExecutor {
         if (tradeEngine.startPromise) {
             await tradeEngine.startPromise;
         }
+        logTiming('engine:start-ready');
 
         if (!isRunning()) {
             throw new Error(
@@ -106,6 +146,7 @@ export class OUDTradeExecutor {
         });
 
         await tradeEngine.watch('before');
+        logTiming('before-purchase:ready');
 
         const beforeState =
             tradeEngine.store?.getState?.();
@@ -145,17 +186,22 @@ export class OUDTradeExecutor {
          */
         await tradeEngine.purchase(
             trade.contractType,
+            `oud-${trade.tradeId}`,
         );
+        logTiming('purchase:promise-resolved');
 
         const contractId =
             tradeEngine.contractId;
 
         if (!contractId) {
-            throw new Error(
+            const error = new Error(
                 `Purchase returned without a contract_id for ${trade.contractType}.`,
-            );
+            ) as Error & { code: string };
+            error.code = 'PURCHASE_OUTCOME_UNCERTAIN';
+            throw error;
         }
 
+        logTiming('purchase:contract-id-verified');
         return {
             contractId: String(contractId),
             trade: {

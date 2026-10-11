@@ -1,4 +1,4 @@
-﻿scss
+scss
 .only-ups-downs-page {
     width: 100%;
     min-height: 100%;
@@ -1904,4 +1904,27 @@
     .only-ups-downs-native-performance__trade {
         grid-template-columns: 30px 1fr auto;
     }
+}
+
+/* Manual OUD execution controls */
+.only-ups-downs-native-bot__manual-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.only-ups-downs-native-bot__manual-control--up {
+    border-color: #16a34a;
+    color: #16a34a;
+}
+
+.only-ups-downs-native-bot__manual-control--down {
+    border-color: #dc2626;
+    color: #dc2626;
+}
+
+.only-ups-downs-native-bot__manual-control:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }

@@ -256,7 +256,7 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
                         const is_open_contract = contract.status === 'open';
                         if (is_same_contract && is_open_contract) {
                             doUntilDone(() => {
-                                api_base.api.send({ proposal_open_contract: 1, contract_id: contract.contract_id });
+                                return api_base.api.send({ proposal_open_contract: 1, contract_id: contract.contract_id });
                             }, ['PriceMoved']);
                         }
                     }, 1500);
@@ -292,6 +292,10 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
             getPrevTick,
             setPrevTick,
         );
+    }
+
+    readyForNextPurchase() {
+        this.store.dispatch(readyForNextPurchase());
     }
 
     makeDirectPurchaseDecision() {

@@ -1803,6 +1803,34 @@ onChange={(event) => {
         </button>
     </div>
 
+    <div className='only-ups-downs-native-bot__manual-controls'>
+        <button
+            type='button'
+            className='only-ups-downs-native-bot__control only-ups-downs-native-bot__manual-control only-ups-downs-native-bot__manual-control--up'
+            disabled={
+                !symbol ||
+                oudExecutionState.status === 'PURCHASING' ||
+                oudExecutionState.status === 'CONTRACT_ACTIVE'
+            }
+            onClick={() => handleOudManualTrade('UP')}
+        >
+            MANUAL UP
+        </button>
+
+        <button
+            type='button'
+            className='only-ups-downs-native-bot__control only-ups-downs-native-bot__manual-control only-ups-downs-native-bot__manual-control--down'
+            disabled={
+                !symbol ||
+                oudExecutionState.status === 'PURCHASING' ||
+                oudExecutionState.status === 'CONTRACT_ACTIVE'
+            }
+            onClick={() => handleOudManualTrade('DOWN')}
+        >
+            MANUAL DOWN
+        </button>
+    </div>
+
     <div className='only-ups-downs-native-bot__status-grid'>
         <div>
             <span>Status</span>

@@ -1,5 +1,7 @@
 import { LogTypes } from '../../../constants/messages';
 import { api_base } from '../../api/api-base';
+import { createExecutionApiAdapter } from '../../execution-v2/execution-api-adapter';
+import { V2GetActiveAccountId } from '../../api/appId';
 import { contractStatus, info, log } from '../utils/broadcast';
 import { doUntilDone, getUUID, recoverFromError, tradeOptionToBuy } from '../utils/helpers';
 import { purchaseSuccessful } from './state/actions';
@@ -9,10 +11,15 @@ import { tradeReplicationService } from '@/services/trade-replication.service';
 let delayIndex = 0;
 let purchase_reference;
 
+const executionApiAdapter = createExecutionApiAdapter({
+    getApi: () => api_base.api,
+    getAccountId: () => V2GetActiveAccountId(),
+});
+
 export default Engine =>
     class Purchase extends Engine {
 
-        purchase(contract_type) {
+        purchase(contract_type, executionCycleId) {
 
     const purchaseState = this.store.getState();
 
@@ -419,6 +426,48 @@ export default Engine =>
 
 
 
+            if (this.options?.nativeOudDirectPurchase === true) {
+                if (
+                    executionCycleId === undefined ||
+                    executionCycleId === null ||
+                    String(executionCycleId).trim() === ''
+                ) {
+                    const error = new Error(
+                        'Native OUD purchase blocked: a stable execution cycle ID is required.'
+                    );
+                    error.code = 'OUD_EXECUTION_CYCLE_REQUIRED';
+                    return Promise.reject(error);
+                }
+
+                try {
+                    executionApiAdapter.startListening();
+                } catch (error) {
+                    return Promise.reject(error);
+                }
+
+                return executionApiAdapter.sendBuyOnce({
+                    cycleId: String(executionCycleId),
+                    request: trade_option,
+                }).then(result => {
+                    const response = result.response;
+
+                    // Preserve the confirmed contract before any callbacks run.
+                    this.contractId = result.contractId;
+
+                    return Promise.resolve()
+                        .then(() => armContractId(response))
+                        .then(() => onSuccess(response))
+                        .catch(error => {
+                            const uncertainError = new Error(
+                                'Deriv confirmed a purchase, but post-purchase processing failed. Reconcile the account before continuing.'
+                            );
+                            uncertainError.code = 'PURCHASE_OUTCOME_UNCERTAIN';
+                            uncertainError.contractId = result.contractId;
+                            uncertainError.cause = error;
+                            throw uncertainError;
+                        });
+                });
+            }
             if(
                 !this.options.timeMachineEnabled
             ){

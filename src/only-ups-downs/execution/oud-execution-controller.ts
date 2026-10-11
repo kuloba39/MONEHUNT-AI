@@ -1,4 +1,6 @@
-﻿import { api_base } from '@/external/bot-skeleton/services/api/api-base';
+import { api_base } from '@/external/bot-skeleton/services/api/api-base';
+import { V2GetActiveAccountId } from '@/external/bot-skeleton/services/api/appId';
+import { createOUDPurchaseLock } from './oud-purchase-lock';
 import type {
     OUDDirection,
     OUDDirectionMode,
@@ -92,6 +94,7 @@ export class OUDExecutionController {
     private lastConsumedSignalCycleId = 0;
     private runStartSignalCycleId = 0;
     private signalExecutionInFlight = false;
+    private purchaseOutcomeUncertain = false;
 
     /*
      * A locked READY signal may already exist when RUN is pressed.
@@ -187,8 +190,100 @@ export class OUDExecutionController {
                 this.handleNativeTradeResult(result);
             },
         });
+
+        this.restorePurchaseOutcomeLock();
     }
 
+    private createPurchaseLock() {
+        let accountId: string | null = null;
+
+        try {
+            const activeAccountId = V2GetActiveAccountId();
+            accountId =
+                typeof activeAccountId === 'string'
+                    ? activeAccountId
+                    : null;
+        } catch {
+            // The lock helper fails closed when the account ID is unavailable.
+        }
+
+        return createOUDPurchaseLock(accountId);
+    }
+
+    private restorePurchaseOutcomeLock() {
+        const snapshot = this.createPurchaseLock().getSnapshot();
+
+        if (!snapshot.locked) {
+            return;
+        }
+
+        this.purchaseOutcomeUncertain = true;
+        this.state.status = 'ERROR';
+        this.state.error =
+            snapshot.error ??
+            snapshot.record?.reason ??
+            'An uncertain purchase is locked. Reconcile the Deriv account before trading.';
+
+        if (snapshot.record?.contractId) {
+            this.state.contractId = snapshot.record.contractId;
+        }
+    }
+
+    private isPurchaseOutcomeBlocked() {
+        if (this.purchaseOutcomeUncertain) {
+            return true;
+        }
+
+        const snapshot = this.createPurchaseLock().getSnapshot();
+
+        if (!snapshot.locked) {
+            return false;
+        }
+
+        this.purchaseOutcomeUncertain = true;
+        this.setState({
+            status: 'ERROR',
+            error:
+                snapshot.error ??
+                snapshot.record?.reason ??
+                'An uncertain purchase is locked. Reconcile the Deriv account before trading.',
+            contractId:
+                snapshot.record?.contractId ?? this.state.contractId,
+        });
+
+        return true;
+    }
+
+    private persistUncertainPurchaseLock(
+        trade: OUDActiveTrade,
+        reason: string,
+        contractId: string | null,
+    ) {
+        this.purchaseOutcomeUncertain = true;
+        this.activeTrade = trade;
+
+        try {
+            this.createPurchaseLock().lock({
+                cycleId: `oud-${trade.tradeId}`,
+                contractId,
+                reason,
+            });
+
+            return reason;
+        } catch (error) {
+            const persistenceError =
+                error instanceof Error
+                    ? error.message
+                    : String(error);
+
+            console.error(
+                '[OUD PURCHASE LOCK] Persistent lock could not be verified:',
+                error,
+            );
+
+            return `${reason} WARNING: persistent lock could not be verified (${persistenceError}). Trading remains blocked in this controller; reconcile the Deriv account before restarting OUD.`;
+        }
+    }
     private refreshEngine() {
         this.tradeEngine =
             this.dbot?.interpreter?.bot?.tradeEngine ?? null;
@@ -469,6 +564,10 @@ export class OUDExecutionController {
     }
 
     run() {
+        if (this.isPurchaseOutcomeBlocked()) {
+            return false;
+        }
+
         if (
             this.state.status === 'PURCHASING' ||
             this.state.status === 'CONTRACT_ACTIVE'
@@ -747,9 +846,8 @@ export class OUDExecutionController {
                 error: null,
             });
 
-            console.log(
-                '[OUD NATIVE SIGNAL ACCEPTED]',
-                {
+            console.log('[OUD NATIVE SIGNAL ACCEPTED]', {
+                    at: new Date().toISOString(),
                     tradeId:
                         activeTrade.tradeId,
                     signalCycleId:
@@ -881,16 +979,46 @@ export class OUDExecutionController {
                         },
                     );
                 } catch (error) {
-                    this.activeTrade = null;
+                    const uncertain =
+                        Boolean(
+                            error &&
+                            typeof error === 'object' &&
+                            'code' in error &&
+                            error.code === 'PURCHASE_OUTCOME_UNCERTAIN'
+                        );
 
-                    this.signalGate.releaseCycle(
-                        acceptedSignal.signalCycleId,
-                    );
+                    if (!uncertain) {
+                        this.activeTrade = null;
+                        this.signalGate.releaseCycle(
+                            acceptedSignal.signalCycleId,
+                        );
+                    }
 
-                    const message =
+                    let message =
                         error instanceof Error
                             ? error.message
                             : String(error);
+
+                    const uncertainContractId = uncertain
+                        ? (
+                            error &&
+                            typeof error === 'object' &&
+                            'contractId' in error &&
+                            error.contractId != null
+                                ? String(error.contractId)
+                                : this.tradeEngine?.contractId != null
+                                    ? String(this.tradeEngine.contractId)
+                                    : null
+                        )
+                        : null;
+
+                    if (uncertain) {
+                        message = this.persistUncertainPurchaseLock(
+                            activeTrade,
+                            message,
+                            uncertainContractId,
+                        );
+                    }
 
                     console.error(
                         '[OUD NATIVE EXECUTION] failed:',
@@ -900,7 +1028,9 @@ export class OUDExecutionController {
                     this.setState({
                         status: 'ERROR',
                         error: message,
-                        contractId: null,
+                        contractId: uncertain
+                            ? uncertainContractId
+                            : null,
                     });
                 } finally {
                     this.signalExecutionInFlight =
@@ -912,6 +1042,7 @@ export class OUDExecutionController {
     canExecute() {
         return (
             this.state.lifecycle === 'RUNNING' &&
+            !this.purchaseOutcomeUncertain &&
             !!this.state.direction &&
             !!this.state.market &&
             this.state.status !== 'PURCHASING' &&
@@ -1235,8 +1366,10 @@ export class OUDExecutionController {
 
     async executeManual(params: OUDExecuteParams) {
         if (
+            this.isPurchaseOutcomeBlocked() ||
             this.state.status === 'PURCHASING' ||
-            this.state.status === 'CONTRACT_ACTIVE'
+            this.state.status === 'CONTRACT_ACTIVE' ||
+            this.signalExecutionInFlight
         ) {
             return false;
         }
@@ -1259,6 +1392,10 @@ export class OUDExecutionController {
         requireRunning: boolean,
         consumeScannerSignal: boolean,
     ) {
+        if (this.isPurchaseOutcomeBlocked()) {
+            return false;
+        }
+
         /*
          * Native execution is scanner-driven.
          *
@@ -1340,12 +1477,20 @@ export class OUDExecutionController {
             return false;
         }
 
+        let manualTrade: ReturnType<typeof createOUDManualTrade> | null = null;
+
         try {
             this.stopPolling();
 
             const direction = params.direction;
             const contractType =
                 getContractType(direction);
+
+            manualTrade = createOUDManualTrade(
+                direction,
+                params.market,
+                { stake, duration },
+            );
 
             this.setState({
                 status: 'PURCHASING',
@@ -1455,17 +1600,24 @@ export class OUDExecutionController {
                 return false;
             }
 
+            if (!manualTrade) {
+                throw new Error('Manual OUD trade snapshot is missing.');
+            }
+
             await this.tradeEngine.purchase(
                 contractType,
+                `oud-${manualTrade.tradeId}`,
             );
 
             const contractId =
                 this.tradeEngine.contractId;
 
             if (!contractId) {
-                throw new Error(
+                const error = new Error(
                     `Purchase returned without a contract_id for ${contractType}.`,
-                );
+                ) as Error & { code: string };
+                error.code = 'PURCHASE_OUTCOME_UNCERTAIN';
+                throw error;
             }
 
             /*
@@ -1505,10 +1657,39 @@ export class OUDExecutionController {
         } catch (error) {
             this.stopPolling();
 
-            const message =
+            const uncertain =
+                Boolean(
+                    error &&
+                    typeof error === 'object' &&
+                    'code' in error &&
+                    error.code === 'PURCHASE_OUTCOME_UNCERTAIN'
+                );
+
+            let message =
                 error instanceof Error
                     ? error.message
                     : String(error);
+
+            const uncertainContractId = uncertain
+                ? (
+                    error &&
+                    typeof error === 'object' &&
+                    'contractId' in error &&
+                    error.contractId != null
+                        ? String(error.contractId)
+                        : this.tradeEngine?.contractId != null
+                            ? String(this.tradeEngine.contractId)
+                            : null
+                )
+                : null;
+
+            if (uncertain) {
+                message = this.persistUncertainPurchaseLock(
+                    manualTrade,
+                    message,
+                    uncertainContractId,
+                );
+            }
 
             console.error(
                 '[OUD EXECUTION] failed:',
@@ -1518,7 +1699,9 @@ export class OUDExecutionController {
             this.setState({
                 status: 'ERROR',
                 error: message,
-                contractId: null,
+                contractId: uncertain
+                    ? uncertainContractId
+                    : null,
             });
 
             return false;
@@ -1526,6 +1709,14 @@ export class OUDExecutionController {
     }
 
     reset() {
+        if (this.purchaseOutcomeUncertain) {
+            this.setState({
+                status: 'ERROR',
+                error: 'Reset is blocked because a purchase outcome is uncertain. Reconcile the Deriv account before continuing.',
+            });
+            return false;
+        }
+
         /*
          * Never reset away an active purchased contract.
          * The real Deriv contract must finish first.
@@ -1590,18 +1781,3 @@ export class OUDExecutionController {
 }
 
 export default OUDExecutionController;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

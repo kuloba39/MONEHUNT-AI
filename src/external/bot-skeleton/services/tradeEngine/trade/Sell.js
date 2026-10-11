@@ -27,7 +27,7 @@ export default Engine =>
 
             let delay_index = 1;
 
-            return new Promise(resolve => {
+            return new Promise((resolve, reject) => {
                 const onContractSold = sell_response => {
                     delay_index = 1;
 
@@ -44,9 +44,9 @@ export default Engine =>
                 const contract_id = this.contractId;
 
                 const sellContractAndGetContractInfo = () => {
-                    return doUntilDone(() => api_base.api.send({ sell: contract_id, price: 0 }))
+                    return api_base.api.send({ sell: contract_id, price: 0 })
                         .then(sell_response => {
-                            doUntilDone(() => api_base.api.send({ proposal_open_contract: 1, contract_id })).then(
+                            return doUntilDone(() => api_base.api.send({ proposal_open_contract: 1, contract_id })).then(
                                 () => sell_response
                             );
                         })
@@ -63,12 +63,9 @@ export default Engine =>
                                 name: error.code,
                                 message: getLocalizedErrorMessage(error.code, error.details),
                                 msg_type: e.msg_type,
-                                error: { ...error.error },
+                                error: { code: 'SellOutcomeUnknown', original_code: error.code, details: error.details },
                             };
 
-                            if (error.code === 'RateLimit') {
-                                return Promise.reject(sell_error);
-                            }
 
                             // For every other error, check whether the contract is not actually already sold.
                             return doUntilDone(() =>
@@ -102,7 +99,7 @@ export default Engine =>
                     // eslint-disable-next-line no-promise-executor-return
                     return doUntilDone(sellContractAndGetContractInfo, errors_to_ignore)
                         .then(sell_response => onContractSold(sell_response))
-                        .catch(error => error);
+                        .catch(reject);
                 }
 
                 // If above checkbox not checked, try to recover from sell error.
@@ -115,7 +112,7 @@ export default Engine =>
                     recoverFn,
                     errors_to_ignore,
                     delay_index++
-                ).then(sell_response => onContractSold(sell_response));
+                ).then(sell_response => onContractSold(sell_response)).catch(reject);
             });
         }
     };

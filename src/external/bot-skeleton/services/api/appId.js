@@ -109,7 +109,7 @@ export const generateDerivApiInstance = async (forceNew = false) => {
             // Set up close handler to clear instance
             deriv_socket.addEventListener('close', () => {
                 console.log('[DerivAPI] WebSocket connection closed');
-                if (derivApiInstance === deriv_api) {
+                if (derivApiInstance === deriv_api && deriv_api.connection === deriv_socket) {
                     derivApiInstance = null;
                     currentWebSocketURL = null;
                 }

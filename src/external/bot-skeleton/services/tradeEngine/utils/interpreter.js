@@ -21,7 +21,10 @@ JSInterpreter.prototype.restoreStateSnapshot = function (snapshot) {
 const botInitialized = bot => bot && bot.tradeEngine.options;
 const botStarted = bot => botInitialized(bot) && bot.tradeEngine.tradeOptions;
 const shouldRestartOnError = (bot, errorName = '') =>
-    !unrecoverable_errors.includes(errorName) && botInitialized(bot) && bot.tradeEngine.options.shouldRestartOnError;
+    !['PURCHASE_OUTCOME_UNCERTAIN', 'OUD_EXECUTION_CYCLE_REQUIRED'].includes(errorName) &&
+    !unrecoverable_errors.includes(errorName) &&
+    botInitialized(bot) &&
+    bot.tradeEngine.options.shouldRestartOnError;
 
 const shouldStopOnError = (bot, errorName = '') => {
     const stopErrors = ['SellNotAvailableCustom', 'ContractCreationFailure', 'InvalidtoBuy'];
