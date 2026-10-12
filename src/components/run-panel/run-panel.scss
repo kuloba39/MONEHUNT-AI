@@ -250,11 +250,14 @@
         display: flex;
         justify-content: space-between;
         flex-direction: column;
+        flex: 1 1 0%;
         min-height: 0;
         overflow: hidden !important;
 
         .dc-tabs {
             flex: 1 1 0%;
+            height: 100%;
+            width: 100%;
             min-height: 0;
             min-width: 0;
 
@@ -272,6 +275,12 @@
             .dc-themed-scrollbars-wrapper {
                 min-width: 0;
                 width: 100%;
+            }
+
+            &__content {
+                height: 100%;
+                min-height: 0;
+                min-width: 0;
             }
         }
     }
@@ -585,4 +594,3 @@
         }
     }
 }
-
