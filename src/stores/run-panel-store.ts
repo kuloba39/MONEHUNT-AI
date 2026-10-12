@@ -456,6 +456,13 @@ if (!client.is_logged_in) {
         observer.register('bot.click_stop', this.onStopButtonClick);
         observer.register('bot.trade_again', this.onBotTradeAgain);
         observer.register('contract.status', this.onContractStatusEvent);
+        // Remove stale copies before registering the current run's listeners.
+        if (observer.isRegistered('bot.contract')) {
+            observer.unregister('bot.contract', this.onBotContractEvent);
+            observer.unregister('bot.contract', summary_card.onBotContractEvent);
+            observer.unregister('bot.contract', transactions.onBotContractEvent);
+        }
+
         observer.register('bot.contract', this.onBotContractEvent);
         observer.register('bot.contract', summary_card.onBotContractEvent);
         observer.register('bot.contract', transactions.onBotContractEvent);
@@ -754,7 +761,9 @@ if (!client.is_logged_in) {
         observer.unregisterAll('bot.stop_button_click');
         observer.unregisterAll('bot.trade_again');
         observer.unregisterAll('contract.status');
-        observer.unregisterAll('bot.contract');
+        if (observer.isRegistered('bot.contract')) {
+            observer.unregister('bot.contract', this.onBotContractEvent);
+        }
         observer.unregisterAll('Error');
         observer.unregisterAll('bot.setPurchaseInProgress');
     };
