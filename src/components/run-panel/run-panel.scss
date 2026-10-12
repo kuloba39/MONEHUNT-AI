@@ -305,16 +305,13 @@
 
             &--mobile {
                 display: flex;
-                height: var(--drawer-content-height-mobile);
-                position: fixed;
-                bottom: 15.7rem;
-                width: 100vw;
+                flex: 1 1 auto;
+                height: 100%;
+                min-height: 0;
+                position: relative;
+                bottom: auto;
+                width: 100%;
                 padding: 0.4rem 0;
-
-                /* Fix for iOS devices to prevent tab content overlap with bottom controls */
-                @supports (-webkit-touch-callout: none) {
-                    bottom: calc(15.7rem + env(safe-area-inset-bottom, 0));
-                }
             }
 
             &--summary-tab {
