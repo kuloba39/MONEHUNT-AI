@@ -768,7 +768,10 @@ if (!client.is_logged_in) {
         observer.unregisterAll('bot.trade_again');
         observer.unregisterAll('contract.status');
         if (observer.isRegistered('bot.contract')) {
+            const { summary_card, transactions } = this.root_store;
             observer.unregister('bot.contract', this.onBotContractEvent);
+            observer.unregister('bot.contract', summary_card.onBotContractEvent);
+            observer.unregister('bot.contract', transactions.onBotContractEvent);
         }
         observer.unregisterAll('Error');
         observer.unregisterAll('bot.setPurchaseInProgress');

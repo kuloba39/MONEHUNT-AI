@@ -279,7 +279,7 @@ const RunPanel = observer(() => {
         const drawer = document.querySelector('.run-panel__container') as HTMLElement | null;
         const drawerHeight = drawer?.getBoundingClientRect().height || 0;
 
-        const baseTop = 8.5 * 16;
+        const baseTop = window.innerHeight * 0.30;
         const minOffset = -baseTop + 8;
         const maxOffset = Math.max(
             minOffset,

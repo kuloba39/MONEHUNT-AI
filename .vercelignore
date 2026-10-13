@@ -17,3 +17,6 @@ src/pages/ai-lab/*.monehunt-backup
 # Local backup copies inside constants
 src/constants/*.backup
 src/constants/*.before-*
+
+# Local PowerShell backup files
+*.bak

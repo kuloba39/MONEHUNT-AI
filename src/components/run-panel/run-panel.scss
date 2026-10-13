@@ -11,8 +11,8 @@
     }
 
     &__container {
-        height: var(--bot-content-height) !important;
-        top: calc(8.5rem + var(--run-panel-offset-y, 0px)) !important;
+        height: 60vh !important;
+        top: calc(30vh + var(--run-panel-offset-y, 0px)) !important;
         width: 36.6rem !important;
         right: 0;
 
@@ -588,6 +588,99 @@
             flex-basis: 100%;
             white-space: normal;
             word-break: break-word;
+        }
+    }
+}
+
+/* MOBILE RUN PANEL BOTTOM VISIBILITY FIX */
+.run-panel__container--mobile {
+    .dc-drawer__content.run-panel__content {
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        box-sizing: border-box;
+        padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .run-panel-tab__content--mobile {
+        min-height: 0;
+        max-height: 100%;
+    }
+}
+
+/* Keep mobile summary statistics in the panel layout, above its bottom controls. */
+.run-panel__container--mobile .run-panel__stat--mobile {
+    position: relative !important;
+    bottom: auto !important;
+    flex: 0 0 auto;
+    width: 100%;
+}
+
+/* MOBILE RUN PANEL DRAWER HANDLE FIX */
+.run-panel.dc-drawer {
+    @include mobile-or-tablet-screen {
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        height: calc(100% - 10.1rem) !important;
+        top: calc(100% - 9.8rem) !important;
+
+        > .dc-drawer__toggle {
+            display: flex;
+            flex: 0 0 3.6rem;
+            position: relative;
+            width: 100%;
+            min-height: 3.6rem;
+            height: 3.6rem;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        > .dc-drawer__container {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+            height: auto !important;
+            overflow: hidden;
+        }
+
+        .dc-drawer__header {
+            flex: 0 0 auto;
+        }
+
+        .dc-drawer__content.run-panel__content {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+    }
+}
+
+/* MOBILE RUN PANEL: keep the drawer toggle visible above the toolbar */
+.run-panel.dc-drawer {
+    @include mobile-or-tablet-screen {
+        z-index: 101 !important;
+
+        > .dc-drawer__toggle {
+            position: relative;
+            flex: 0 0 3.6rem;
+            min-height: 3.6rem;
+            height: 3.6rem;
+            background-color: var(--general-main-1);
+            border-top: 1px solid var(--general-section-1);
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        > .dc-drawer__toggle .dc-drawer__toggle-icon {
+            display: block;
+            visibility: visible;
+            opacity: 1;
         }
     }
 }
