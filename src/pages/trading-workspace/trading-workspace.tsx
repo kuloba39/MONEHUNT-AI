@@ -3,6 +3,9 @@ import { observer } from 'mobx-react-lite';
 import { ApiHelpers } from '@/external/bot-skeleton';
 import { getContractTypeOptions } from '@/components/shared/utils/common-data';
 import { useStore } from '@/hooks/useStore';
+import { generateOAuthURL } from '@/components/shared';
+import Dialog from '@/components/shared_ui/dialog';
+import { localize } from '@deriv-com/translations';
 import {
     MONEHUNT_SELECTED_BOT_KEY,
     type MonehuntSelectedBot,
@@ -15,6 +18,37 @@ import './trading-workspace.scss';
 const TradingWorkspace = observer(() => {
     const store = useStore();
     const { app, dbot } = store;
+    const {
+        is_dialog_open,
+        dialog_options,
+        onCancelButtonClick,
+        onCloseDialog,
+        onOkButtonClick,
+    } = store.run_panel;
+    const {
+        cancel_button_text,
+        ok_button_text,
+        title,
+        message,
+        dismissable,
+        is_closed_on_cancel,
+    } = dialog_options as {
+        cancel_button_text?: string;
+        ok_button_text?: string;
+        title?: string;
+        message?: React.ReactNode;
+        dismissable?: boolean;
+        is_closed_on_cancel?: boolean;
+    };
+
+    const handleDialogLogin = async () => {
+        const oauthUrl = await generateOAuthURL();
+        if (oauthUrl) {
+            window.location.replace(oauthUrl);
+        } else {
+            console.error('[TRADING WORKSPACE] Failed to generate OAuth URL');
+        }
+    };
     const isRunning = Boolean(store?.run_panel?.is_running);
 
     const [selectedBot, setSelectedBot] =
@@ -950,6 +984,26 @@ const TradingWorkspace = observer(() => {
                 </button>
             )}
         </main>
+
+        {/* TRADING WORKSPACE SHARED DIALOG HOST */}
+        <Dialog
+            cancel_button_text={cancel_button_text || localize('Cancel')}
+            className='dc-dialog__wrapper--fixed'
+            confirm_button_text={ok_button_text || localize('Ok')}
+            has_close_icon
+            is_mobile_full_width={false}
+            is_visible={is_dialog_open}
+            onCancel={onCancelButtonClick || undefined}
+            onClose={onCloseDialog}
+            onConfirm={onOkButtonClick || onCloseDialog}
+            portal_element_id='modal_root'
+            title={title}
+            login={handleDialogLogin}
+            dismissable={dismissable}
+            is_closed_on_cancel={is_closed_on_cancel}
+        >
+            {message}
+        </Dialog>
 
         <RunPanel />
     </>
