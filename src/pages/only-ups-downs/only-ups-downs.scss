@@ -1928,3 +1928,13 @@ scss
     opacity: 0.4;
     cursor: not-allowed;
 }
+.only-ups-downs-native-performance__error {
+    margin: 12px 0;
+    padding: 10px 12px;
+    border: 1px solid #b45309;
+    border-radius: 8px;
+    color: #b45309;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}

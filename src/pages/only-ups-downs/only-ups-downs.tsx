@@ -1888,6 +1888,14 @@ onChange={(event) => {
         </button>
     </div>
 
+    {oudExecutionState.error && (
+        <div
+            className='only-ups-downs-native-performance__error'
+            role='alert'
+        >
+            {oudExecutionState.error}
+        </div>
+    )}
     <div className='only-ups-downs-native-performance__grid'>
         <div>
             <span>Total P/L</span>

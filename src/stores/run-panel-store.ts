@@ -134,11 +134,17 @@ export default class RunPanelStore {
 
     get is_clear_stat_disabled() {
         const { journal, transactions } = this.root_store;
+        const loginid = this.core?.client?.loginid as string;
+        const hasTransactions =
+            (transactions?.transactions?.length ?? 0) > 0 ||
+            (transactions?.elements?.[loginid]?.length ?? 0) > 0 ||
+            (transactions?.recovered_transactions?.length ?? 0) > 0 ||
+            (transactions?.recovered_completed_transactions?.length ?? 0) > 0;
 
         return (
             this.is_running ||
             this.has_open_contract ||
-            (journal.unfiltered_messages.length === 0 && transactions?.transactions?.length === 0)
+            (journal.unfiltered_messages.length === 0 && !hasTransactions)
         );
     }
 
