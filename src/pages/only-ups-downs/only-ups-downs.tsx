@@ -13,7 +13,7 @@ import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
 import { load, save_types } from '@/external/bot-skeleton';
 import { saveWorkspaceToRecent } from '@/external/bot-skeleton/utils';
-import { FREE_BOTS } from '@/constants/free-bots';
+import onlyUpsDownsSignalxml from '@/constants/Only_Ups_Downs_Signal_Bot.xml';
 import { OUDExecutionController } from '@/only-ups-downs/execution';
 import type { OUDExecutionState } from '@/only-ups-downs/execution/oud-execution-types';
 
@@ -698,9 +698,11 @@ const [oudManualDirection, setOudManualDirection] =
         return;
     }
 
-    const bot = FREE_BOTS.find(
-        item => item.id === 'only-ups-downs-signal',
-    );
+    const bot = {
+        id: 'only-ups-downs-signal',
+        name: 'ONLY UPS / ONLY DOWNS SIGNAL BOT',
+        xml: onlyUpsDownsSignalxml,
+    };
 
     if (!bot?.xml) {
         console.error(
