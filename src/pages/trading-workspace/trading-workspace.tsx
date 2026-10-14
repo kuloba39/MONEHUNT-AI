@@ -1,7 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { ApiHelpers } from '@/external/bot-skeleton';
-import { getContractTypeOptions } from '@/components/shared/utils/common-data';
 import { useStore } from '@/hooks/useStore';
 import { generateOAuthURL } from '@/components/shared';
 import Dialog from '@/components/shared_ui/dialog';
@@ -62,17 +61,15 @@ const TradingWorkspace = observer(() => {
     const [symbolOptions, setSymbolOptions] = React.useState<Array<[string, string]>>([]);
     const [tradeType, setTradeType] = React.useState('');
     const [contractType, setContractType] = React.useState('');
-    const [contractTypeOptions, setContractTypeOptions] =
-        React.useState<Array<[string, string]>>([]);
-    const [prediction, setPrediction] = React.useState('');
-    const [predictionOptions, setPredictionOptions] = React.useState<number[]>([]);
+    const strategySelectionRef = React.useRef<{ market: string; submarket: string; symbol: string } | null>(null);
     const [duration, setDuration] = React.useState('1');
     const [durationUnit, setDurationUnit] = React.useState('');
     const [durationOptions, setDurationOptions] = React.useState<
         Array<{ display: string; unit: string; min: number; max: number }>
     >([]);
     const [stake, setStake] = React.useState('1');
-    const [martingale, setMartingale] = React.useState('2');
+    const [martingale, setMartingale] = React.useState('0');
+    const [maxStake, setMaxStake] = React.useState('');
     const [takeProfit, setTakeProfit] = React.useState('');
     const [stopLoss, setStopLoss] = React.useState('');
     const [error, setError] = React.useState('');
@@ -220,6 +217,18 @@ const TradingWorkspace = observer(() => {
 
                 console.log('[MONEHUNT TIMING] bot XML load END', {                     elapsedMs: Math.round(performance.now() - botLoadStartedAt),                 });
                 const allBlocks = workspace.getAllBlocks(false);
+                const marketBlock = allBlocks.find(
+                    block => block.type === 'trade_definition_market'
+                );
+                const loadedMarket = marketBlock?.getFieldValue('MARKET_LIST') || '';
+                const loadedSubmarket = marketBlock?.getFieldValue('SUBMARKET_LIST') || '';
+                const loadedSymbol = marketBlock?.getFieldValue('SYMBOL_LIST') || '';
+
+                strategySelectionRef.current = {
+                    market: loadedMarket,
+                    submarket: loadedSubmarket,
+                    symbol: loadedSymbol,
+                };
 
                 const tradeTypeBlock = allBlocks.find(
                     block => block.type === 'trade_definition_tradetype'
@@ -237,35 +246,13 @@ const TradingWorkspace = observer(() => {
 
                 setTradeType(loadedTradeType);
 
-                const contractOptions = loadedTradeType
-                    ? getContractTypeOptions('both', loadedTradeType)
-                    : [];
-
-                const officialContractOptions: Array<[string, string]> =
-                    [...contractOptions];
-
-                if (officialContractOptions.length > 1) {
-                    officialContractOptions.unshift(['Both', 'both']);
-                }
-
-                setContractTypeOptions(officialContractOptions);
-
-                const initialContract =
-                    loadedContractType &&
-                    officialContractOptions.some(
-                        option => option[1] === loadedContractType
-                    )
-                        ? loadedContractType
-                        : officialContractOptions[0]?.[1] || '';
-
-                setContractType(initialContract);
+                setContractType(loadedContractType);
 
                 console.log(
                     '[MONEHUNT TRADING WORKSPACE] BOT TRADE SETTINGS DETECTED:',
                     {
                         tradeType: loadedTradeType,
                         contractType: loadedContractType,
-                        contractOptions: officialContractOptions,
                     }
                 );
                 console.log(
@@ -323,32 +310,14 @@ const TradingWorkspace = observer(() => {
 
                 setMarketOptions(options);
 
-                const firstMarket = options?.[0]?.[1] ?? '';
+                const desiredMarket = strategySelectionRef.current?.market;
+                const firstMarket =
+                    options.find(option => option[1] === desiredMarket)?.[1] ??
+                    options?.[0]?.[1] ??
+                    '';
 
                 if (firstMarket) {
                     setMarket(firstMarket);
-
-                    const submarkets =
-                        activeSymbols.getSubmarketDropdownOptions(firstMarket);
-
-                    setSubmarketOptions(submarkets);
-
-                    const firstSubmarket = submarkets?.[0]?.[1] ?? '';
-
-                    if (firstSubmarket) {
-                        setSubmarket(firstSubmarket);
-
-                        const symbols =
-                            activeSymbols.getSymbolDropdownOptions(firstSubmarket);
-
-                        setSymbolOptions(symbols);
-
-                        const firstSymbol = symbols?.[0]?.[1] ?? '';
-
-                        if (firstSymbol) {
-                            setSymbol(firstSymbol);
-                        }
-                    }
                 }
 
                 console.log(
@@ -380,21 +349,19 @@ const TradingWorkspace = observer(() => {
         if (!activeSymbols) return;
 
         const options = activeSymbols.getSubmarketDropdownOptions(market);
-
         setSubmarketOptions(options);
 
-        const nextSubmarket = options?.[0]?.[1] ?? '';
+        const selection = strategySelectionRef.current;
+        const desiredSubmarket =
+            selection?.market === market ? selection.submarket : '';
+        const nextSubmarket =
+            options.find(option => option[1] === desiredSubmarket)?.[1] ??
+            options?.[0]?.[1] ??
+            '';
+
         setSubmarket(nextSubmarket);
 
-        if (nextSubmarket) {
-            const symbols =
-                activeSymbols.getSymbolDropdownOptions(nextSubmarket);
-
-            setSymbolOptions(symbols);
-
-            const nextSymbol = symbols?.[0]?.[1] ?? '';
-            setSymbol(nextSymbol);
-        } else {
+        if (!nextSubmarket) {
             setSymbolOptions([]);
             setSymbol('');
         }
@@ -417,16 +384,12 @@ const TradingWorkspace = observer(() => {
         const loadTradeRuntimeOptions = async () => {
             try {
                 const runtimeOptionsStartedAt = performance.now();                 console.log('[MONEHUNT TIMING] contracts_for START', {                     symbol,                     tradeType,                 });
-                const [durations, predictions] = await Promise.all([
-                    contractsFor.getDurations(symbol, tradeType),
-                    contractsFor.getPredictionRange(symbol, tradeType),
-                ]);
+                const durations = await contractsFor.getDurations(symbol, tradeType);
 
                 console.log('[MONEHUNT TIMING] contracts_for END', {                     elapsedMs: Math.round(performance.now() - runtimeOptionsStartedAt),                 });
                 if (cancelled) return;
 
                 setDurationOptions(durations || []);
-                setPredictionOptions(predictions || []);
 
                 const selectedDuration =
                     durations?.find(item => item.unit === durationUnit) ||
@@ -449,24 +412,12 @@ const TradingWorkspace = observer(() => {
                     setDuration('1');
                 }
 
-                if (predictions?.length) {
-                    const currentPrediction = Number(prediction);
-                    const nextPrediction = predictions.includes(currentPrediction)
-                        ? currentPrediction
-                        : predictions[0];
-
-                    setPrediction(String(nextPrediction));
-                } else {
-                    setPrediction('');
-                }
-
                 console.log(
                     '[MONEHUNT TRADING WORKSPACE] TRADE RUNTIME OPTIONS READY:',
                     {
                         symbol,
                         tradeType,
                         durations,
-                        predictions,
                     }
                 );
             } catch (error) {
@@ -491,11 +442,25 @@ const TradingWorkspace = observer(() => {
         if (!activeSymbols) return;
 
         const options = activeSymbols.getSymbolDropdownOptions(submarket);
-
         setSymbolOptions(options);
 
-        const nextSymbol = options?.[0]?.[1] ?? '';
+        const selection = strategySelectionRef.current;
+        const desiredSymbol =
+            selection?.submarket === submarket ? selection.symbol : '';
+        const nextSymbol =
+            options.find(option => option[1] === desiredSymbol)?.[1] ??
+            options?.[0]?.[1] ??
+            '';
+
         setSymbol(nextSymbol);
+
+        if (selection && nextSymbol === desiredSymbol && desiredSymbol) {
+            strategySelectionRef.current = null;
+            console.log(
+                '[MONEHUNT TRADING WORKSPACE] XML MARKET/SYMBOL SELECTION RESTORED:',
+                { market: selection.market, submarket, symbol: nextSymbol }
+            );
+        }
     }, [submarket]);
     const executeBot = async () => {
         setError('');
@@ -507,12 +472,11 @@ const TradingWorkspace = observer(() => {
 
         const parsedStake = Number(stake);
         const parsedMartingale = Number(martingale);
+        const parsedMaxStake = maxStake.trim() === '' ? undefined : Number(maxStake);
         const parsedTakeProfit =
             takeProfit.trim() === '' ? undefined : Number(takeProfit);
         const parsedStopLoss =
             stopLoss.trim() === '' ? undefined : Number(stopLoss);
-        const parsedPrediction =
-            prediction.trim() === '' ? undefined : Number(prediction);
         const parsedDuration = Number(duration);
         const selectedDurationOption = durationOptions.find(
             option => option.unit === durationUnit
@@ -520,11 +484,6 @@ const TradingWorkspace = observer(() => {
 
         if (!symbol) {
             setError('Select a market.');
-            return;
-        }
-
-        if (!contractType) {
-            setError('Select a contract / side.');
             return;
         }
 
@@ -546,15 +505,6 @@ const TradingWorkspace = observer(() => {
             return;
         }
 
-        if (
-            parsedPrediction !== undefined &&
-            (!Number.isInteger(parsedPrediction) ||
-                !predictionOptions.includes(parsedPrediction))
-        ) {
-            setError('Prediction is outside the official range for this contract.');
-            return;
-        }
-
         if (!Number.isFinite(parsedStake) || parsedStake <= 0) {
             setError('Stake must be greater than 0.');
             return;
@@ -562,9 +512,17 @@ const TradingWorkspace = observer(() => {
 
         if (
             !Number.isFinite(parsedMartingale) ||
-            parsedMartingale < 0
+            (parsedMartingale !== 0 && parsedMartingale <= 1)
         ) {
-            setError('Martingale must be 0 or greater.');
+            setError('Martingale must be 0 (disabled) or greater than 1.');
+            return;
+        }
+
+        if (
+            parsedMaxStake !== undefined &&
+            (!Number.isFinite(parsedMaxStake) || parsedMaxStake < parsedStake)
+        ) {
+            setError('Max Stake must be a valid amount at least as large as the starting stake.');
             return;
         }
 
@@ -584,17 +542,6 @@ const TradingWorkspace = observer(() => {
             return;
         }
 
-        setMonehuntRuntimeConfig({
-            symbol,
-            contractType,
-            prediction: parsedPrediction,
-            duration: parsedDuration,
-            durationUnit: durationUnit || undefined,
-            stake: parsedStake,
-            martingale: parsedMartingale,
-            takeProfit: parsedTakeProfit,
-            stopLoss: parsedStopLoss,
-        });
 
         console.log(
             '[MONEHUNT TRADING WORKSPACE] EXECUTE:',
@@ -602,18 +549,28 @@ const TradingWorkspace = observer(() => {
                 botId: selectedBot.id,
                 botName: selectedBot.name,
                 symbol,
-                contractType,
-                prediction: parsedPrediction ?? null,
                 duration: parsedDuration,
                 durationUnit: durationUnit || null,
                 stake: parsedStake,
                 martingale: parsedMartingale,
+                maxStake: parsedMaxStake ?? null,
                 takeProfit: parsedTakeProfit ?? null,
                 stopLoss: parsedStopLoss ?? null,
             }
         );
 
-        await store.run_panel.onRunButtonClick();
+        await store.run_panel.onRunButtonClick(() => {
+            setMonehuntRuntimeConfig({
+                symbol,
+                duration: parsedDuration,
+                durationUnit: durationUnit || undefined,
+                stake: parsedStake,
+                martingale: parsedMartingale,
+                maxStake: parsedMaxStake,
+                takeProfit: parsedTakeProfit,
+                stopLoss: parsedStopLoss,
+            });
+        });
     };
     return (
         <>
@@ -698,9 +655,10 @@ const TradingWorkspace = observer(() => {
                                 <span>MARKET</span>
                                 <select
                                     value={market}
-                                    onChange={event =>
-                                        setMarket(event.target.value)
-                                    }
+                                    onChange={event => {
+                                        strategySelectionRef.current = null;
+                                        setMarket(event.target.value);
+                                    }}
                                     disabled={isRunning || marketOptions.length === 0}
                                 >
                                     {marketOptions.map(([label, value]) => (
@@ -715,9 +673,10 @@ const TradingWorkspace = observer(() => {
                                 <span>SUBMARKET</span>
                                 <select
                                     value={submarket}
-                                    onChange={event =>
-                                        setSubmarket(event.target.value)
-                                    }
+                                    onChange={event => {
+                                        strategySelectionRef.current = null;
+                                        setSubmarket(event.target.value);
+                                    }}
                                     disabled={
                                         isRunning || submarketOptions.length === 0
                                     }
@@ -734,9 +693,10 @@ const TradingWorkspace = observer(() => {
                                 <span>SYMBOL</span>
                                 <select
                                     value={symbol}
-                                    onChange={event =>
-                                        setSymbol(event.target.value)
-                                    }
+                                    onChange={event => {
+                                        strategySelectionRef.current = null;
+                                        setSymbol(event.target.value);
+                                    }}
                                     disabled={isRunning || symbolOptions.length === 0}
                                 >
                                     {symbolOptions.map(([label, value]) => (
@@ -747,43 +707,9 @@ const TradingWorkspace = observer(() => {
                                 </select>
                             </label>
                             <label>
-                                <span>CONTRACT / SIDE</span>
-                                <select
-                                    value={contractType}
-                                    onChange={event =>
-                                        setContractType(event.target.value)
-                                    }
-                                    disabled={
-                                        isRunning ||
-                                        contractTypeOptions.length === 0
-                                    }
-                                >
-                                    {contractTypeOptions.map(([label, value]) => (
-                                        <option key={value} value={value}>
-                                            {label}
-                                        </option>
-                                    ))}
-                                </select>
+                                <span>BOT CONTRACT (FROM STRATEGY)</span>
+                                <div>{contractType || 'Defined by bot strategy'}</div>
                             </label>
-
-                            {predictionOptions.length > 0 && (
-                                <label>
-                                    <span>PREDICTION</span>
-                                    <select
-                                        value={prediction}
-                                        onChange={event =>
-                                            setPrediction(event.target.value)
-                                        }
-                                        disabled={isRunning}
-                                    >
-                                        {predictionOptions.map(value => (
-                                            <option key={value} value={value}>
-                                                {value}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                            )}
 
                             {durationOptions.length > 0 && (
                                 <label>
@@ -865,6 +791,19 @@ const TradingWorkspace = observer(() => {
                                     onChange={event =>
                                         setMartingale(event.target.value)
                                     }
+                                    disabled={isRunning}
+                                />
+                            </label>
+
+                            <label>
+                                <span>MAX STAKE (OPTIONAL)</span>
+                                <input
+                                    type='number'
+                                    min={stake || '0.01'}
+                                    step='0.01'
+                                    value={maxStake}
+                                    onChange={event => setMaxStake(event.target.value)}
+                                    placeholder='No cap'
                                     disabled={isRunning}
                                 />
                             </label>

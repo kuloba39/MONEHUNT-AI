@@ -1,422 +1,1001 @@
+
+/* =========================================================
+   MONEHUNT AI — PREMIUM AUTONOMOUS ROBOT CARD SYSTEM
+   Graphite titanium • Angular armor • Integrated controls
+   ========================================================= */
+
 .free-bots {
-
-    padding:24px;
-
-}
-
-
-.free-bots-header {
-
-    margin-bottom:25px;
-
-}
-
-
-.free-bots-header h2 {
-
-    font-size:26px;
-    font-weight:800;
-    margin-bottom:8px;
-
-}
-
-
-.free-bots-header p {
-
-    color:var(--text-less-prominent);
-    font-size:14px;
-
-}
-
-.free-bots-grid{
-
-    display:grid;
-
-    grid-template-columns:
-    repeat(auto-fit,minmax(240px,1fr));
-
-    gap:20px;
-
-}
-
-
-
-.free-bot-card {
-
-    position:relative;
-
-    padding:22px;
-
-    border-radius:18px;
-
-    background:
-    linear-gradient(
-        145deg,
-        rgba(255,255,255,.08),
-        rgba(255,255,255,.02)
-    );
-
-    border:1px solid rgba(255,255,255,.15);
-
-    backdrop-filter:blur(15px);
-
-    transition:.3s;
-
-    overflow:hidden;
-
-}
-
-
-
-.free-bot-card:hover {
-
-    transform:translateY(-6px);
-
-    border-color:#00e5ff;
-
-    box-shadow:
-    0 15px 40px rgba(0,229,255,.18);
-
-}
-
-
-
-.free-bot-top {
-
-    display:flex;
-
-    justify-content:space-between;
-
-    align-items:center;
-
-}
-
-
-
-.bot-status {
-
-    background:#00c853;
-
-    color:#000;
-
-    font-size:11px;
-
-    font-weight:900;
-
-    padding:5px 12px;
-
-    border-radius:20px;
-
-}
-
-
-
-.bot-icon {
-
-    font-size:35px;
-
-}
-
-
-
-.free-bot-card h3 {
-
-    margin-top:20px;
-
-    font-size:20px;
-
-    font-weight:800;
-
-}
-
-
-
-.free-bot-card p {
-
-    min-height:45px;
-
-    margin-top:10px;
-
-    color:var(--text-less-prominent);
-
-}
-
-
-
-.free-bot-card button {
-
-
-    width:100%;
-
-    margin-top:20px;
-
-    padding:12px;
-
-    border-radius:12px;
-
-    border:none;
-
-    cursor:pointer;
-
-
-    font-weight:800;
-
-    background:
-
-    linear-gradient(
-        90deg,
-        #00e5ff,
-        #00c853
-    );
-
-
-    color:#000;
-
-
-    transition:.3s;
-
-}
-
-
-
-.free-bot-card button:hover {
-
-    transform:scale(1.03);
-
-}
-.free-bot-card.oreshnic {
-
-    border-color:#ff9800;
-
-}
-
-
-.free-bot-card.manager5 {
-
-    border-color:#ff1744;
-
-}
-
-
-.free-bot-card.manager1 {
-
-    border-color:#2979ff;
-
-}
-
-
-.free-bot-card.defender {
-
-    border-color:#00e676;
-
-}
-
-
-.free-bot-card.even {
-
-    border-color:#00bcd4;
-
-}
-
-
-
-.bot-tag {
-
-    display:inline-block;
-
-    margin-top:10px;
-
-    padding:5px 12px;
-
-    border-radius:20px;
-
-    font-size:11px;
-
-    font-weight:900;
-
-    background:rgba(255,255,255,.1);
-
-}
-/* MOBILE RESPONSIVE */
-
-@media (max-width: 768px) {
-
-.free-bots-grid {
-
-    display: grid;
-
-    grid-template-columns: repeat(
-        auto-fill,
-        minmax(280px, 1fr)
-    );
-
-    gap: 16px;
+    --mh-bg: #070c12;
+    --mh-panel: #0d151f;
+    --mh-panel-raised: #121e2a;
+    --mh-border: #253645;
+    --mh-text: #edf5fa;
+    --mh-muted: #91a5b5;
 
     width: 100%;
-
+    box-sizing: border-box;
+    padding: 24px;
+    color: var(--mh-text);
+    background:
+        radial-gradient(
+            ellipse at 50% 0%,
+            rgba(14, 88, 75, 0.12),
+            transparent 55%
+        ),
+        var(--mh-bg);
+    border: 1px solid #172630;
+    border-radius: 22px;
+    font-family: Inter, "Segoe UI", sans-serif;
 }
 
-    .free-bot-card {
-
-        width: 100%;
-
-        min-height: auto;
-
-    }
-
-    .free-bots-header h2 {
-
-        font-size: 22px;
-
-    }
-
-    .free-bots-header p {
-
-        font-size: 14px;
-
-    }
-
+.free-bots *,
+.free-bots *::before,
+.free-bots *::after {
+    box-sizing: border-box;
 }
 
-@media (max-width: 480px) {
+/* ---------- PAGE HEADER ---------- */
 
+.free-bots-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.free-bots-kicker {
+    margin: 0 0 9px;
+    color: #42dca2;
+    font-family: Consolas, monospace;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.free-bots-header h2 {
+    margin: 0;
+    color: #f1f7fb;
+    font-size: clamp(23px, 3vw, 32px);
+    font-weight: 800;
+    letter-spacing: -0.8px;
+}
+
+.free-bots-subtitle {
+    max-width: 560px;
+    margin: 9px 0 0;
+    color: var(--mh-muted);
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+.free-bots-count {
+    flex: 0 0 auto;
+    padding: 10px 13px;
+    border: 1px solid #294337;
+    border-radius: 9px;
+    background: #0c211b;
+    color: #57e8ad;
+    font-family: Consolas, monospace;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+/* ---------- RESPONSIVE CARD GRID ---------- */
+
+.free-bots-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(min(100%, 255px), 1fr)
+    );
+    align-items: stretch;
+    gap: 22px;
+}
+
+/* ---------- COMPLETE ROBOT CARD ---------- */
+
+.free-bots .free-bot-card {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #263746;
+    border-radius: 17px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.035),
+            transparent 32%
+        ),
+        linear-gradient(160deg, #101a25, #090f17 72%);
+    box-shadow:
+        0 16px 35px rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.045);
+    transition:
+        transform 220ms ease,
+        border-color 220ms ease,
+        box-shadow 220ms ease;
+}
+
+.free-bots .free-bot-card::before {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    left: 15%;
+    width: 70%;
+    height: 2px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--bot-accent),
+        transparent
+    );
+    content: "";
+    opacity: 0.8;
+}
+
+@media (hover: hover) {
+    .free-bots .free-bot-card:hover {
+        transform: translateY(-5px);
+        border-color: color-mix(
+            in srgb,
+            var(--bot-accent) 55%,
+            #293b4b
+        );
+        box-shadow:
+            0 22px 42px rgba(0, 0, 0, 0.35),
+            0 0 25px color-mix(
+                in srgb,
+                var(--bot-accent) 9%,
+                transparent
+            ),
+            inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    }
+}
+
+/* ---------- ROBOT DISPLAY FRAME ---------- */
+
+.free-bots .free-bot-card-header {
+    position: relative;
+    padding: 13px 13px 0;
+}
+
+.free-bots .free-bot-card .free-bot-artwork {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    width: 100%;
+    height: 225px;
+    min-height: 225px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid color-mix(
+        in srgb,
+        var(--bot-accent) 27%,
+        #263746
+    );
+    border-radius: 12px;
+    background:
+        radial-gradient(
+            ellipse at 50% 57%,
+            color-mix(
+                in srgb,
+                var(--bot-accent) 14%,
+                transparent
+            ),
+            transparent 46%
+        ),
+        linear-gradient(
+            180deg,
+            #152331 0%,
+            #0d1722 48%,
+            #080e15 100%
+        );
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.07),
+        inset 0 -24px 45px rgba(0, 0, 0, 0.28);
+}
+
+/* Subtle technical grid */
+.free-bots .free-bot-artwork::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background-image:
+        linear-gradient(
+            rgba(170, 205, 225, 0.045) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(170, 205, 225, 0.045) 1px,
+            transparent 1px
+        );
+    background-size: 24px 24px;
+    content: "";
+    mask-image: linear-gradient(
+        to bottom,
+        transparent,
+        #000 20%,
+        #000 80%,
+        transparent
+    );
+}
+
+/* Ground illumination */
+.free-bots .free-bot-artwork::after {
+    position: absolute;
+    z-index: -1;
+    bottom: 23px;
+    left: 50%;
+    width: 112px;
+    height: 12px;
+    border: 1px solid color-mix(
+        in srgb,
+        var(--bot-accent) 45%,
+        transparent
+    );
+    border-radius: 50%;
+    background: color-mix(
+        in srgb,
+        var(--bot-accent) 24%,
+        transparent
+    );
+    box-shadow: 0 0 22px color-mix(
+        in srgb,
+        var(--bot-accent) 35%,
+        transparent
+    );
+    content: "";
+    filter: blur(5px);
+    transform: translateX(-50%);
+}
+
+/* ---------- ROBOT SILHOUETTE ---------- */
+
+.free-bots .free-bot-card .mh-robot {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 144px;
+    height: 164px;
+    min-width: 144px;
+    min-height: 164px;
+    flex: 0 0 164px;
+    flex-direction: column;
+    align-items: center;
+    filter:
+        drop-shadow(0 10px 8px rgba(0, 0, 0, 0.65))
+        drop-shadow(
+            0 0 12px color-mix(
+                in srgb,
+                var(--bot-accent) 12%,
+                transparent
+            )
+        );
+}
+
+/* Mechanical halo */
+.free-bots .free-bot-card .mh-robot::before {
+    position: absolute;
+    z-index: -1;
+    top: 37px;
+    left: 50%;
+    width: 132px;
+    height: 100px;
+    border: 1px solid color-mix(
+        in srgb,
+        var(--bot-accent) 27%,
+        #263746
+    );
+    border-radius: 50%;
+    background: radial-gradient(
+        ellipse,
+        color-mix(
+            in srgb,
+            var(--bot-accent) 8%,
+            transparent
+        ),
+        transparent 70%
+    );
+    content: "";
+    transform: translateX(-50%);
+}
+
+/* ---------- ANTENNA / SENSOR MAST ---------- */
+
+.free-bots .free-bot-card .mh-robot-antenna {
+    position: relative;
+    width: 4px;
+    height: 18px;
+    min-height: 18px;
+    flex: 0 0 18px;
+    border-radius: 1px;
+    background: linear-gradient(
+        90deg,
+        #344555,
+        #e1eaf0 45%,
+        #63798a 70%,
+        #243443
+    );
+    box-shadow: 0 0 5px rgba(220, 240, 255, 0.2);
+}
+
+.free-bots .free-bot-card .mh-robot-antenna-light {
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    border: 1px solid #effff9;
+    border-radius: 2px;
+    background: var(--bot-accent);
+    box-shadow:
+        0 0 5px #fff,
+        0 0 12px var(--bot-accent);
+    transform: translateX(-50%);
+}
+
+/* ---------- ANGULAR TITANIUM HELMET ---------- */
+
+.free-bots .free-bot-card .mh-robot-head {
+    position: relative;
+    width: 96px;
+    height: 70px;
+    min-height: 70px;
+    flex: 0 0 70px;
+    padding: 8px;
+    overflow: visible;
+    border: 1px solid #9eafbe;
+    border-radius: 0;
+    clip-path: polygon(
+        17% 0,
+        83% 0,
+        100% 24%,
+        94% 80%,
+        77% 100%,
+        23% 100%,
+        6% 80%,
+        0 24%
+    );
+    background: linear-gradient(
+        125deg,
+        #e0e7ec 0%,
+        #8094a4 12%,
+        #455b6c 28%,
+        #1b2b3a 52%,
+        #718596 76%,
+        #293b4b 100%
+    );
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3);
+}
+
+/* Visor — dark optical glass */
+.free-bots .free-bot-card .mh-robot-face {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid #536a7b;
+    border-radius: 2px;
+    background:
+        linear-gradient(
+            165deg,
+            rgba(255, 255, 255, 0.1),
+            transparent 28%
+        ),
+        linear-gradient(145deg, #0b141e, #02060b 85%);
+    box-shadow:
+        inset 0 0 13px #000,
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.free-bots .free-bot-card .mh-robot-face::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        115deg,
+        transparent 24%,
+        rgba(255, 255, 255, 0.075) 43%,
+        transparent 59%
+    );
+    content: "";
+    pointer-events: none;
+}
+
+/* Side-mounted armored components */
+.free-bots .free-bot-card .mh-robot-ear {
+    position: absolute;
+    top: 22px;
+    width: 10px;
+    height: 27px;
+    border: 1px solid #9aafbe;
+    border-radius: 1px;
+    background: linear-gradient(
+        90deg,
+        #1c2c3a,
+        #b4c4ce 45%,
+        #455a6c
+    );
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.5);
+}
+
+.free-bots .free-bot-card .mh-robot-ear-left {
+    left: -7px;
+}
+
+.free-bots .free-bot-card .mh-robot-ear-right {
+    right: -7px;
+}
+
+/* Narrow sensor slits, not cartoon eyes */
+.free-bots .free-bot-card .mh-robot-eyes {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+}
+
+.free-bots .free-bot-card .mh-robot-eye {
+    display: block;
+    width: 20px;
+    height: 4px;
+    border: 0;
+    border-radius: 1px;
+    background: var(--bot-accent);
+    box-shadow:
+        0 0 4px #fff,
+        0 0 9px var(--bot-accent),
+        0 0 17px color-mix(
+            in srgb,
+            var(--bot-accent) 65%,
+            transparent
+        );
+    animation: mh-sensor-scan 4s ease-in-out infinite;
+}
+
+.free-bots .free-bot-card .mh-robot-eye:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+/* Remove the cartoon mouth details */
+.free-bots .free-bot-card .mh-robot-mouth {
+    display: none;
+}
+
+.free-bots .free-bot-card .mh-robot-mouth span {
+    display: none;
+}
+
+/* ---------- PRECISION NECK ---------- */
+
+.free-bots .free-bot-card .mh-robot-neck {
+    width: 30px;
+    height: 9px;
+    min-height: 9px;
+    flex: 0 0 9px;
+    border-right: 3px solid #a5b7c5;
+    border-left: 3px solid #a5b7c5;
+    background: linear-gradient(
+        90deg,
+        #182735,
+        #b3c2cd 40%,
+        #526a7c 65%,
+        #1b2a38
+    );
+}
+
+/* ---------- ARMORED TORSO ---------- */
+
+.free-bots .free-bot-card .mh-robot-body {
+    position: relative;
+    width: 82px;
+    height: 49px;
+    min-height: 49px;
+    flex: 0 0 49px;
+    border: 1px solid #8b9faf;
+    border-radius: 0;
+    clip-path: polygon(
+        13% 0,
+        87% 0,
+        100% 22%,
+        91% 85%,
+        77% 100%,
+        23% 100%,
+        9% 85%,
+        0 22%
+    );
+    background: linear-gradient(
+        135deg,
+        #c4d0d9 0%,
+        #6e8495 17%,
+        #314657 38%,
+        #182735 69%,
+        #708597 88%,
+        #263949 100%
+    );
+    box-shadow:
+        inset 0 2px 2px rgba(255, 255, 255, 0.4),
+        inset 0 -7px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* Reactor housing */
+.free-bots .free-bot-card .mh-robot-chest {
+    position: absolute;
+    top: 9px;
+    left: 50%;
+    display: grid;
+    width: 25px;
+    height: 25px;
+    place-items: center;
+    border: 1px solid color-mix(
+        in srgb,
+        var(--bot-accent) 70%,
+        #d5e4ed
+    );
+    border-radius: 2px;
+    background: linear-gradient(145deg, #0d1a26, #03080e);
+    box-shadow:
+        0 0 7px color-mix(
+            in srgb,
+            var(--bot-accent) 55%,
+            transparent
+        ),
+        inset 0 0 7px color-mix(
+            in srgb,
+            var(--bot-accent) 18%,
+            transparent
+        );
+    transform: translateX(-50%);
+}
+
+.free-bots .free-bot-card .mh-robot-chest-core {
+    width: 10px;
+    height: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 1px;
+    background: #fff;
+    box-shadow:
+        0 0 5px #fff,
+        0 0 10px var(--bot-accent),
+        0 0 17px var(--bot-accent);
+    animation: mh-reactor-pulse 3.5s ease-in-out infinite;
+}
+
+/* Armored shoulder plates */
+.free-bots .free-bot-card .mh-robot-shoulder {
+    position: absolute;
+    top: 6px;
+    width: 12px;
+    height: 28px;
+    border: 1px solid #8b9faf;
+    border-radius: 1px;
+    background: linear-gradient(
+        90deg,
+        #273c4d,
+        #b0c0cc 45%,
+        #42596b
+    );
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.55);
+}
+
+.free-bots .free-bot-card .mh-robot-shoulder-left {
+    left: -10px;
+}
+
+.free-bots .free-bot-card .mh-robot-shoulder-right {
+    right: -10px;
+}
+
+/* Robot model ID */
+.free-bots .free-bot-card .mh-robot-model {
+    position: absolute;
+    right: -5px;
+    bottom: 1px;
+    z-index: 3;
+    padding: 4px 7px;
+    border: 1px solid color-mix(
+        in srgb,
+        var(--bot-accent) 50%,
+        #35485a
+    );
+    border-radius: 3px;
+    background: #08111a;
+    color: var(--bot-accent);
+    font-family: Consolas, monospace;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+}
+
+/* ---------- ACCESS STATUS ---------- */
+
+.free-bots .free-bot-status {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    z-index: 4;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 8px;
+    border: 1px solid #294438;
+    border-radius: 4px;
+    background: rgba(7, 22, 18, 0.92);
+    color: #82e5b9;
+    font-family: Consolas, monospace;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.7px;
+}
+
+.free-bots .free-bot-status-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    flex: 0 0 6px;
+    margin-right: 6px;
+    border-radius: 50%;
+    background: var(--bot-accent);
+    box-shadow: 0 0 7px var(--bot-accent);
+}
+
+/* ---------- BOT INFORMATION PANEL ---------- */
+
+.free-bots .free-bot-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px 19px 17px;
+}
+
+.free-bots .free-bot-eyebrow {
+    margin: 0 0 8px;
+    color: var(--bot-accent);
+    font-family: Consolas, monospace;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+}
+
+.free-bots .free-bot-title {
+    width: 100%;
+    margin: 0;
+    color: #f1f6fa;
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.35;
+    letter-spacing: -0.35px;
+    overflow-wrap: anywhere;
+}
+
+.free-bots .free-bot-description {
+    min-height: 42px;
+    margin: 10px 0 15px;
+    color: #9aabba;
+    font-size: 12px;
+    line-height: 1.75;
+}
+
+.free-bots .free-bot-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 9px;
+    border: 1px solid color-mix(
+        in srgb,
+        var(--bot-accent) 32%,
+        #273746
+    );
+    border-radius: 4px;
+    background: color-mix(
+        in srgb,
+        var(--bot-accent) 8%,
+        #0b141e
+    );
+    color: var(--bot-accent);
+    font-family: Consolas, monospace;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 1.1px;
+}
+
+/* ---------- INTEGRATED BUTTON AREA ---------- */
+
+.free-bots .free-bot-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 15px 19px 19px;
+    border-top: 1px solid #233340;
+    background: rgba(3, 8, 13, 0.34);
+}
+
+.free-bots .free-bot-button {
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-height: 45px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 15px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition:
+        background 180ms ease,
+        border-color 180ms ease,
+        color 180ms ease,
+        box-shadow 180ms ease,
+        transform 180ms ease;
+}
+
+.free-bots .free-bot-button-primary {
+    border-color: color-mix(
+        in srgb,
+        var(--bot-accent) 70%,
+        #ffffff
+    );
+    background: var(--bot-accent);
+    color: #04110d;
+    box-shadow:
+        0 4px 13px color-mix(
+            in srgb,
+            var(--bot-accent) 16%,
+            transparent
+        ),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.free-bots .free-bot-button-primary span:last-child {
+    font-size: 17px;
+    line-height: 1;
+}
+
+.free-bots .free-bot-button-secondary {
+    border-color: #354757;
+    background: #111d28;
+    color: #d2dee7;
+}
+
+.free-bots .free-bot-button:focus-visible {
+    outline: 2px solid var(--bot-accent);
+    outline-offset: 3px;
+}
+
+@media (hover: hover) {
+    .free-bots .free-bot-button-primary:hover {
+        background: color-mix(
+            in srgb,
+            var(--bot-accent) 84%,
+            white
+        );
+        box-shadow: 0 0 19px color-mix(
+            in srgb,
+            var(--bot-accent) 27%,
+            transparent
+        );
+        transform: translateY(-1px);
+    }
+
+    .free-bots .free-bot-button-secondary:hover {
+        border-color: var(--bot-accent);
+        background: color-mix(
+            in srgb,
+            var(--bot-accent) 9%,
+            #111d28
+        );
+        color: #fff;
+    }
+}
+
+.free-bots .free-bot-button:active {
+    transform: translateY(1px);
+}
+
+/* ---------- ANIMATION ---------- */
+
+@keyframes mh-sensor-scan {
+    0%, 100% {
+        opacity: 1;
+        filter: brightness(1);
+    }
+
+    50% {
+        opacity: 0.78;
+        filter: brightness(1.3);
+    }
+}
+
+@keyframes mh-reactor-pulse {
+    0%, 100% {
+        opacity: 0.92;
+        filter: brightness(1);
+    }
+
+    50% {
+        opacity: 1;
+        filter: brightness(1.3);
+    }
+}
+
+/* ---------- TABLET / MOBILE ---------- */
+
+@media (max-width: 700px) {
     .free-bots {
-
-        padding: 12px;
-
+        padding: 15px;
+        border-radius: 15px;
     }
 
-    .free-bot-card {
-
-        padding: 14px;
-
-        border-radius: 12px;
-
+    .free-bots-header {
+        align-items: flex-start;
+        gap: 12px;
     }
 
-}
-/* MOBILE */
-
-@media (max-width: 768px) {
-
-    .free-bots {
-
-        width: 100%;
-        padding: 12px;
-        overflow-x: hidden;
-
+    .free-bots-count {
+        padding: 8px;
+        font-size: 9px;
     }
 
     .free-bots-grid {
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(min(100%, 235px), 1fr)
+        );
+        gap: 15px;
+    }
 
-        display: flex;
+    .free-bots .free-bot-card-header {
+        padding: 10px 10px 0;
+    }
+
+    .free-bots .free-bot-card .free-bot-artwork {
+        height: 210px;
+        min-height: 210px;
+    }
+
+    .free-bots .free-bot-content {
+        padding: 17px 15px 14px;
+    }
+
+    .free-bots .free-bot-footer {
+        padding: 13px 15px 15px;
+    }
+}
+
+@media (max-width: 420px) {
+    .free-bots-header {
         flex-direction: column;
-
-        gap: 12px;
-
-        width: 100%;
-
     }
 
-    .free-bots-grid > * {
-
-        width: 100%;
-        min-width: 100%;
-
+    .free-bots-count {
+        align-self: flex-start;
     }
 
+    .free-bots-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
-.free-bots {
 
+@media (prefers-reduced-motion: reduce) {
+    .free-bots *,
+    .free-bots *::before,
+    .free-bots *::after {
+        animation: none !important;
+        scroll-behavior: auto !important;
+        transition: none !important;
+    }
+}
+
+/* Modern metallic SVG robot */
+.free-bot-artwork {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
-
-    @media (max-width: 768px) {
-
-        padding: 12px;
-
-        overflow-y: visible;
-
-    }
-
-}
-.free-bots-grid {
-
-    @media (max-width: 768px) {
-
-        display: flex;
-        flex-direction: column;
-
-        gap: 12px;
-
-    }
-
-}
-.free-bot-actions {
-
-    display: grid;
-
-    grid-template-columns: 1fr 1fr;
-
-    gap: 10px;
-
-    margin-top: 20px;
-
-}
-
-.free-bot-action {
-
-    width: 100%;
-
-    margin-top: 0 !important;
-
-    padding: 12px;
-
-    border-radius: 12px;
-
-    border: 1px solid rgba(255,255,255,.16);
-
-    cursor: pointer;
-
-    font-weight: 800;
-
-    transition: .3s;
-
-}
-
-.free-bot-action:hover {
-
-    transform: translateY(-2px);
-
-}
-
-.free-bot-action--select {
-
+    min-width: 0;
+    min-height: 225px;
+    overflow: hidden;
+    isolation: isolate;
     background:
+        radial-gradient(
+            ellipse at 50% 58%,
+            color-mix(in srgb, var(--bot-accent) 15%, transparent),
+            transparent 58%
+        ),
+        linear-gradient(145deg, #111923 0%, #080d14 72%, #101820 100%);
+    border-bottom: 1px solid rgba(158, 180, 199, 0.16);
+}
 
-    linear-gradient(
-        90deg,
-        #00e5ff,
-        #00c853
+.free-bot-artwork::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.22;
+    background-image:
+        linear-gradient(rgba(139, 165, 188, 0.13) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139, 165, 188, 0.13) 1px, transparent 1px);
+    background-size: 24px 24px;
+    mask-image: linear-gradient(
+        to bottom,
+        transparent,
+        black 25%,
+        black 80%,
+        transparent
     );
-
-    color: #000;
-
 }
 
-.free-bot-action--edit {
-
-    background: rgba(255,255,255,.08);
-
-    color: var(--text-general);
-
+.free-bot-artwork::after {
+    content: "";
+    position: absolute;
+    width: 175px;
+    height: 175px;
+    border: 1px solid color-mix(
+        in srgb,
+        var(--bot-accent) 24%,
+        transparent
+    );
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow:
+        0 0 35px color-mix(in srgb, var(--bot-accent) 8%, transparent),
+        inset 0 0 25px color-mix(in srgb, var(--bot-accent) 5%, transparent);
 }
 
-@media (max-width: 480px) {
+.mh-modern-robot {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: min(100%, 285px);
+    height: auto;
+    max-height: 255px;
+    overflow: visible;
+    filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.38));
+    animation: mh-robot-hover 5s ease-in-out infinite;
+    transform-origin: center center;
+}
 
-    .free-bot-actions {
-
-        grid-template-columns: 1fr;
-
+@keyframes mh-robot-hover {
+    0%,
+    100% {
+        transform: translateY(0);
     }
 
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mh-modern-robot {
+        animation: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .free-bot-artwork {
+        min-height: 205px;
+    }
+
+    .mh-modern-robot {
+        width: min(100%, 255px);
+        max-height: 225px;
+    }
 }

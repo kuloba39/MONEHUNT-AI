@@ -1,5 +1,8 @@
 import { applyMiddleware, createStore } from 'redux';
-import { getMonehuntRuntimeConfig } from '../../../../../utils/monehunt-runtime-config';
+import {
+    clearMonehuntRuntimeConfig,
+    getMonehuntRuntimeConfig,
+} from '../../../../../utils/monehunt-runtime-config';
 import { thunk } from 'redux-thunk';
 import { getLocalizedErrorMessage } from '@/constants/backend-error-messages';
 import { createError } from '../../../utils/error';
@@ -122,6 +125,7 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
             effectiveOptions.symbol = monehuntRuntimeConfig.symbol;
         }
 
+
         if (monehuntRuntimeConfig?.contractType) {
             if (
                 monehuntRuntimeConfig.contractType === 'both' &&
@@ -135,7 +139,7 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
             }
         }
 
-        const { symbol } = effectiveOptions;
+                const { symbol } = effectiveOptions;
 
         this.initArgs = [token, effectiveOptions];
         this.options = effectiveOptions;
@@ -154,7 +158,7 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
 
         if (!this.checkTicksPromiseExists()) this.watchTicks(symbol);
     }
-    start(tradeOptions) {
+    start(tradeOptions, { preserveMonehuntMartingale = false } = {}) {
         if (!this.options) {
             throw createError('NotInitialized', getLocalizedErrorMessage('NotInitialized'));
         }
@@ -162,6 +166,48 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
         globalObserver.emit('bot.running');
 
         const monehuntRuntimeConfig = getMonehuntRuntimeConfig();
+
+        // Consume shared config; this run retains its local copy.
+        if (monehuntRuntimeConfig) {
+            clearMonehuntRuntimeConfig();
+        }
+
+        // Preserve progression only for a valid existing state outside native OUD execution.
+        const canPreserveMonehuntMartingale =
+            preserveMonehuntMartingale &&
+            Boolean(this.monehuntMartingale) &&
+            this.options?.nativeOudDirectPurchase !== true;
+
+        if (!canPreserveMonehuntMartingale) {
+            this.monehuntMartingale = null;
+
+            const martingaleMultiplier = Number(monehuntRuntimeConfig?.martingale);
+            const startingStake = Number(
+                monehuntRuntimeConfig?.stake ?? tradeOptions?.amount
+            );
+            const configuredMaxStake = monehuntRuntimeConfig?.maxStake;
+            const maxStake =
+                configuredMaxStake === undefined || configuredMaxStake === null
+                    ? null
+                    : Number(configuredMaxStake);
+
+            if (
+                monehuntRuntimeConfig &&
+                Number.isFinite(martingaleMultiplier) &&
+                martingaleMultiplier > 1 &&
+                Number.isFinite(startingStake) &&
+                startingStake > 0 &&
+                (maxStake === null ||
+                    (Number.isFinite(maxStake) && maxStake >= startingStake))
+            ) {
+                this.monehuntMartingale = {
+                    startingStake,
+                    currentStake: startingStake,
+                    multiplier: martingaleMultiplier,
+                    maxStake,
+                };
+            }
+        }
 
         const effectiveTradeOptions = {
             ...tradeOptions,
@@ -180,10 +226,6 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
                 monehuntRuntimeConfig.durationUnit;
         }
 
-        if (monehuntRuntimeConfig?.prediction !== undefined) {
-            effectiveTradeOptions.prediction =
-                monehuntRuntimeConfig.prediction;
-        }
 
         if (
             monehuntRuntimeConfig?.takeProfit !== undefined ||
@@ -227,6 +269,7 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
             ...validated_trade_options,
             symbol: this.options.symbol,
         };
+
 
         this.store.dispatch(start());
         this.checkLimits(validated_trade_options);

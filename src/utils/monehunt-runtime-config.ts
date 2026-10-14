@@ -6,6 +6,7 @@ export type MonehuntRuntimeConfig = {
     durationUnit?: string;
     stake?: number;
     martingale?: number;
+    maxStake?: number;
     takeProfit?: number;
     stopLoss?: number;
 };

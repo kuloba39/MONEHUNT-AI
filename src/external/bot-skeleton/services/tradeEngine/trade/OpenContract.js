@@ -63,12 +63,102 @@ export default Engine =>
                         }
 
                         this.store.dispatch(sell());
+
+                        this.applyMonehuntMartingale(contract);
                     } else {
                         this.store.dispatch(openContractReceived());
                     }
                 }
             });
             api_base.pushSubscription(subscription);
+        }
+        applyMonehuntMartingale(contract) {
+            const state = this.monehuntMartingale;
+
+            // This feature belongs to Trading Workspace, never native OUD.
+            if (!state || this.options?.nativeOudDirectPurchase === true) {
+                return;
+            }
+
+            const contractId = contract?.contract_id;
+            const sellTransactionId = contract?.transaction_ids?.sell;
+
+            if (!contractId || !sellTransactionId) {
+                console.warn('[MONEHUNT MARTINGALE] Settlement missing final transaction identity.');
+                return;
+            }
+
+            // Defensive duplicate-settlement guard.
+            if (this.lastMartingaleSettledContractId === contractId) {
+                console.warn('[MONEHUNT MARTINGALE] Duplicate settlement ignored:', contractId);
+                return;
+            }
+
+            const { buy_price: buyPrice, sell_price: sellPrice, currency } = contract;
+
+            if (
+                buyPrice === undefined || buyPrice === null ||
+                sellPrice === undefined || sellPrice === null
+            ) {
+                console.warn('[MONEHUNT MARTINGALE] Settlement missing prices.');
+                return;
+            }
+
+            const buy = Number(buyPrice);
+            const sell = Number(sellPrice);
+
+            if (!Number.isFinite(buy) || !Number.isFinite(sell)) {
+                console.warn('[MONEHUNT MARTINGALE] Settlement has invalid prices.');
+                return;
+            }
+
+            const profit = getRoundedNumber(sell - buy, currency);
+            const previousStake = Number(state.currentStake);
+
+            if (!Number.isFinite(previousStake) || previousStake <= 0) {
+                console.error('[MONEHUNT MARTINGALE] Current stake is invalid; progression skipped.');
+                return;
+            }
+
+            let nextStake = state.startingStake;
+
+            if (profit < 0) {
+                nextStake = getRoundedNumber(
+                    previousStake * state.multiplier,
+                    currency
+                );
+
+                if (state.maxStake !== null && nextStake > state.maxStake) {
+                    nextStake = state.startingStake;
+                }
+            }
+
+            if (!Number.isFinite(Number(nextStake)) || Number(nextStake) <= 0) {
+                console.error('[MONEHUNT MARTINGALE] Next stake is invalid; progression skipped.');
+                return;
+            }
+
+            // Mark only a validated final settlement as handled.
+            this.lastMartingaleSettledContractId = contractId;
+            state.currentStake = Number(nextStake);
+            this.tradeOptions.amount = Number(nextStake);
+
+            console.log('[MONEHUNT MARTINGALE] SETTLEMENT:', {
+                contractId,
+                profit,
+                previousStake,
+                nextStake: this.tradeOptions.amount,
+                multiplier: state.multiplier,
+                maxStake: state.maxStake,
+            });
+
+            // Rebuild quotes for the changed amount when proposals are required.
+            if (this.is_proposal_subscription_required === true) {
+                this.makeProposals({
+                    ...this.options,
+                    ...this.tradeOptions,
+                });
+            }
         }
 
         waitForAfter() {

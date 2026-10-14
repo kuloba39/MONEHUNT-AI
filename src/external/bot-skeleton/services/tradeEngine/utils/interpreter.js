@@ -1,4 +1,4 @@
-﻿import { isMultiplierContract } from '@/components/shared';
+import { isMultiplierContract } from '@/components/shared';
 import cloneThorough from '@/utils/clone';
 import JSInterpreter from '@deriv/js-interpreter';
 import { unrecoverable_errors } from '../../../constants/messages';
@@ -285,7 +285,7 @@ const Interpreter = () => {
                 init();
                 $scope.observer.register('Error', onError);
                 bot.tradeEngine.init(...initArgs);
-                bot.tradeEngine.start(tradeOptions);
+                bot.tradeEngine.start(tradeOptions, { preserveMonehuntMartingale: true });
                 const canRestoreState = $scope.startState && interpreter?.restoreStateSnapshot instanceof Function;
                 if (canRestoreState) {
                     revert($scope.startState);

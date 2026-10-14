@@ -166,7 +166,7 @@ export default class RunPanelStore {
         });
     };
 
-    onRunButtonClick = async () => {
+    onRunButtonClick = async (beforeRun?: () => void) => {
         let timer_counter = 1;
         if (window.sendRequestsStatistic) {
             performance.clearMeasures();
@@ -212,6 +212,9 @@ if (!client.is_logged_in) {
             this.unregisterBotListeners();
             return;
         }
+
+        // Apply workspace settings only after login and bot validation pass.
+        beforeRun?.();
 
         ui?.setAccountSwitcherDisabledMessage(
             localize(
