@@ -53,6 +53,12 @@ const TradingWorkspacePage = lazy(() => import('../pages/trading-workspace'));
 const ChartPage = lazy(() => import('../pages/chart'));
 const FreeBotsPage = lazy(() => import('../pages/free-bots'));
 const DCirclesPage = lazy(() => import('../pages/analysis'));
+const DCirclesExecutionPage = () => (
+    <>
+        <DCirclesPage />
+        <TradingWorkspacePage headless />
+    </>
+);
 
 const LanguageHandler = ({
     children
@@ -169,7 +175,7 @@ const router = createBrowserRouter(
 
             <Route
                 path='d-circles'
-                element={<DCirclesPage />}
+                element={<DCirclesExecutionPage />}
             />
 
             {/* MONEHUNT TRADING WORKSPACE */}

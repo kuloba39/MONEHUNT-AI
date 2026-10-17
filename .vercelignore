@@ -20,3 +20,10 @@ src/constants/*.before-*
 
 # Local PowerShell backup files
 *.bak
+
+# Local investigation backup directories
+_monehunt-runtime-fix-backup-*/
+_monehunt-strategy-preservation-*/
+backup-bot-cleanup-*/
+.env.production
+coverage/

@@ -1,4 +1,4 @@
-// @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
+﻿// @ts-nocheck â€” vendored bot code with known upstream type gaps; see AGENTS.md
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 import { formatDate, isEnded } from '@/components/shared';
 import { LogTypes } from '@/external/bot-skeleton';
@@ -26,8 +26,8 @@ export default class TransactionsStore {
     constructor(root_store: RootStore, core: TStores) {
         this.root_store = root_store;
         this.core = core;
+        this.elements = getStoredItemsByUser(this.TRANSACTION_CACHE, this.core?.client?.loginid, {});
         this.is_transaction_details_modal_open = false;
-        this.disposeReactionsFn = this.registerReactions();
 
         makeObservable(this, {
             elements: observable,
@@ -46,10 +46,12 @@ export default class TransactionsStore {
             sortOutPositionsBeforeAction: action.bound,
             recoverPendingContractsById: action.bound,
         });
+        // Register reactions after MobX observables and computed values are defined.
+        this.disposeReactionsFn = this.registerReactions();
     }
     TRANSACTION_CACHE = 'transaction_cache';
 
-    elements: TElement = getStoredItemsByUser(this.TRANSACTION_CACHE, this.core?.client?.loginid, []);
+    elements: TElement = {};
     active_transaction_id: null | number = null;
     recovered_completed_transactions: number[] = [];
     recovered_transactions: number[] = [];

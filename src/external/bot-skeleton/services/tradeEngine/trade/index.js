@@ -139,7 +139,81 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
             }
         }
 
-                const { symbol } = effectiveOptions;
+        const originalContractTypes = options?.contractTypes;
+        const direction = monehuntRuntimeConfig?.direction;
+        const contractPreference = monehuntRuntimeConfig?.contractPreference;
+        const tradeFamily = String(monehuntRuntimeConfig?.tradeFamily || '').toUpperCase();
+
+        const contractFamilies = {
+            EVENODD: ['DIGITEVEN', 'DIGITODD'],
+            OVERUNDER: ['DIGITOVER', 'DIGITUNDER'],
+            CALLPUT: ['CALL', 'PUT'],
+        };
+
+        const selectedFamily = contractFamilies[tradeFamily];
+        const allowsPreferenceOverride =
+            !monehuntRuntimeConfig?.contractType ||
+            monehuntRuntimeConfig.contractType === 'both';
+
+        let preferenceOverrideApplied = false;
+
+        // Only override contracts within a recognized, matching family.
+        // Keep the bot's original contract list for all other strategies.
+        const originalTypesMatchFamily =
+            Array.isArray(originalContractTypes) &&
+            originalContractTypes.length > 0 &&
+            originalContractTypes.every(type => selectedFamily?.includes(type));
+
+        if (
+            contractPreference &&
+            selectedFamily &&
+            originalTypesMatchFamily &&
+            allowsPreferenceOverride
+        ) {
+            const preferenceMap = {
+                even: ['DIGITEVEN'],
+                odd: ['DIGITODD'],
+                over: ['DIGITOVER'],
+                under: ['DIGITUNDER'],
+                rise: ['CALL'],
+                fall: ['PUT'],
+                both: selectedFamily,
+            };
+
+            const requestedTypes = preferenceMap[contractPreference];
+            const familyMatchesPreference =
+                (tradeFamily === 'EVENODD' &&
+                    ['even', 'odd', 'both'].includes(contractPreference)) ||
+                (tradeFamily === 'OVERUNDER' &&
+                    ['over', 'under', 'both'].includes(contractPreference)) ||
+                (tradeFamily === 'CALLPUT' &&
+                    ['rise', 'fall', 'both'].includes(contractPreference));
+
+            if (familyMatchesPreference && requestedTypes) {
+                effectiveOptions.contractTypes = [...requestedTypes];
+                preferenceOverrideApplied = true;
+            }
+        }
+
+        // Backward compatibility for callers still using the older direction setting.
+        let directionOverrideApplied = false;
+        if (
+            !contractPreference &&
+            direction &&
+            Array.isArray(originalContractTypes) &&
+            originalContractTypes.length > 0 &&
+            originalContractTypes.every(type => ['CALL', 'PUT'].includes(type)) &&
+            allowsPreferenceOverride
+        ) {
+            effectiveOptions.contractTypes =
+                direction === 'rise'
+                    ? ['CALL']
+                    : direction === 'fall'
+                      ? ['PUT']
+                      : ['CALL', 'PUT'];
+            directionOverrideApplied = true;
+        }
+        const { symbol } = effectiveOptions;
 
         this.initArgs = [token, effectiveOptions];
         this.options = effectiveOptions;
@@ -149,6 +223,11 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
             configuredSymbol: monehuntRuntimeConfig?.symbol ?? null,
             configuredContractType:
                 monehuntRuntimeConfig?.contractType ?? null,
+            configuredDirection: direction ?? 'bot-default',
+            configuredTradeFamily: tradeFamily || null,
+            configuredContractPreference: contractPreference ?? 'bot-default',
+            contractPreferenceOverrideApplied: preferenceOverrideApplied,
+            directionOverrideApplied,
             engineSymbol: effectiveOptions?.symbol ?? null,
             engineContractTypes:
                 effectiveOptions?.contractTypes ?? null,
@@ -156,7 +235,7 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
 
         this.startPromise = this.loginAndGetBalance(token);
 
-        if (!this.checkTicksPromiseExists()) this.watchTicks(symbol);
+        this.watchTicks(symbol);
     }
     start(tradeOptions, { preserveMonehuntMartingale = false } = {}) {
         if (!this.options) {
@@ -227,6 +306,10 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
         }
 
 
+        // Preserve the bot prediction unless the user explicitly supplied an override.
+        if (Number.isFinite(monehuntRuntimeConfig?.prediction)) {
+            effectiveTradeOptions.prediction = monehuntRuntimeConfig.prediction;
+        }
         if (
             monehuntRuntimeConfig?.takeProfit !== undefined ||
             monehuntRuntimeConfig?.stopLoss !== undefined

@@ -98,20 +98,23 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
         }
     }
 
-    // Check if there are no active or saved bots
-    const has_no_bots = !has_active_bot && !has_saved_bots;
-    const is_bot_builder_tab = active_tab === DBOT_TABS.BOT_BUILDER;
+    // Recognize an XML bot loaded into the dedicated Trading Workspace.
+    const is_trading_workspace = window.location.pathname
+        .replace(/\/+$/, '')
+        .endsWith('/preview');
+    const tradingWorkspace = is_trading_workspace ? window.Blockly?.derivWorkspace : undefined;
+    const has_trading_workspace_bot = Boolean(tradingWorkspace?.getTopBlocks(false)?.length);
 
-    // Disable the RUN button if:
-    // 1. There are no active or saved bots AND the user is not in the bot builder tab
+    // Preserve the normal checks and allow Run for a loaded workspace bot.
+    const has_no_bots =
+        !has_active_bot && !has_saved_bots && !has_trading_workspace_bot;
+    const is_bot_builder_tab =
+        active_tab === DBOT_TABS.BOT_BUILDER || has_trading_workspace_bot;
+
     const should_disable_run = has_no_bots && !is_bot_builder_tab;
-
     const is_disabled = is_stop_button_visible ? false : shouldDisable || should_disable_run;
-
-    // Show the tooltip when:
-    // 1. The user is NOT in the bot builder tab, AND
-    // 2. There are no bots
-    const should_show_tooltip = !is_stop_button_visible && !is_bot_builder_tab && has_no_bots;
+    const should_show_tooltip =
+        !is_stop_button_visible && !is_bot_builder_tab && has_no_bots;
 
     const button_props = React.useMemo(() => {
         if (is_stop_button_visible && !is_stop_button_disabled) {

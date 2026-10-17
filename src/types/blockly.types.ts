@@ -77,6 +77,7 @@ export interface BlocklyUtils {
 }
 
 export interface ExtendedBlocklyWorkspace extends BlocklyWorkspace {
+    getTopBlocks: (ordered?: boolean) => BlocklyBlock[];
     addBlockNode: (blockNode: Element | null) => void;
     strategy_to_load?: string;
     current_strategy_id?: string;

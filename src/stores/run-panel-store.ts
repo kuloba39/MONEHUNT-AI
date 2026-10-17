@@ -196,7 +196,7 @@ export default class RunPanelStore {
 if (!client.is_logged_in) {
     console.warn('[MONEHUNT EXECUTION BLOCKED] CLIENT NOT LOGGED IN');
     this.showLoginDialog();
-    return;
+    return false;
 }
 
         /**
@@ -210,7 +210,7 @@ if (!client.is_logged_in) {
 
         if (!this.dbot.shouldRunBot()) {
             this.unregisterBotListeners();
-            return;
+            return false;
         }
 
         // Apply workspace settings only after login and bot validation pass.
@@ -232,6 +232,7 @@ if (!client.is_logged_in) {
             this.dbot.runBot();
         });
         this.setShowBotStopMessage(false);
+        return true;
     };
 
     onStopButtonClick = () => {
@@ -872,14 +873,8 @@ if (!client.is_logged_in) {
     };
 
     onUnmount = () => {
-        const { journal, summary_card, transactions } = this.root_store;
-
         if (!this.is_running) {
             this.unregisterBotListeners();
-            this.disposeReactionsFn();
-            journal.disposeReactionsFn();
-            summary_card.disposeReactionsFn();
-            transactions.disposeReactionsFn();
         }
 
         observer.unregisterAll('ui.log.error');

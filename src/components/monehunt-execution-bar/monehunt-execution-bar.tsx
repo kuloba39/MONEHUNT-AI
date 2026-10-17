@@ -7,10 +7,26 @@ import ContractStageText from '@/components/trade-animation/contract-stage-text'
 import { contract_stages } from '@/constants/contract-stage';
 import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
+import {
+    MONEHUNT_PENDING_GLOBAL_RUN_KEY,
+    MONEHUNT_PENDING_GLOBAL_MARKET_KEY,
+    MONEHUNT_SELECTED_BOT_KEY,
+} from '@/utils/monehunt-selected-bot';
 import './monehunt-execution-bar.scss';
 
 const MonehuntExecutionBar = observer(() => {
     const { run_panel, blockly_store } = useStore();
+
+    const selected_bot_id = (() => {
+        try {
+            const raw = sessionStorage.getItem(MONEHUNT_SELECTED_BOT_KEY);
+            const bot = raw ? JSON.parse(raw) : null;
+            return bot?.id && bot?.name && bot?.xml ? String(bot.id) : '';
+        } catch {
+            return '';
+        }
+    })();
+    const has_selected_bot = Boolean(selected_bot_id);
 
     const {
         contract_stage,
@@ -25,7 +41,7 @@ const MonehuntExecutionBar = observer(() => {
 
     const { has_active_bot, has_saved_bots } = blockly_store;
 
-    const has_bot = has_active_bot || has_saved_bots;
+    const has_bot = has_active_bot || has_saved_bots || has_selected_bot;
     const is_running_state = is_running || has_open_contract || is_stop_button_visible;
     const is_error = !!error_type;
 
@@ -70,6 +86,49 @@ const MonehuntExecutionBar = observer(() => {
         }
 
         if (is_run_disabled) return;
+
+        if (has_selected_bot) {
+            try {
+                if (sessionStorage.getItem(MONEHUNT_PENDING_GLOBAL_RUN_KEY)) {
+                    console.warn(
+                        '[MONEHUNT GLOBAL RUN] A Run request is already pending. Wait for it to finish.'
+                    );
+                    return;
+                }
+            } catch (error) {
+                console.error(
+                    '[MONEHUNT GLOBAL RUN] Could not check for a pending request:',
+                    error
+                );
+                return;
+            }
+            try {
+                sessionStorage.setItem(
+                    MONEHUNT_PENDING_GLOBAL_RUN_KEY,
+                    selected_bot_id
+                );
+
+            const selectedDcirclesMarket = localStorage.getItem('d_circles_market') || '';
+            if (selectedDcirclesMarket) {
+                sessionStorage.setItem(
+                    MONEHUNT_PENDING_GLOBAL_MARKET_KEY,
+                    selectedDcirclesMarket
+                );
+            } else {
+                sessionStorage.removeItem(MONEHUNT_PENDING_GLOBAL_MARKET_KEY);
+            }
+            } catch (error) {
+                console.error(
+                    '[MONEHUNT GLOBAL RUN] Could not queue the selected bot:',
+                    error
+                );
+                return;
+            }
+
+            window.dispatchEvent(new Event('monehunt:global-run'));
+            return;
+        }
+
         onRunButtonClick();
     };
 

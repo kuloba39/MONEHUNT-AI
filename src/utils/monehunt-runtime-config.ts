@@ -1,6 +1,9 @@
 export type MonehuntRuntimeConfig = {
     symbol?: string;
     contractType?: string;
+    direction?: 'rise' | 'fall' | 'both';
+    tradeFamily?: string;
+    contractPreference?: 'even' | 'odd' | 'over' | 'under' | 'rise' | 'fall' | 'both';
     prediction?: number;
     duration?: number;
     durationUnit?: string;

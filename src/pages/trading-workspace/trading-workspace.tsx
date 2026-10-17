@@ -6,6 +6,8 @@ import { generateOAuthURL } from '@/components/shared';
 import Dialog from '@/components/shared_ui/dialog';
 import { localize } from '@deriv-com/translations';
 import {
+    MONEHUNT_PENDING_GLOBAL_RUN_KEY,
+    MONEHUNT_PENDING_GLOBAL_MARKET_KEY,
     MONEHUNT_SELECTED_BOT_KEY,
     type MonehuntSelectedBot,
 } from '@/utils/monehunt-selected-bot';
@@ -14,7 +16,7 @@ import RunPanel from '@/components/run-panel';
 import { load } from '@/external/bot-skeleton/scratch/utils';
 import './trading-workspace.scss';
 
-const TradingWorkspace = observer(() => {
+const TradingWorkspace = observer(({ headless = false }: { headless?: boolean }) => {
     const store = useStore();
     const { app, dbot } = store;
     const {
@@ -52,6 +54,11 @@ const TradingWorkspace = observer(() => {
 
     const [selectedBot, setSelectedBot] =
         React.useState<MonehuntSelectedBot | null>(null);
+    const [executionWorkspaceReady, setExecutionWorkspaceReady] = React.useState(false);
+    const [loadedBotId, setLoadedBotId] = React.useState('');
+    const [globalRunSignal, setGlobalRunSignal] = React.useState(0);
+    const handledGlobalRunRequest = React.useRef('');
+    const [apiHelpersReadyVersion, setApiHelpersReadyVersion] = React.useState(0);
 
     const [market, setMarket] = React.useState('');
     const [submarket, setSubmarket] = React.useState('');
@@ -61,7 +68,25 @@ const TradingWorkspace = observer(() => {
     const [symbolOptions, setSymbolOptions] = React.useState<Array<[string, string]>>([]);
     const [tradeType, setTradeType] = React.useState('');
     const [contractType, setContractType] = React.useState('');
+    const [botPrediction, setBotPrediction] = React.useState('');
+    const [showPredictionControls, setShowPredictionControls] = React.useState(false);
+    const [hasWinningStake, setHasWinningStake] = React.useState(false);
+    const [winningStake, setWinningStake] = React.useState('');
+    const [prediction, setPrediction] = React.useState('');
+    const [predictionMode, setPredictionMode] = React.useState<'bot-default' | 'user-preference'>('bot-default');
+    const [directionPreference, setDirectionPreference] = React.useState<
+        'bot-default' | 'even' | 'odd' | 'over' | 'under' | 'rise' | 'fall' | 'both'
+    >('bot-default');
     const strategySelectionRef = React.useRef<{ market: string; submarket: string; symbol: string } | null>(null);
+    const pendingDcirclesRunRef = React.useRef<{
+        botId: string;
+        symbol: string;
+        market: string;
+        submarket: string;
+        signal: number;
+    } | null>(null);
+    const [globalMarketReadySymbol, setGlobalMarketReadySymbol] = React.useState('');
+    const [durationOptionsSymbol, setDurationOptionsSymbol] = React.useState('');
     const [duration, setDuration] = React.useState('1');
     const [durationUnit, setDurationUnit] = React.useState('');
     const [durationOptions, setDurationOptions] = React.useState<
@@ -76,7 +101,42 @@ const TradingWorkspace = observer(() => {
     const [showBotWorkspace, setShowBotWorkspace] = React.useState(false);
 
     React.useEffect(() => {
-        if (!showBotWorkspace) return;
+        if (!executionWorkspaceReady) return;
+
+        let attempts = 0;
+        let cancelled = false;
+        let interval: ReturnType<typeof setInterval>;
+
+        const checkApiHelpers = () => {
+            if (cancelled) return;
+
+            attempts += 1;
+            const helpers = ApiHelpers?.instance;
+
+            if (helpers?.active_symbols && helpers?.contracts_for) {
+                console.log('[MONEHUNT TRADING WORKSPACE] API HELPERS READY');
+                clearInterval(interval);
+                setApiHelpersReadyVersion(current => current + 1);
+                return;
+            }
+
+            if (attempts >= 30) {
+                clearInterval(interval);
+                console.warn('[MONEHUNT TRADING WORKSPACE] API HELPER READINESS TIMEOUT');
+            }
+        };
+
+        interval = setInterval(checkApiHelpers, 500);
+        checkApiHelpers();
+
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
+    }, [executionWorkspaceReady]);
+
+    React.useEffect(() => {
+        if (!showBotWorkspace && !headless) return;
 
         const workspace = dbot.workspace;
         const blockly = (window as any).Blockly;
@@ -92,7 +152,31 @@ const TradingWorkspace = observer(() => {
             window.cancelAnimationFrame(frame);
             window.removeEventListener('resize', resizeWorkspace);
         };
-    }, [showBotWorkspace, dbot]);
+    }, [showBotWorkspace, dbot, headless]);
+
+    React.useEffect(() => {
+        const readPendingRequest = () => {
+            try {
+                if (sessionStorage.getItem(MONEHUNT_PENDING_GLOBAL_RUN_KEY)) {
+                    setGlobalRunSignal(current => current + 1);
+                }
+            } catch (error) {
+                console.error('[MONEHUNT GLOBAL RUN] Could not read queued request:', error);
+            }
+        };
+
+        const handleGlobalRun = () => {
+            handledGlobalRunRequest.current = '';
+            readPendingRequest();
+        };
+
+        readPendingRequest();
+        window.addEventListener('monehunt:global-run', handleGlobalRun);
+
+        return () => {
+            window.removeEventListener('monehunt:global-run', handleGlobalRun);
+        };
+    }, []);
 
     React.useEffect(() => {
         const readSelectedBot = () => {
@@ -145,6 +229,8 @@ const TradingWorkspace = observer(() => {
 
         const mountExecutionWorkspace = async () => {
             try {
+                setExecutionWorkspaceReady(false);
+                setLoadedBotId('');
                 console.log(
                     '[MONEHUNT TRADING WORKSPACE] MOUNTING OFFICIAL DBOT WORKSPACE'
                 );
@@ -202,8 +288,11 @@ const TradingWorkspace = observer(() => {
                     }
                 );
 
-                const botLoadStartedAt = performance.now();                 console.log('[MONEHUNT TIMING] bot XML load START');
-                await load({
+                const botLoadStartedAt = performance.now();
+                console.log('[MONEHUNT TIMING] bot XML load START');
+                setError('');
+
+                const loadResult = await load({
                     block_string: selectedBotForExecution.xml,
                     file_name: selectedBotForExecution.name,
                     strategy_id: selectedBotForExecution.id,
@@ -215,8 +304,57 @@ const TradingWorkspace = observer(() => {
                     persist_to_recent: false,
                 });
 
-                console.log('[MONEHUNT TIMING] bot XML load END', {                     elapsedMs: Math.round(performance.now() - botLoadStartedAt),                 });
+                console.log('[MONEHUNT TIMING] bot XML load END', {
+                    elapsedMs: Math.round(performance.now() - botLoadStartedAt),
+                });
+
+                if (cancelled) return;
+
+                const loadError = (loadResult as { error?: unknown } | undefined)?.error;
+
+                if (loadError) {
+                    console.error(
+                        '[MONEHUNT TRADING WORKSPACE] Selected bot load failed:',
+                        loadError
+                    );
+                    setError(
+                        typeof loadError === 'string'
+                            ? loadError
+                            : 'The selected bot could not be loaded. Check its XML and supported blocks.'
+                    );
+                    return;
+                }
+
                 const allBlocks = workspace.getAllBlocks(false);
+
+                if (allBlocks.length === 0) {
+                    const message = 'The selected bot loaded no blocks. Please check the saved bot XML.';
+                    console.error('[MONEHUNT TRADING WORKSPACE]', message);
+                    setError(message);
+                    return;
+                }
+                const hasPredictionVariable = allBlocks.some(
+                    block => block.type === 'variables_set' &&
+                        block.getField('VAR')?.getText() === 'Prediction'
+                );
+                const winStakeSetter = allBlocks.find(
+                    block => block.type === 'variables_set' &&
+                        block.getField('VAR')?.getText() === 'winStake'
+                );
+                const winStakeValueBlock = winStakeSetter?.getInputTargetBlock?.('VALUE');
+                const loadedWinStake = winStakeValueBlock?.getFieldValue?.('NUM');
+
+                const canEditWinningStake =
+                    winStakeValueBlock?.type === 'math_number' &&
+                    winStakeValueBlock.getField('NUM') !== null;
+
+                setHasWinningStake(canEditWinningStake);
+                setWinningStake(
+                    loadedWinStake !== null && loadedWinStake !== undefined
+                        ? String(loadedWinStake)
+                        : ''
+                );
+
                 const marketBlock = allBlocks.find(
                     block => block.type === 'trade_definition_market'
                 );
@@ -247,6 +385,25 @@ const TradingWorkspace = observer(() => {
                 setTradeType(loadedTradeType);
 
                 setContractType(loadedContractType);
+                const isEvenOddContract = ['DIGITEVEN', 'DIGITODD', 'EVEN', 'ODD']
+                    .includes(String(loadedContractType).toUpperCase());
+                setShowPredictionControls(hasPredictionVariable && !isEvenOddContract);
+
+                const tradeOptionsBlock = allBlocks.find(
+                    block => block.type === 'trade_definition_tradeoptions'
+                );
+                const predictionBlock = tradeOptionsBlock?.getInputTargetBlock?.('PREDICTION');
+                const loadedPredictionValue = predictionBlock?.getFieldValue?.('NUM');
+                const loadedPrediction =
+                    loadedPredictionValue !== null && loadedPredictionValue !== undefined &&
+                    String(loadedPredictionValue).trim() !== ''
+                        ? String(loadedPredictionValue)
+                        : '';
+
+                setBotPrediction(loadedPrediction);
+                setPrediction(loadedPrediction);
+                setPredictionMode('bot-default');
+                setDirectionPreference('bot-default');
 
                 console.log(
                     '[MONEHUNT TRADING WORKSPACE] BOT TRADE SETTINGS DETECTED:',
@@ -265,6 +422,8 @@ const TradingWorkspace = observer(() => {
                         blockCount: workspace.getAllBlocks(false).length,
                     }
                 );
+                setLoadedBotId(String(selectedBotForExecution.id));
+                setExecutionWorkspaceReady(true);
             } catch (error) {
                 console.error(
                     '[MONEHUNT TRADING WORKSPACE] EXECUTION WORKSPACE INITIALIZATION FAILED:',
@@ -287,6 +446,8 @@ const TradingWorkspace = observer(() => {
     }, [app, dbot]);
 
     React.useEffect(() => {
+        if (!executionWorkspaceReady) return;
+
         let cancelled = false;
 
         const loadMarketOptions = async () => {
@@ -340,7 +501,7 @@ const TradingWorkspace = observer(() => {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [executionWorkspaceReady, apiHelpersReadyVersion]);
 
     React.useEffect(() => {
         if (!market) return;
@@ -365,9 +526,13 @@ const TradingWorkspace = observer(() => {
             setSymbolOptions([]);
             setSymbol('');
         }
-    }, [market]);
+    }, [market, apiHelpersReadyVersion]);
 
     React.useEffect(() => {
+        setDurationOptionsSymbol('');
+        setDurationOptions([]);
+        setGlobalMarketReadySymbol('');
+
         if (!symbol || !tradeType) return;
 
         const contractsFor = ApiHelpers?.instance?.contracts_for;
@@ -390,6 +555,49 @@ const TradingWorkspace = observer(() => {
                 if (cancelled) return;
 
                 setDurationOptions(durations || []);
+                setDurationOptionsSymbol(symbol);
+
+                const pendingDcirclesRun = pendingDcirclesRunRef.current;
+                if (pendingDcirclesRun?.symbol === symbol) {
+                    const hasUsableDuration =
+                        Array.isArray(durations) &&
+                        durations.some(
+                            item =>
+                                item &&
+                                typeof item.unit === 'string' &&
+                                item.unit.length > 0 &&
+                                Number.isFinite(Number(item.min)) &&
+                                Number.isFinite(Number(item.max)) &&
+                                Number(item.min) <= Number(item.max)
+                        );
+
+                    if (hasUsableDuration) {
+                        setGlobalMarketReadySymbol(symbol);
+                    } else {
+                        setGlobalMarketReadySymbol('');
+                        handledGlobalRunRequest.current =
+                            `${pendingDcirclesRun.botId}:${pendingDcirclesRun.signal}`;
+                        pendingDcirclesRunRef.current = null;
+                        setError(
+                            `No supported contract durations are available for ${symbol}. No trade was started.`
+                        );
+
+                        try {
+                            if (
+                                sessionStorage.getItem(MONEHUNT_PENDING_GLOBAL_RUN_KEY) ===
+                                pendingDcirclesRun.botId
+                            ) {
+                                sessionStorage.removeItem(MONEHUNT_PENDING_GLOBAL_RUN_KEY);
+                                sessionStorage.removeItem(MONEHUNT_PENDING_GLOBAL_MARKET_KEY);
+                            }
+                        } catch (error) {
+                            console.error(
+                                '[MONEHUNT GLOBAL RUN] Could not clear unsupported market request:',
+                                error
+                            );
+                        }
+                    }
+                }
 
                 const selectedDuration =
                     durations?.find(item => item.unit === durationUnit) ||
@@ -425,6 +633,39 @@ const TradingWorkspace = observer(() => {
                     '[MONEHUNT TRADING WORKSPACE] TRADE RUNTIME OPTIONS FAILED:',
                     error
                 );
+
+                if (cancelled) return;
+
+                setDurationOptions([]);
+                setDurationOptionsSymbol('');
+                setGlobalMarketReadySymbol('');
+
+                const pendingDcirclesRun = pendingDcirclesRunRef.current;
+
+                if (pendingDcirclesRun?.symbol === symbol) {
+                    handledGlobalRunRequest.current =
+                        `${pendingDcirclesRun.botId}:${pendingDcirclesRun.signal}`;
+                    pendingDcirclesRunRef.current = null;
+
+                    setError(
+                        `Could not load contract durations for ${symbol}. No trade was started.`
+                    );
+
+                    try {
+                        if (
+                            sessionStorage.getItem(MONEHUNT_PENDING_GLOBAL_RUN_KEY) ===
+                            pendingDcirclesRun.botId
+                        ) {
+                            sessionStorage.removeItem(MONEHUNT_PENDING_GLOBAL_RUN_KEY);
+                            sessionStorage.removeItem(MONEHUNT_PENDING_GLOBAL_MARKET_KEY);
+                        }
+                    } catch (storageError) {
+                        console.error(
+                            '[MONEHUNT GLOBAL RUN] Could not clear failed duration request:',
+                            storageError
+                        );
+                    }
+                }
             }
         };
 
@@ -433,7 +674,7 @@ const TradingWorkspace = observer(() => {
         return () => {
             cancelled = true;
         };
-    }, [symbol, tradeType]);
+    }, [symbol, tradeType, apiHelpersReadyVersion]);
 
     React.useEffect(() => {
         if (!submarket) return;
@@ -445,12 +686,16 @@ const TradingWorkspace = observer(() => {
         setSymbolOptions(options);
 
         const selection = strategySelectionRef.current;
+        const pendingDcirclesSymbol =
+            pendingDcirclesRunRef.current?.submarket === submarket
+                ? pendingDcirclesRunRef.current.symbol
+                : '';
         const desiredSymbol =
-            selection?.submarket === submarket ? selection.symbol : '';
-        const nextSymbol =
-            options.find(option => option[1] === desiredSymbol)?.[1] ??
-            options?.[0]?.[1] ??
-            '';
+            pendingDcirclesSymbol ||
+            (selection?.submarket === submarket ? selection.symbol : '');
+        const nextSymbol = desiredSymbol
+            ? options.find(option => option[1] === desiredSymbol)?.[1] ?? ''
+            : options?.[0]?.[1] ?? '';
 
         setSymbol(nextSymbol);
 
@@ -461,13 +706,13 @@ const TradingWorkspace = observer(() => {
                 { market: selection.market, submarket, symbol: nextSymbol }
             );
         }
-    }, [submarket]);
-    const executeBot = async () => {
+    }, [submarket, apiHelpersReadyVersion]);
+    const executeBot = async (): Promise<boolean> => {
         setError('');
 
         if (!selectedBot) {
             setError('Select a bot before execution.');
-            return;
+            return false;
         }
 
         const parsedStake = Number(stake);
@@ -478,13 +723,40 @@ const TradingWorkspace = observer(() => {
         const parsedStopLoss =
             stopLoss.trim() === '' ? undefined : Number(stopLoss);
         const parsedDuration = Number(duration);
+        const parsedUserPrediction =
+            prediction.trim() === '' ? undefined : Number(prediction);
+
+        if (
+            predictionMode === 'user-preference' &&
+            (
+                parsedUserPrediction === undefined ||
+                !Number.isFinite(parsedUserPrediction) ||
+                !Number.isInteger(parsedUserPrediction)
+            )
+        ) {
+            setError('User Prediction must be a valid whole number.');
+            return false;
+        }
         const selectedDurationOption = durationOptions.find(
             option => option.unit === durationUnit
         );
 
         if (!symbol) {
             setError('Select a market.');
-            return;
+            return false;
+        }
+
+        if (
+            durationOptionsSymbol !== symbol ||
+            !selectedDurationOption ||
+            !Number.isFinite(Number(selectedDurationOption.min)) ||
+            !Number.isFinite(Number(selectedDurationOption.max)) ||
+            Number(selectedDurationOption.min) > Number(selectedDurationOption.max)
+        ) {
+            setError(
+                'Wait for valid contract duration options to load for the selected market.'
+            );
+            return false;
         }
 
         if (
@@ -493,7 +765,7 @@ const TradingWorkspace = observer(() => {
             parsedDuration > 10
         ) {
             setError('Duration must be between 1 and 10.');
-            return;
+            return false;
         }
 
         if (
@@ -502,12 +774,12 @@ const TradingWorkspace = observer(() => {
                 parsedDuration > Math.min(selectedDurationOption.max, 10))
         ) {
             setError('Duration is outside the official range for this duration unit.');
-            return;
+            return false;
         }
 
         if (!Number.isFinite(parsedStake) || parsedStake <= 0) {
             setError('Stake must be greater than 0.');
-            return;
+            return false;
         }
 
         if (
@@ -515,7 +787,7 @@ const TradingWorkspace = observer(() => {
             (parsedMartingale !== 0 && parsedMartingale <= 1)
         ) {
             setError('Martingale must be 0 (disabled) or greater than 1.');
-            return;
+            return false;
         }
 
         if (
@@ -523,7 +795,7 @@ const TradingWorkspace = observer(() => {
             (!Number.isFinite(parsedMaxStake) || parsedMaxStake < parsedStake)
         ) {
             setError('Max Stake must be a valid amount at least as large as the starting stake.');
-            return;
+            return false;
         }
 
         if (
@@ -531,7 +803,7 @@ const TradingWorkspace = observer(() => {
             (!Number.isFinite(parsedTakeProfit) || parsedTakeProfit < 0)
         ) {
             setError('Take Profit must be 0 or greater.');
-            return;
+            return false;
         }
 
         if (
@@ -539,7 +811,7 @@ const TradingWorkspace = observer(() => {
             (!Number.isFinite(parsedStopLoss) || parsedStopLoss < 0)
         ) {
             setError('Stop Loss must be 0 or greater.');
-            return;
+            return false;
         }
 
 
@@ -549,6 +821,10 @@ const TradingWorkspace = observer(() => {
                 botId: selectedBot.id,
                 botName: selectedBot.name,
                 symbol,
+                direction:
+                    directionPreference === 'bot-default'
+                        ? undefined
+                        : directionPreference,
                 duration: parsedDuration,
                 durationUnit: durationUnit || null,
                 stake: parsedStake,
@@ -559,11 +835,23 @@ const TradingWorkspace = observer(() => {
             }
         );
 
-        await store.run_panel.onRunButtonClick(() => {
+        const didStart = await store.run_panel.onRunButtonClick(() => {
             setMonehuntRuntimeConfig({
                 symbol,
+                tradeFamily: tradeType,
+                contractPreference:
+                    directionPreference === 'bot-default'
+                        ? undefined
+                        : directionPreference,
+                direction:
+                    directionPreference === 'rise' ||
+                    directionPreference === 'fall' ||
+                    directionPreference === 'both'
+                        ? directionPreference
+                        : undefined,
                 duration: parsedDuration,
                 durationUnit: durationUnit || undefined,
+                prediction: predictionMode === 'user-preference' ? parsedUserPrediction : undefined,
                 stake: parsedStake,
                 martingale: parsedMartingale,
                 maxStake: parsedMaxStake,
@@ -571,9 +859,200 @@ const TradingWorkspace = observer(() => {
                 stopLoss: parsedStopLoss,
             });
         });
+
+        if (didStart !== true) {
+            setError('The official bot validation or login gate blocked execution.');
+            return false;
+        }
+
+        return true;
     };
+    React.useEffect(() => {
+        if (!globalRunSignal) return;
+
+        let pendingBotId = '';
+        let requestedDcirclesSymbol = '';
+
+        try {
+            pendingBotId = sessionStorage.getItem(MONEHUNT_PENDING_GLOBAL_RUN_KEY) || '';
+            requestedDcirclesSymbol =
+                sessionStorage.getItem(MONEHUNT_PENDING_GLOBAL_MARKET_KEY) || '';
+        } catch (error) {
+            console.error('[MONEHUNT GLOBAL RUN] Could not read queued request:', error);
+            setError('Could not read the queued Run request. Please press Run again.');
+            return;
+        }
+
+        if (!pendingBotId || !selectedBot || pendingBotId !== String(selectedBot.id)) return;
+        if (loadedBotId !== pendingBotId || !executionWorkspaceReady) return;
+        if (isRunning) return;
+
+        const requestToken = `${pendingBotId}:${globalRunSignal}`;
+
+        if (requestedDcirclesSymbol) {
+            const staged = pendingDcirclesRunRef.current;
+
+            if (
+                !staged ||
+                staged.botId !== pendingBotId ||
+                staged.signal !== globalRunSignal ||
+                staged.symbol !== requestedDcirclesSymbol
+            ) {
+                const activeSymbols = ApiHelpers?.instance?.active_symbols;
+
+                // Wait for active-symbol options before validating the requested market.
+                // An empty initial list does not prove that the market is invalid.
+                if (!activeSymbols || !marketOptions.length) return;
+
+                const resolved = activeSymbols
+                    .getAllSymbols(false)
+                    .find((item: { symbol: string }) => item.symbol === requestedDcirclesSymbol);
+
+                const validMarket =
+                    resolved &&
+                    typeof resolved.market === 'string' &&
+                    typeof resolved.submarket === 'string' &&
+                    !activeSymbols.isSymbolClosed(requestedDcirclesSymbol) &&
+                    !activeSymbols.isMarketClosed(resolved.market) &&
+                    activeSymbols
+                        .getMarketDropdownOptions()
+                        .some((option: [string, string]) => option[1] === resolved.market) &&
+                    activeSymbols
+                        .getSubmarketDropdownOptions(resolved.market)
+                        .some((option: [string, string]) => option[1] === resolved.submarket) &&
+                    activeSymbols
+                        .getSymbolDropdownOptions(resolved.submarket)
+                        .some((option: [string, string]) => option[1] === requestedDcirclesSymbol);
+
+                if (!validMarket) {
+                    handledGlobalRunRequest.current = requestToken;
+                    pendingDcirclesRunRef.current = null;
+                    setError(
+                        `D-Circles market ${requestedDcirclesSymbol} is unavailable or closed. No trade was started.`
+                    );
+
+                    try {
+                        if (sessionStorage.getItem(MONEHUNT_PENDING_GLOBAL_RUN_KEY) === pendingBotId) {
+                            sessionStorage.removeItem(MONEHUNT_PENDING_GLOBAL_RUN_KEY);
+                            sessionStorage.removeItem(MONEHUNT_PENDING_GLOBAL_MARKET_KEY);
+                        }
+                    } catch (error) {
+                        console.error('[MONEHUNT GLOBAL RUN] Could not clear invalid request:', error);
+                    }
+                    return;
+                }
+
+                pendingDcirclesRunRef.current = {
+                    botId: pendingBotId,
+                    symbol: requestedDcirclesSymbol,
+                    market: resolved.market,
+                    submarket: resolved.submarket,
+                    signal: globalRunSignal,
+                };
+
+                strategySelectionRef.current = {
+                    market: resolved.market,
+                    submarket: resolved.submarket,
+                    symbol: requestedDcirclesSymbol,
+                };
+
+                setGlobalMarketReadySymbol(
+                    symbol === requestedDcirclesSymbol && durationOptionsSymbol === requestedDcirclesSymbol && durationOptions.length
+                        ? requestedDcirclesSymbol
+                        : ''
+                );
+                setError('');
+                setMarket(resolved.market);
+                setSubmarket(resolved.submarket);
+                setSymbol(requestedDcirclesSymbol);
+
+                console.log('[MONEHUNT GLOBAL RUN] D-Circles market staged:', {
+                    botId: pendingBotId,
+                    symbol: requestedDcirclesSymbol,
+                    market: resolved.market,
+                    submarket: resolved.submarket,
+                });
+                return;
+            }
+
+            if (
+                market !== staged.market ||
+                submarket !== staged.submarket ||
+                symbol !== staged.symbol ||
+                durationOptionsSymbol !== staged.symbol ||
+                globalMarketReadySymbol !== staged.symbol
+            ) {
+                return;
+            }
+        } else {
+            pendingDcirclesRunRef.current = null;
+        }
+
+        if (handledGlobalRunRequest.current === requestToken) return;
+
+        if (
+            !marketOptions.length ||
+            !symbol ||
+            !durationOptions.length ||
+            !durationUnit
+        ) return;
+
+        if (isRunning) return;
+
+        handledGlobalRunRequest.current = requestToken;
+
+        console.log('[MONEHUNT GLOBAL RUN] Running selected bot through validated flow:', {
+            botId: pendingBotId,
+            symbol,
+            duration,
+            durationUnit,
+            dCirclesMarket: requestedDcirclesSymbol || null,
+        });
+
+        void (async () => {
+            try {
+                const accepted = await executeBot();
+
+                if (!accepted) {
+                    setError(current =>
+                        current || 'Run was not started. Correct the settings and press Run again.'
+                    );
+                }
+            } catch (error) {
+                console.error('[MONEHUNT GLOBAL RUN] Execution request failed:', error);
+                setError('The queued Run request failed. Review the settings and try again.');
+            } finally {
+                try {
+                    if (sessionStorage.getItem(MONEHUNT_PENDING_GLOBAL_RUN_KEY) === pendingBotId) {
+                        sessionStorage.removeItem(MONEHUNT_PENDING_GLOBAL_RUN_KEY);
+                        sessionStorage.removeItem(MONEHUNT_PENDING_GLOBAL_MARKET_KEY);
+                    }
+                } catch (error) {
+                    console.error('[MONEHUNT GLOBAL RUN] Could not clear completed request:', error);
+                }
+                pendingDcirclesRunRef.current = null;
+                setGlobalMarketReadySymbol('');
+            }
+        })();
+    }, [
+        globalRunSignal,
+        selectedBot,
+        loadedBotId,
+        executionWorkspaceReady,
+        apiHelpersReadyVersion,
+        marketOptions,
+        market,
+        submarket,
+        symbol,
+        durationOptions,
+        durationOptionsSymbol,
+        durationUnit,
+        globalMarketReadySymbol,
+        isRunning,
+    ]);
     return (
         <>
+        {!headless && (
         <main className='monehunt-trading-workspace'>
             <section className='monehunt-trading-workspace__header'>
                 <div>
@@ -710,7 +1189,113 @@ const TradingWorkspace = observer(() => {
                                 <span>BOT CONTRACT (FROM STRATEGY)</span>
                                 <div>{contractType || 'Defined by bot strategy'}</div>
                             </label>
-
+                            <label>
+                            <span>CONTRACT PREFERENCE</span>
+                            <select
+                                value={directionPreference}
+                                onChange={event =>
+                                    setDirectionPreference(
+                                        event.target.value as
+                                            | 'bot-default'
+                                            | 'even'
+                                            | 'odd'
+                                            | 'over'
+                                            | 'under'
+                                            | 'rise'
+                                            | 'fall'
+                                            | 'both'
+                                    )
+                                }
+                                disabled={isRunning}
+                            >
+                                <option value='bot-default'>Bot Default</option>
+                                {tradeType?.toUpperCase() === 'EVENODD' && (
+                                    <>
+                                        <option value='even'>Even Only</option>
+                                        <option value='odd'>Odd Only</option>
+                                        <option value='both'>Both Even and Odd</option>
+                                    </>
+                                )}
+                                {tradeType?.toUpperCase() === 'OVERUNDER' && (
+                                    <>
+                                        <option value='over'>Over Only</option>
+                                        <option value='under'>Under Only</option>
+                                        <option value='both'>Both Over and Under</option>
+                                    </>
+                                )}
+                                {tradeType?.toUpperCase() === 'CALLPUT' && (
+                                    <>
+                                        <option value='rise'>Rise / UP Only</option>
+                                        <option value='fall'>Fall / DOWN Only</option>
+                                        <option value='both'>Both Rise and Fall</option>
+                                    </>
+                                )}
+                            </select>
+                        </label>
+                            {showPredictionControls && (
+                            <>
+                                <label>
+                                    <span>PREDICTION SOURCE</span>
+                                    <select
+                                        value={predictionMode}
+                                        onChange={event => {
+                                            const mode = event.target.value as 'bot-default' | 'user-preference';
+                                            setPredictionMode(mode);
+                                            if (mode === 'bot-default') setPrediction(botPrediction);
+                                        }}
+                                        disabled={isRunning}
+                                    >
+                                        <option value='bot-default'>
+                                            Bot Default{botPrediction ? ` (${botPrediction})` : ' (strategy default)'}
+                                        </option>
+                                        <option value='user-preference'>User Preference</option>
+                                    </select>
+                                </label>
+                                {predictionMode === 'user-preference' && (
+                                    <label>
+                                        <span>USER PREDICTION</span>
+                                        <input
+                                            type='number'
+                                            step='1'
+                                            value={prediction}
+                                            onChange={event => setPrediction(event.target.value)}
+                                            disabled={isRunning}
+                                        />
+                                    </label>
+                                )}
+                            </>
+                            )}
+                            {hasWinningStake && (
+                                <label>
+                                    <span>WINNING STAKE</span>
+                                    <input
+                                        type='number'
+                                        min='0.01'
+                                        step='any'
+                                        value={winningStake}
+                                        onChange={event => {
+                                            const value = event.target.value;
+                                            setWinningStake(value);
+                                            const amount = Number(value);
+                                            if (value.trim() && Number.isFinite(amount) && amount > 0) {
+                                                const workspace = dbot.workspace;
+                                                const setter = workspace?.getAllBlocks(false).find(
+                                                    block => block.type === 'variables_set' &&
+                                                        block.getField('VAR')?.getText() === 'winStake'
+                                                );
+                                                const valueBlock = setter?.getInputTargetBlock?.('VALUE');
+                                                if (
+                                                    valueBlock?.type === 'math_number' &&
+                                                    valueBlock.getField('NUM')
+                                                ) {
+                                                    valueBlock.setFieldValue(String(amount), 'NUM');
+                                                }
+                                            }
+                                        }}
+                                        disabled={isRunning}
+                                    />
+                                </label>
+                            )}
                             {durationOptions.length > 0 && (
                                 <label>
                                     <span>DURATION</span>
@@ -885,7 +1470,21 @@ const TradingWorkspace = observer(() => {
                 )}
             </section>
 
-            <div
+
+
+            {showBotWorkspace && (
+                <button
+                    type='button'
+                    className='monehunt-trading-workspace__workspace-close'
+                    onClick={() => setShowBotWorkspace(false)}
+                >
+                    CLOSE BOT WORKSPACE
+                </button>
+            )}
+        </main>
+        )}
+
+        <div
                 id='scratch_div'
                 aria-hidden={!showBotWorkspace}
                 style={showBotWorkspace ? {
@@ -912,17 +1511,6 @@ const TradingWorkspace = observer(() => {
                     pointerEvents: 'none',
                 }}
             />
-
-            {showBotWorkspace && (
-                <button
-                    type='button'
-                    className='monehunt-trading-workspace__workspace-close'
-                    onClick={() => setShowBotWorkspace(false)}
-                >
-                    CLOSE BOT WORKSPACE
-                </button>
-            )}
-        </main>
 
         {/* TRADING WORKSPACE SHARED DIALOG HOST */}
         <Dialog
