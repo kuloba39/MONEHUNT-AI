@@ -253,9 +253,9 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
 
         // Preserve progression only for a valid existing state outside native OUD execution.
         const canPreserveMonehuntMartingale =
-            preserveMonehuntMartingale &&
             Boolean(this.monehuntMartingale) &&
-            this.options?.nativeOudDirectPurchase !== true;
+            this.options?.nativeOudDirectPurchase !== true &&
+            (preserveMonehuntMartingale || !monehuntRuntimeConfig);
 
         if (!canPreserveMonehuntMartingale) {
             this.monehuntMartingale = null;
@@ -294,6 +294,9 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
 
         if (monehuntRuntimeConfig?.stake !== undefined) {
             effectiveTradeOptions.amount = monehuntRuntimeConfig.stake;
+        }
+        if (canPreserveMonehuntMartingale) {
+            effectiveTradeOptions.amount = this.monehuntMartingale.currentStake;
         }
 
         if (monehuntRuntimeConfig?.duration !== undefined) {

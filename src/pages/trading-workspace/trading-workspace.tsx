@@ -97,6 +97,7 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
     const [maxStake, setMaxStake] = React.useState('');
     const [takeProfit, setTakeProfit] = React.useState('');
     const [stopLoss, setStopLoss] = React.useState('');
+
     const [error, setError] = React.useState('');
     const [showBotWorkspace, setShowBotWorkspace] = React.useState(false);
 
@@ -333,6 +334,68 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
                     setError(message);
                     return;
                 }
+                // Read this bot's own starting values, not later recovery assignments.
+                const initializationOwner = allBlocks.find(
+                    block => !!block.getInputTargetBlock?.('INITIALIZATION')
+                );
+                let initializationBlock =
+                    initializationOwner?.getInputTargetBlock?.('INITIALIZATION') ?? null;
+                const initializationValues: Record<string, string> = {};
+                const visitedInitializationBlocks = new Set<any>();
+
+                while (
+                    initializationBlock &&
+                    !visitedInitializationBlocks.has(initializationBlock)
+                ) {
+                    visitedInitializationBlocks.add(initializationBlock);
+
+                    if (initializationBlock.type === 'variables_set') {
+                        const variableName =
+                            initializationBlock.getField('VAR')?.getText();
+                        const valueBlock =
+                            initializationBlock.getInputTargetBlock?.('VALUE');
+                        const numericValue = valueBlock?.getFieldValue?.('NUM');
+
+                        if (
+                            (variableName === 'Stake' ||
+                                variableName === 'Martingale' ||
+                                variableName === 'winStake') &&
+                            valueBlock?.type === 'math_number' &&
+                            numericValue !== null &&
+                            numericValue !== undefined &&
+                            Number.isFinite(Number(numericValue))
+                        ) {
+                            initializationValues[variableName] = String(numericValue);
+                        }
+                    }
+
+                    initializationBlock =
+                        initializationBlock.getNextBlock?.() ?? null;
+                }
+
+                const botDefaultStake = Number(initializationValues.Stake);
+                setStake(
+                    Number.isFinite(botDefaultStake) && botDefaultStake > 0
+                        ? initializationValues.Stake
+                        : '1'
+                );
+
+                // Keep engine-level Martingale disabled by default because the
+                // selected bot may already implement recovery inside its XML.
+                setMartingale('0');
+                setMaxStake('');
+                setTakeProfit('');
+                setStopLoss('');
+
+                console.log(
+                    '[MONEHUNT TRADING WORKSPACE] BOT INITIAL DEFAULTS:',
+                    {
+                        botId: selectedBotForExecution.id,
+                        stake: initializationValues.Stake ?? '1 (fallback)',
+                        xmlMartingale: initializationValues.Martingale ?? 'not found',
+                        engineMartingale: '0 (disabled to avoid duplicate recovery)',
+                    }
+                );
                 const hasPredictionVariable = allBlocks.some(
                     block => block.type === 'variables_set' &&
                         block.getField('VAR')?.getText() === 'Prediction'
@@ -707,8 +770,10 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
             );
         }
     }, [submarket, apiHelpersReadyVersion]);
-    const executeBot = async (): Promise<boolean> => {
+    const executeBot = async (requestedSymbolOverride?: string): Promise<boolean> => {
         setError('');
+        const executionSymbol = requestedSymbolOverride ?? symbol;
+        const preserveBotSettings = requestedSymbolOverride !== undefined;
 
         if (!selectedBot) {
             setError('Select a bot before execution.');
@@ -727,6 +792,7 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
             prediction.trim() === '' ? undefined : Number(prediction);
 
         if (
+            !preserveBotSettings &&
             predictionMode === 'user-preference' &&
             (
                 parsedUserPrediction === undefined ||
@@ -741,17 +807,18 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
             option => option.unit === durationUnit
         );
 
-        if (!symbol) {
+        if (!executionSymbol) {
             setError('Select a market.');
             return false;
         }
 
         if (
-            durationOptionsSymbol !== symbol ||
-            !selectedDurationOption ||
-            !Number.isFinite(Number(selectedDurationOption.min)) ||
-            !Number.isFinite(Number(selectedDurationOption.max)) ||
-            Number(selectedDurationOption.min) > Number(selectedDurationOption.max)
+            durationOptionsSymbol !== executionSymbol ||
+            (!preserveBotSettings &&
+                (!selectedDurationOption ||
+                    !Number.isFinite(Number(selectedDurationOption.min)) ||
+                    !Number.isFinite(Number(selectedDurationOption.max)) ||
+                    Number(selectedDurationOption.min) > Number(selectedDurationOption.max)))
         ) {
             setError(
                 'Wait for valid contract duration options to load for the selected market.'
@@ -759,6 +826,7 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
             return false;
         }
 
+        if (!preserveBotSettings) {
         if (
             !Number.isFinite(parsedDuration) ||
             parsedDuration < 1 ||
@@ -813,6 +881,8 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
             setError('Stop Loss must be 0 or greater.');
             return false;
         }
+        }
+
 
 
         console.log(
@@ -820,7 +890,7 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
             {
                 botId: selectedBot.id,
                 botName: selectedBot.name,
-                symbol,
+                symbol: executionSymbol,
                 direction:
                     directionPreference === 'bot-default'
                         ? undefined
@@ -836,28 +906,37 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
         );
 
         const didStart = await store.run_panel.onRunButtonClick(() => {
-            setMonehuntRuntimeConfig({
-                symbol,
-                tradeFamily: tradeType,
-                contractPreference:
-                    directionPreference === 'bot-default'
-                        ? undefined
-                        : directionPreference,
-                direction:
-                    directionPreference === 'rise' ||
-                    directionPreference === 'fall' ||
-                    directionPreference === 'both'
-                        ? directionPreference
-                        : undefined,
-                duration: parsedDuration,
-                durationUnit: durationUnit || undefined,
-                prediction: predictionMode === 'user-preference' ? parsedUserPrediction : undefined,
-                stake: parsedStake,
-                martingale: parsedMartingale,
-                maxStake: parsedMaxStake,
-                takeProfit: parsedTakeProfit,
-                stopLoss: parsedStopLoss,
-            });
+            setMonehuntRuntimeConfig(
+                preserveBotSettings
+                    ? {
+                        symbol: executionSymbol,
+                        stake: parsedStake,
+                        martingale: parsedMartingale,
+                        maxStake: parsedMaxStake,
+                    }
+                    : {
+                        symbol: executionSymbol,
+                        tradeFamily: tradeType,
+                        contractPreference:
+                            directionPreference === 'bot-default'
+                                ? undefined
+                                : directionPreference,
+                        direction:
+                            directionPreference === 'rise' ||
+                            directionPreference === 'fall' ||
+                            directionPreference === 'both'
+                                ? directionPreference
+                                : undefined,
+                        duration: parsedDuration,
+                        durationUnit: durationUnit || undefined,
+                        prediction: predictionMode === 'user-preference' ? parsedUserPrediction : undefined,
+                        stake: parsedStake,
+                        martingale: parsedMartingale,
+                        maxStake: parsedMaxStake,
+                        takeProfit: parsedTakeProfit,
+                        stopLoss: parsedStopLoss,
+                    }
+            );
         });
 
         if (didStart !== true) {
@@ -1011,7 +1090,7 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
 
         void (async () => {
             try {
-                const accepted = await executeBot();
+                const accepted = await executeBot(requestedDcirclesSymbol || undefined);
 
                 if (!accepted) {
                     setError(current =>

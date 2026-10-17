@@ -260,6 +260,23 @@ describe('TradeEngine runtime config lifecycle', () => {
         expect(engine.tradeOptions.amount).toBe(5);
         expect(getMonehuntRuntimeConfig()).toBeNull();
     });
+    it('uses the saved Martingale stake instead of the bot XML default during continuation', () => {
+        engine.monehuntMartingale = {
+            startingStake: 10,
+            currentStake: 20,
+            multiplier: 2,
+            maxStake: null,
+        };
+
+        engine.start(
+            { amount: 1 },
+            { preserveMonehuntMartingale: true }
+        );
+
+        expect(engine.monehuntMartingale.currentStake).toBe(20);
+        expect(engine.tradeOptions.amount).toBe(20);
+        expect(getMonehuntRuntimeConfig()).toBeNull();
+    });
     it('leaves Martingale disabled when the multiplier is zero', () => {
         setMonehuntRuntimeConfig({
             symbol: 'R_100',
