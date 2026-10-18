@@ -802,10 +802,10 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
             );
         }
     }, [submarket, apiHelpersReadyVersion]);
-    const executeBot = async (requestedSymbolOverride?: string): Promise<boolean> => {
+    const executeBot = async (requestedSymbolOverride?: string, preserveLoadedBotSettings = false): Promise<boolean> => {
         setError('');
         const executionSymbol = requestedSymbolOverride ?? symbol;
-        const preserveBotSettings = requestedSymbolOverride !== undefined;
+        const preserveBotSettings = requestedSymbolOverride !== undefined || preserveLoadedBotSettings;
 
         if (!selectedBot) {
             setError('Select a bot before execution.');
@@ -845,12 +845,12 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
         }
 
         if (
-            durationOptionsSymbol !== executionSymbol ||
-            (!preserveBotSettings &&
-                (!selectedDurationOption ||
-                    !Number.isFinite(Number(selectedDurationOption.min)) ||
-                    !Number.isFinite(Number(selectedDurationOption.max)) ||
-                    Number(selectedDurationOption.min) > Number(selectedDurationOption.max)))
+            !preserveBotSettings &&
+            (durationOptionsSymbol !== executionSymbol ||
+                !selectedDurationOption ||
+                !Number.isFinite(Number(selectedDurationOption.min)) ||
+                !Number.isFinite(Number(selectedDurationOption.max)) ||
+                Number(selectedDurationOption.min) > Number(selectedDurationOption.max))
         ) {
             setError(
                 'Wait for valid contract duration options to load for the selected market.'
@@ -1101,12 +1101,7 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
 
         if (handledGlobalRunRequest.current === requestToken) return;
 
-        if (
-            !marketOptions.length ||
-            !symbol ||
-            !durationOptions.length ||
-            !durationUnit
-        ) return;
+        if (!symbol) return;
 
         if (isRunning) return;
 
@@ -1122,7 +1117,7 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
 
         void (async () => {
             try {
-                const accepted = await executeBot(requestedDcirclesSymbol || undefined);
+                const accepted = await executeBot(requestedDcirclesSymbol || undefined, true);
 
                 if (!accepted) {
                     setError(current =>
