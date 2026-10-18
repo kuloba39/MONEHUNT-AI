@@ -89,11 +89,28 @@ const MonehuntExecutionBar = observer(() => {
 
         if (has_selected_bot) {
             try {
-                if (sessionStorage.getItem(MONEHUNT_PENDING_GLOBAL_RUN_KEY)) {
-                    console.warn(
-                        '[MONEHUNT GLOBAL RUN] A Run request is already pending. Wait for it to finish.'
-                    );
-                    return;
+                const pendingBotId = sessionStorage.getItem(MONEHUNT_PENDING_GLOBAL_RUN_KEY);
+
+                if (pendingBotId) {
+                    const canDiscardStaleRequest =
+                        pendingBotId !== selected_bot_id &&
+                        !is_running_state &&
+                        !has_open_contract;
+
+                    if (canDiscardStaleRequest) {
+                        console.warn(
+                            '[MONEHUNT GLOBAL RUN] Clearing stale request for a different bot:',
+                            { pendingBotId, selectedBotId: selected_bot_id }
+                        );
+                        sessionStorage.removeItem(MONEHUNT_PENDING_GLOBAL_RUN_KEY);
+                        sessionStorage.removeItem(MONEHUNT_PENDING_GLOBAL_MARKET_KEY);
+                    } else {
+                        console.warn(
+                            '[MONEHUNT GLOBAL RUN] A Run request is already pending. Wait for it to finish.',
+                            { pendingBotId, selectedBotId: selected_bot_id }
+                        );
+                        return;
+                    }
                 }
             } catch (error) {
                 console.error(
