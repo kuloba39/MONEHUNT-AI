@@ -110,6 +110,9 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
         // Tick watcher state belongs to this TradeEngine instance.
         this.prevTick = undefined;
 
+        // Retain the Workspace base stake after its shared config is consumed.
+        this.monehuntWorkspaceStake = null;
+
         this.store = createStore(rootReducer, applyMiddleware(thunk));
     }
 
@@ -246,6 +249,17 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
 
         const monehuntRuntimeConfig = getMonehuntRuntimeConfig();
 
+        const isNativeOud = this.options?.nativeOudDirectPurchase === true;
+
+        if (isNativeOud) {
+            this.monehuntWorkspaceStake = null;
+        } else if (monehuntRuntimeConfig?.stake !== undefined) {
+            const configuredWorkspaceStake = Number(monehuntRuntimeConfig.stake);
+            this.monehuntWorkspaceStake =
+                Number.isFinite(configuredWorkspaceStake) && configuredWorkspaceStake > 0
+                    ? configuredWorkspaceStake
+                    : null;
+        }
         // Consume shared config; this run retains its local copy.
         if (monehuntRuntimeConfig) {
             clearMonehuntRuntimeConfig();
@@ -292,9 +306,18 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
             ...tradeOptions,
         };
 
-        if (monehuntRuntimeConfig?.stake !== undefined) {
+        const hasWorkspaceStake =
+            Number.isFinite(this.monehuntWorkspaceStake) &&
+            this.monehuntWorkspaceStake > 0;
+
+        if (!isNativeOud && hasWorkspaceStake) {
+            effectiveTradeOptions.amount = canPreserveMonehuntMartingale
+                ? this.monehuntMartingale.currentStake
+                : this.monehuntWorkspaceStake;
+        } else if (monehuntRuntimeConfig?.stake !== undefined) {
             effectiveTradeOptions.amount = monehuntRuntimeConfig.stake;
         }
+
         if (canPreserveMonehuntMartingale) {
             effectiveTradeOptions.amount = this.monehuntMartingale.currentStake;
         }

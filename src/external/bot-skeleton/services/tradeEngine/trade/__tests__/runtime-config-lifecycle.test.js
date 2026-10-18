@@ -277,6 +277,48 @@ describe('TradeEngine runtime config lifecycle', () => {
         expect(engine.tradeOptions.amount).toBe(20);
         expect(getMonehuntRuntimeConfig()).toBeNull();
     });
+    it('keeps the Workspace base stake across Blockly starts when Martingale is disabled', () => {
+        setMonehuntRuntimeConfig({
+            symbol: 'R_100',
+            stake: 10,
+            martingale: 0,
+        });
+
+        engine.start({ amount: 0.35 });
+        expect(engine.tradeOptions.amount).toBe(10);
+        expect(engine.monehuntMartingale).toBeNull();
+
+        engine.start({ amount: 0.35 });
+        expect(engine.tradeOptions.amount).toBe(10);
+        expect(engine.monehuntMartingale).toBeNull();
+    });
+
+    it('uses the Workspace base stake and then the progressed Martingale stake', () => {
+        setMonehuntRuntimeConfig({
+            symbol: 'R_100',
+            stake: 10,
+            martingale: 2,
+        });
+
+        engine.start({ amount: 0.35 });
+        expect(engine.tradeOptions.amount).toBe(10);
+        expect(engine.monehuntMartingale.currentStake).toBe(10);
+
+        // Simulate a loss settlement updating the engine's recovery stake.
+        engine.monehuntMartingale.currentStake = 20;
+
+        engine.start({ amount: 0.35 });
+        expect(engine.tradeOptions.amount).toBe(20);
+        expect(engine.monehuntMartingale.currentStake).toBe(20);
+    });
+
+    it('keeps the Blockly amount when no Workspace stake was configured', () => {
+        engine.start({ amount: 0.35 });
+
+        expect(engine.tradeOptions.amount).toBe(0.35);
+        expect(engine.monehuntWorkspaceStake ?? null).toBeNull();
+    });
+
     it('leaves Martingale disabled when the multiplier is zero', () => {
         setMonehuntRuntimeConfig({
             symbol: 'R_100',
