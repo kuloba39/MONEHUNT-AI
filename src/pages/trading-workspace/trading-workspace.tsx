@@ -16,6 +16,8 @@ import RunPanel from '@/components/run-panel';
 import { load } from '@/external/bot-skeleton/scratch/utils';
 import './trading-workspace.scss';
 
+const MONEHUNT_STAKE_PREFERENCE_KEY = 'monehunt_trading_workspace_stake';
+
 const TradingWorkspace = observer(({ headless = false }: { headless?: boolean }) => {
     const store = useStore();
     const { app, dbot } = store;
@@ -92,7 +94,18 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
     const [durationOptions, setDurationOptions] = React.useState<
         Array<{ display: string; unit: string; min: number; max: number }>
     >([]);
-    const [stake, setStake] = React.useState('1');
+    const [stake, setStake] = React.useState(() => {
+        try {
+            const savedStake = window.localStorage.getItem(
+                MONEHUNT_STAKE_PREFERENCE_KEY
+            );
+            return savedStake && Number.isFinite(Number(savedStake)) && Number(savedStake) > 0
+                ? savedStake
+                : '1';
+        } catch {
+            return '1';
+        }
+    });
     const [martingale, setMartingale] = React.useState('0');
     const [maxStake, setMaxStake] = React.useState('');
     const [takeProfit, setTakeProfit] = React.useState('');
@@ -374,10 +387,29 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
                 }
 
                 const botDefaultStake = Number(initializationValues.Stake);
+                let savedStakePreference = '';
+
+                try {
+                    savedStakePreference =
+                        window.localStorage.getItem(MONEHUNT_STAKE_PREFERENCE_KEY) ?? '';
+                } catch (storageError) {
+                    console.warn(
+                        '[MONEHUNT TRADING WORKSPACE] Could not read saved stake preference:',
+                        storageError
+                    );
+                }
+
+                const hasSavedStakePreference =
+                    savedStakePreference.trim() !== '' &&
+                    Number.isFinite(Number(savedStakePreference)) &&
+                    Number(savedStakePreference) > 0;
+
                 setStake(
-                    Number.isFinite(botDefaultStake) && botDefaultStake > 0
-                        ? initializationValues.Stake
-                        : '1'
+                    hasSavedStakePreference
+                        ? savedStakePreference
+                        : Number.isFinite(botDefaultStake) && botDefaultStake > 0
+                            ? initializationValues.Stake
+                            : '1'
                 );
 
                 // Keep engine-level Martingale disabled by default because the
@@ -1438,9 +1470,28 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
                                     min='0'
                                     step='0.01'
                                     value={stake}
-                                    onChange={event =>
-                                        setStake(event.target.value)
-                                    }
+                                    onChange={event => {
+                const nextStake = event.target.value;
+                setStake(nextStake);
+
+                if (
+                    nextStake.trim() !== '' &&
+                    Number.isFinite(Number(nextStake)) &&
+                    Number(nextStake) > 0
+                ) {
+                    try {
+                        window.localStorage.setItem(
+                            MONEHUNT_STAKE_PREFERENCE_KEY,
+                            nextStake
+                        );
+                    } catch (storageError) {
+                        console.warn(
+                            '[MONEHUNT TRADING WORKSPACE] Could not save stake preference:',
+                            storageError
+                        );
+                    }
+                }
+            }}
                                     disabled={isRunning}
                                 />
                             </label>
