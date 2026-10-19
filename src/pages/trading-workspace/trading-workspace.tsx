@@ -17,6 +17,7 @@ import { load } from '@/external/bot-skeleton/scratch/utils';
 import './trading-workspace.scss';
 
 const MONEHUNT_STAKE_PREFERENCE_KEY = 'monehunt_trading_workspace_stake';
+const MONEHUNT_MARTINGALE_PREFERENCE_PREFIX = 'monehunt_trading_workspace_martingale:';
 
 const TradingWorkspace = observer(({ headless = false }: { headless?: boolean }) => {
     const store = useStore();
@@ -412,9 +413,31 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
                             : '1'
                 );
 
-                // Keep engine-level Martingale disabled by default because the
-                // selected bot may already implement recovery inside its XML.
-                setMartingale('0');
+                // Restore this bot's saved multiplier; default to disabled.
+                const martingalePreferenceKey =
+                    `${MONEHUNT_MARTINGALE_PREFERENCE_PREFIX}${selectedBotForExecution.id}`;
+                let savedMartingalePreference = '';
+
+                try {
+                    savedMartingalePreference =
+                        window.localStorage.getItem(martingalePreferenceKey) ?? '';
+                } catch (storageError) {
+                    console.warn(
+                        '[MONEHUNT TRADING WORKSPACE] Could not read martingale preference:',
+                        storageError
+                    );
+                }
+
+                const savedMartingaleNumber = Number(savedMartingalePreference);
+                const hasSavedMartingalePreference =
+                    savedMartingalePreference.trim() !== '' &&
+                    Number.isFinite(savedMartingaleNumber) &&
+                    savedMartingaleNumber >= 0 &&
+                    (savedMartingaleNumber === 0 || savedMartingaleNumber > 1);
+
+                setMartingale(
+                    hasSavedMartingalePreference ? savedMartingalePreference : '0'
+                );
                 setMaxStake('');
                 setTakeProfit('');
                 setStopLoss('');
@@ -1498,9 +1521,32 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
                                     min='0'
                                     step='0.01'
                                     value={martingale}
-                                    onChange={event =>
-                                        setMartingale(event.target.value)
-                                    }
+                                    onChange={event => {
+                                        const nextMartingale = event.target.value;
+                                        setMartingale(nextMartingale);
+
+                                        const botId = selectedBot?.id;
+                                        const numericMartingale = Number(nextMartingale);
+                                        const isValidMartingale =
+                                            nextMartingale.trim() !== '' &&
+                                            Number.isFinite(numericMartingale) &&
+                                            numericMartingale >= 0 &&
+                                            (numericMartingale === 0 || numericMartingale > 1);
+
+                                        if (botId && isValidMartingale) {
+                                            try {
+                                                window.localStorage.setItem(
+                                                    `${MONEHUNT_MARTINGALE_PREFERENCE_PREFIX}${botId}`,
+                                                    nextMartingale
+                                                );
+                                            } catch (storageError) {
+                                                console.warn(
+                                                    '[MONEHUNT TRADING WORKSPACE] Could not save martingale preference:',
+                                                    storageError
+                                                );
+                                            }
+                                        }
+                                    }}
                                     disabled={isRunning}
                                 />
                             </label>
