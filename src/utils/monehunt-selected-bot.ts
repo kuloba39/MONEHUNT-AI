@@ -1,6 +1,7 @@
 export const MONEHUNT_SELECTED_BOT_KEY = 'monehunt_selected_bot';
 export const MONEHUNT_PENDING_GLOBAL_RUN_KEY = 'monehunt_pending_global_run';
 export const MONEHUNT_PENDING_GLOBAL_MARKET_KEY = 'monehunt_pending_global_market';
+export const MONEHUNT_PENDING_OVER2_SIGNAL_KEY = 'monehunt_pending_over2_signal';
 export const MONEHUNT_BOT_BUILDER_EDIT_KEY =
     'monehunt_bot_builder_edit';
 

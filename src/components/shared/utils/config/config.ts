@@ -48,6 +48,15 @@ export const isProduction = () => {
     const productionDomains = Object.values(PRODUCTION_DOMAINS) as string[];
     return productionDomains.includes(hostname);
 };
+// Returns the exact redirect URI used by both Deriv OAuth steps.
+export const getDerivRedirectUri = (): string => {
+    if (isProduction()) {
+        return 'https://www.monehunt.site/callback';
+    }
+
+    // Preserve origin-based redirects for local development and previews.
+    return `${window.location.origin}/callback`;
+};
 
 export const isLocal = () => /localhost(:\d+)?$/i.test(window.location.hostname);
 
@@ -111,7 +120,7 @@ export const generateOAuthURL = async (prompt?: string): Promise<string> => {
 
         const config: AuthConfig = {
             clientId,
-            redirectUri: window.location.origin,
+            redirectUri: getDerivRedirectUri(),
             scopes: 'trade',
         };
 

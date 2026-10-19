@@ -8,6 +8,7 @@ import { localize } from '@deriv-com/translations';
 import {
     MONEHUNT_PENDING_GLOBAL_RUN_KEY,
     MONEHUNT_PENDING_GLOBAL_MARKET_KEY,
+    MONEHUNT_PENDING_OVER2_SIGNAL_KEY,
     MONEHUNT_SELECTED_BOT_KEY,
     type MonehuntSelectedBot,
 } from '@/utils/monehunt-selected-bot';
@@ -81,6 +82,7 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
         'bot-default' | 'even' | 'odd' | 'over' | 'under' | 'rise' | 'fall' | 'both'
     >('bot-default');
     const strategySelectionRef = React.useRef<{ market: string; submarket: string; symbol: string } | null>(null);
+    const over2SelectionRef = React.useRef<{ market: string; submarket: string; symbol: string } | null>(null);
     const pendingDcirclesRunRef = React.useRef<{
         botId: string;
         symbol: string;
@@ -348,6 +350,178 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
                     setError(message);
                     return;
                 }
+                // Apply an explicitly selected Over 2 signal after its bot XML loads.
+                // This only updates Blockly fields; it never starts execution.
+                const pendingOver2Raw = sessionStorage.getItem(
+                    MONEHUNT_PENDING_OVER2_SIGNAL_KEY
+                );
+
+                if (pendingOver2Raw) {
+                    let pendingOver2: {
+                        botId?: string;
+                        marketSymbol?: string;
+                        leastDigit?: number;
+                        prediction?: number;
+                    };
+
+                    try {
+                        pendingOver2 = JSON.parse(pendingOver2Raw);
+                    } catch {
+                        setError('The pending Over 2 signal is invalid JSON. Please select the signal again.');
+                        return;
+                    }
+
+                    const pendingDigit = Number(pendingOver2.leastDigit);
+                    const pendingSymbol = String(pendingOver2.marketSymbol ?? '').trim();
+
+                    if (
+                        pendingOver2.botId !== 'over2-signal' ||
+                        selectedBotForExecution.id !== 'over2-signal' ||
+                        !pendingSymbol ||
+                        !Number.isInteger(pendingDigit) ||
+                        pendingDigit < 0 ||
+                        pendingDigit > 2 ||
+                        pendingOver2.prediction !== 2
+                    ) {
+                        setError('The pending Over 2 signal failed validation. Please select it again.');
+                        return;
+                    }
+
+                    // Resolve the Over 2 symbol to its real market and submarket.
+                    // Keep the signal pending if active-symbol data is not ready.
+                    const over2ActiveSymbols = ApiHelpers?.instance?.active_symbols;
+
+                    if (!over2ActiveSymbols) {
+                        setError('Market data is not ready. Please wait and select the Over 2 signal again.');
+                        return;
+                    }
+
+                    // Wait for active-symbol data before resolving the handoff.
+                    // An empty initial cache must not reject a valid signal.
+                    await over2ActiveSymbols.retrieveActiveSymbols(false);
+                    if (cancelled) return;
+
+                    const over2Resolved = over2ActiveSymbols
+                        .getAllSymbols(false)
+                        .find((item: { symbol: string }) => item.symbol === pendingSymbol);
+
+                    const over2Valid =
+                        over2Resolved &&
+                        typeof over2Resolved.market === 'string' &&
+                        typeof over2Resolved.submarket === 'string' &&
+                        !over2ActiveSymbols.isSymbolClosed(pendingSymbol) &&
+                        !over2ActiveSymbols.isMarketClosed(over2Resolved.market) &&
+                        over2ActiveSymbols
+                            .getMarketDropdownOptions()
+                            .some((option: [string, string]) => option[1] === over2Resolved.market) &&
+                        over2ActiveSymbols
+                            .getSubmarketDropdownOptions(over2Resolved.market)
+                            .some((option: [string, string]) => option[1] === over2Resolved.submarket) &&
+                        over2ActiveSymbols
+                            .getSymbolDropdownOptions(over2Resolved.submarket)
+                            .some((option: [string, string]) => option[1] === pendingSymbol);
+
+                    if (!over2Valid) {
+                        setError(`Over 2 market ${pendingSymbol} is unavailable or closed. No trade was started.`);
+                        return;
+                    }
+
+                    const pendingMarketBlock = allBlocks.find(
+                        block => block.type === 'trade_definition_market'
+                    );
+                    const pendingLeastDigitBlock = allBlocks.find(block => {
+                        if (block.type !== 'variables_set') return false;
+                        return block.getField('VAR')?.getText() === 'leastDigit';
+                    });
+                    const pendingLeastDigitValue =
+                        pendingLeastDigitBlock?.getInputTargetBlock?.('VALUE');
+                    const pendingLeastDigitField =
+                        pendingLeastDigitValue?.getField?.('NUM');
+
+                    if (
+                        !pendingMarketBlock?.getField?.('MARKET_LIST') ||
+                        !pendingMarketBlock?.getField?.('SUBMARKET_LIST') ||
+                        !pendingMarketBlock?.getField?.('SYMBOL_LIST') ||
+                        !pendingLeastDigitField
+                    ) {
+                        setError('The Over 2 bot is missing its market or leastDigit input. The signal was not consumed.');
+                        return;
+                    }
+
+                    try {
+                        // Update dependent Blockly dropdowns in order:
+                        // market -> submarket -> symbol.
+                        pendingMarketBlock.setFieldValue(
+                            over2Resolved.market,
+                            'MARKET_LIST'
+                        );
+                        pendingMarketBlock.setFieldValue(
+                            over2Resolved.submarket,
+                            'SUBMARKET_LIST'
+                        );
+                        pendingMarketBlock.setFieldValue(
+                            pendingSymbol,
+                            'SYMBOL_LIST'
+                        );
+                        pendingLeastDigitField.setValue(String(pendingDigit));
+
+                        // Stage the React selectors as well as Blockly.
+                        // Existing effects will restore this selection; Run remains manual.
+                        over2SelectionRef.current = {
+                            market: over2Resolved.market,
+                            submarket: over2Resolved.submarket,
+                            symbol: pendingSymbol,
+                        };
+                        strategySelectionRef.current = {
+                            market: over2Resolved.market,
+                            submarket: over2Resolved.submarket,
+                            symbol: pendingSymbol,
+                        };
+                        setError('');
+                        setGlobalMarketReadySymbol(
+                            symbol === pendingSymbol &&
+                            durationOptionsSymbol === pendingSymbol &&
+                            durationOptions.length
+                                ? pendingSymbol
+                                : ''
+                        );
+                        setMarket(over2Resolved.market);
+                        setSubmarket(over2Resolved.submarket);
+                        setSymbol(pendingSymbol);
+
+                        const pendingPredictionVariable = allBlocks.find(block => {
+                            if (block.type !== 'variables_set') return false;
+                            return block.getField('VAR')?.getText() === 'Prediction';
+                        });
+                        const pendingPredictionValue =
+                            pendingPredictionVariable?.getInputTargetBlock?.('VALUE');
+                        pendingPredictionValue?.getField?.('NUM')?.setValue('2');
+
+                        const pendingTradeOptions = allBlocks.find(
+                            block => block.type === 'trade_definition_tradeoptions'
+                        );
+                        const pendingContractPrediction =
+                            pendingTradeOptions?.getInputTargetBlock?.('PREDICTION');
+                        pendingContractPrediction?.getField?.('NUM')?.setValue('2');
+
+                        workspace.render?.();
+                        sessionStorage.removeItem(MONEHUNT_PENDING_OVER2_SIGNAL_KEY);
+
+                        console.log('[MONEHUNT WORKSPACE] OVER 2 SIGNAL APPLIED', {
+                            marketSymbol: pendingSymbol,
+                            leastDigit: pendingDigit,
+                            prediction: 2,
+                            autoRun: false,
+                        });
+                    } catch (signalError) {
+                        console.error(
+                            '[MONEHUNT WORKSPACE] Failed to apply Over 2 signal',
+                            signalError
+                        );
+                        setError('Could not apply the Over 2 signal. Please return to AI Lab and select it again.');
+                        return;
+                    }
+                }
                 // Read this bot's own starting values, not later recovery assignments.
                 const initializationOwner = allBlocks.find(
                     block => !!block.getInputTargetBlock?.('INITIALIZATION')
@@ -589,7 +763,7 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
 
                 setMarketOptions(options);
 
-                const desiredMarket = strategySelectionRef.current?.market;
+                const desiredMarket = over2SelectionRef.current?.market ?? strategySelectionRef.current?.market;
                 const firstMarket =
                     options.find(option => option[1] === desiredMarket)?.[1] ??
                     options?.[0]?.[1] ??
@@ -630,9 +804,14 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
         const options = activeSymbols.getSubmarketDropdownOptions(market);
         setSubmarketOptions(options);
 
+        const over2Selection = over2SelectionRef.current;
         const selection = strategySelectionRef.current;
         const desiredSubmarket =
-            selection?.market === market ? selection.submarket : '';
+            over2Selection?.market === market
+                ? over2Selection.submarket
+                : selection?.market === market
+                    ? selection.submarket
+                    : '';
         const nextSubmarket =
             options.find(option => option[1] === desiredSubmarket)?.[1] ??
             options?.[0]?.[1] ??
@@ -803,6 +982,7 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
         const options = activeSymbols.getSymbolDropdownOptions(submarket);
         setSymbolOptions(options);
 
+        const over2Selection = over2SelectionRef.current;
         const selection = strategySelectionRef.current;
         const pendingDcirclesSymbol =
             pendingDcirclesRunRef.current?.submarket === submarket
@@ -810,6 +990,9 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
                 : '';
         const desiredSymbol =
             pendingDcirclesSymbol ||
+            (over2Selection?.submarket === submarket
+                ? over2Selection.symbol
+                : '') ||
             (selection?.submarket === submarket ? selection.symbol : '');
         const nextSymbol = desiredSymbol
             ? options.find(option => option[1] === desiredSymbol)?.[1] ?? ''
@@ -835,6 +1018,28 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
             return false;
         }
 
+        // Prevent Over 2 from trading a symbol different from its Blockly strategy.
+        if (selectedBot.id === 'over2-signal') {
+            const executionWorkspace = dbot.workspace;
+            const executionMarketBlock = executionWorkspace
+                ?.getAllBlocks(false)
+                .find(block => block.type === 'trade_definition_market');
+            const workspaceSymbol = String(
+                executionMarketBlock?.getFieldValue('SYMBOL_LIST') ?? ''
+            ).trim();
+
+            if (!workspaceSymbol || workspaceSymbol !== executionSymbol) {
+                console.error('[MONEHUNT OVER 2] EXECUTION SYMBOL MISMATCH', {
+                    workspaceSymbol: workspaceSymbol || null,
+                    executionSymbol: executionSymbol || null,
+                    blocked: true,
+                });
+                setError(
+                    `Over 2 was not started: bot symbol (${workspaceSymbol || 'missing'}) does not match selected execution symbol (${executionSymbol || 'missing'}). Re-select the signal and verify the market.`
+                );
+                return false;
+            }
+        }
         const parsedStake = Number(stake);
         const parsedMartingale = Number(martingale);
         const parsedMaxStake = maxStake.trim() === '' ? undefined : Number(maxStake);
@@ -1265,7 +1470,8 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
                                     value={market}
                                     onChange={event => {
                                         strategySelectionRef.current = null;
-                                        setMarket(event.target.value);
+                over2SelectionRef.current = null;
+                setMarket(event.target.value);
                                     }}
                                     disabled={isRunning || marketOptions.length === 0}
                                 >
@@ -1283,7 +1489,8 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
                                     value={submarket}
                                     onChange={event => {
                                         strategySelectionRef.current = null;
-                                        setSubmarket(event.target.value);
+                over2SelectionRef.current = null;
+                setSubmarket(event.target.value);
                                     }}
                                     disabled={
                                         isRunning || submarketOptions.length === 0
@@ -1303,7 +1510,8 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
                                     value={symbol}
                                     onChange={event => {
                                         strategySelectionRef.current = null;
-                                        setSymbol(event.target.value);
+                over2SelectionRef.current = null;
+                setSymbol(event.target.value);
                                     }}
                                     disabled={isRunning || symbolOptions.length === 0}
                                 >

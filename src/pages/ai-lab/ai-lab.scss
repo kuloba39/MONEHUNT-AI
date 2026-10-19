@@ -1,4 +1,4 @@
-﻿/* =========================================================
+/* =========================================================
    MONEHUNT AI LAB
    AI MISSION CONTROL
    Premium Emerald / AI Command Center
@@ -3509,5 +3509,87 @@
         grid-column: 1 / -1;
         grid-row: 4;
         width: 100%;
+    }
+}
+
+/* Compact Over 2 signal-only AI Lab */
+.over2-signal-only .over2-scanner-panel {
+    margin-bottom: 16px;
+}
+
+.over2-selected-summary {
+    width: 100%;
+    padding: 18px;
+    border: 1px solid var(--ai-border-soft);
+    border-radius: 12px;
+    background: var(--ai-panel);
+}
+
+.over2-selected-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.over2-selected-grid > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--ai-border-soft);
+    border-radius: 9px;
+    background: var(--ai-panel-raised);
+}
+
+.over2-selected-grid span,
+.over2-selected-grid small {
+    color: var(--text-less-prominent);
+    font-size: 11px;
+}
+
+.over2-selected-grid strong {
+    overflow-wrap: anywhere;
+    font-size: 15px;
+}
+
+.over2-apply-signal-button {
+    width: 100%;
+    min-height: 46px;
+    border: 0;
+    border-radius: 9px;
+    background: var(--ai-accent-strong);
+    color: #071b12;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.over2-apply-signal-button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.over2-apply-note {
+    margin: 10px 0 0;
+    color: var(--text-less-prominent);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+    .over2-selected-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .over2-signal-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+    }
+
+    .over2-signal-type,
+    .over2-signal-valid,
+    .over2-signal-age {
+        display: none;
     }
 }

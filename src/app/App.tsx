@@ -17,6 +17,7 @@ import ChunkLoader from '@/components/loader/chunk-loader';
 import LocalStorageSyncWrapper from '@/components/localStorage-sync-wrapper';
 import RoutePromptDialog from '@/components/route-prompt-dialog';
 
+import { getDerivRedirectUri } from '@/components/shared/utils/config/config';
 import { useAccountSwitching } from '@/hooks/useAccountSwitching';
 import { useLanguageFromURL } from '@/hooks/useLanguageFromURL';
 
@@ -251,7 +252,7 @@ function App() {
                             clientId:
                                 process.env.NEXT_PUBLIC_DERIV_APP_ID || '',
                             redirectUri:
-                                window.location.origin,
+                                getDerivRedirectUri(),
                             scopes: 'trade',
                         }
                     );
