@@ -467,6 +467,7 @@ async initializeInterpreter() {
                 }
                 while (watch('before')) {
                     BinaryBotPrivateTickAnalysis();
+                    console.log('[MONEHUNT BEFORE TRACE] before_purchase function reached');
                     BinaryBotPrivateRun(BinaryBotPrivateBeforePurchase);
                 }
                 while (watch('during')) {
