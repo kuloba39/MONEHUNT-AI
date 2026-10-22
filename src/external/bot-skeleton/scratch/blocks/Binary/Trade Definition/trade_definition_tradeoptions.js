@@ -381,6 +381,8 @@ window.Blockly.Blocks.trade_definition_tradeoptions = {
                 });
             });
         } else {
+            if (!this.selected_symbol || this.selected_symbol === 'na' || this.selected_symbol === 'DEFAULT') return;
+
             contracts_for
                 .getDurations(this.selected_symbol, this.selected_trade_type)
                 .then(durations => {
@@ -498,6 +500,8 @@ window.Blockly.Blocks.trade_definition_tradeoptions = {
     updatePredictionInput(should_use_default_value) {
         const { contracts_for } = ApiHelpers?.instance ?? {};
         if (!contracts_for) return;
+
+        if (!this.selected_symbol || this.selected_symbol === 'na' || this.selected_symbol === 'DEFAULT') return;
 
         contracts_for.getPredictionRange(this.selected_symbol, this.selected_trade_type).then(prediction_range => {
             this.createPredictionInput(prediction_range);

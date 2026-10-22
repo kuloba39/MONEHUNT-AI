@@ -375,8 +375,8 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
                     const pendingSymbol = String(pendingOver2.marketSymbol ?? '').trim();
 
                     if (
-                        pendingOver2.botId !== 'over2-signal' ||
-                        selectedBotForExecution.id !== 'over2-signal' ||
+                        pendingOver2.botId !== 'over2-signal-v2' ||
+                        selectedBotForExecution.id !== 'over2-signal-v2' ||
                         !pendingSymbol ||
                         !Number.isInteger(pendingDigit) ||
                         pendingDigit < 0 ||
@@ -1019,7 +1019,7 @@ const TradingWorkspace = observer(({ headless = false }: { headless?: boolean })
         }
 
         // Prevent Over 2 from trading a symbol different from its Blockly strategy.
-        if (selectedBot.id === 'over2-signal') {
+        if (selectedBot.id === 'over2-signal-v2') {
             const executionWorkspace = dbot.workspace;
             const executionMarketBlock = executionWorkspace
                 ?.getAllBlocks(false)

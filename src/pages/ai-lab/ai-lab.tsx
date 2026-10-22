@@ -40,7 +40,7 @@ const AiLab = observer(() => {
     const { setLoading } = blockly_store;
 
     const isOver2Strategy =
-        selected_strategy_id === 'over2-signal';
+        selected_strategy_id === 'over2-signal-v2';
 
     const isMatchesStrategy =
         selected_strategy_id === 'matches-signal';
@@ -439,7 +439,7 @@ setOver2SelectedSignal(
  * dedicated OVER 2 bot strategy. No bot selector is required.
  */
 setSelectedStrategyId(
-    'over2-signal'
+    'over2-signal-v2'
 );
 /*
      * OVER 2 uses one dedicated bot.
@@ -452,7 +452,7 @@ setSelectedStrategyId(
         FREE_BOTS.find(
             bot =>
                 bot.id ===
-                'over2-signal'
+                'over2-signal-v2'
         );
 
     setOver2SelectedBot(
@@ -924,7 +924,7 @@ const [
  * barrierDigit / leastDigit.
  */
 
-if (bot.id !== 'over2-signal') {
+if (bot.id !== 'over2-signal-v2') {
 
     const predictionBlock =
         blocks.find(block => {
@@ -1166,7 +1166,7 @@ const applyOver2SignalToBot = async (result?: any) => {
         return;
     }
 
-    const bot = FREE_BOTS.find(item => item.id === 'over2-signal');
+    const bot = FREE_BOTS.find(item => item.id === 'over2-signal-v2');
 
     if (!bot?.xml) {
         console.error('AI LAB: OVER 2 SIGNAL BOT XML is unavailable.');
@@ -1181,7 +1181,7 @@ const applyOver2SignalToBot = async (result?: any) => {
         sessionStorage.setItem(
             MONEHUNT_PENDING_OVER2_SIGNAL_KEY,
             JSON.stringify({
-                botId: 'over2-signal',
+                botId: 'over2-signal-v2',
                 marketSymbol,
                 leastDigit,
                 prediction: 2,

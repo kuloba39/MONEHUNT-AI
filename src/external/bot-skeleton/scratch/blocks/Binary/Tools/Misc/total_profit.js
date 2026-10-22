@@ -71,11 +71,23 @@ window.Blockly.Blocks.total_profit_string = {
     onchange: window.Blockly.Blocks.total_profit.onchange,
 };
 
-window.Blockly.JavaScript.javascriptGenerator.forBlock.total_profit = () => [
-    'Bot.getTotalProfit(false)',
+const getProfitGeneratorCode = (toString, block) => {
+    const strategyId =
+        block?.workspace?.current_strategy_id ||
+        window.Blockly.xmlValues?.strategy_id ||
+        '';
+
+    const method =
+        strategyId === 'over2-signal-v2' ? 'getSessionProfit' : 'getTotalProfit';
+
+    return `Bot.${method}(${toString})`;
+};
+
+window.Blockly.JavaScript.javascriptGenerator.forBlock.total_profit = block => [
+    getProfitGeneratorCode('false', block),
     window.Blockly.JavaScript.javascriptGenerator.ORDER_ATOMIC,
 ];
-window.Blockly.JavaScript.javascriptGenerator.forBlock.total_profit_string = () => [
-    'Bot.getTotalProfit(true)',
+window.Blockly.JavaScript.javascriptGenerator.forBlock.total_profit_string = block => [
+    getProfitGeneratorCode('true', block),
     window.Blockly.JavaScript.javascriptGenerator.ORDER_ATOMIC,
 ];

@@ -1,4 +1,4 @@
-﻿
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FREE_BOTS } from '@/constants/free-bots';
@@ -17,8 +17,8 @@ const BOT_ARTWORK: Record<string, { eyebrow: string; model: string }> = {
         eyebrow: 'MATCHES / DIFFERS',
         model: 'MS',
     },
-    'over2-signal': {
-        eyebrow: 'OVER 2 SIGNAL',
+    'over2-signal-v2': {
+        eyebrow: 'OVER 2 SIGNAL V2',
         model: 'O2',
     },
     'over6-recovery-over3': {

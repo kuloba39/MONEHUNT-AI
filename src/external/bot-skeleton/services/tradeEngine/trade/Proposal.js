@@ -166,18 +166,26 @@ export default Engine =>
                 return true;
             }
 
-            // Compare incoming "trade_option" argument with "this.trade_option", if any
-            // of the values is different, this is a new tradeOption and new proposals
-            // should be generated.
-            return [
-                'amount',
-                'barrierOffset',
-                'basis',
-                'duration',
-                'duration_unit',
-                'prediction',
-                'secondBarrierOffset',
-                'underlying_symbol',
-            ].some(value => this.trade_option[value] !== trade_option[value]);
+            const previousTypes = this.trade_option.contractTypes;
+            const incomingTypes = trade_option.contractTypes;
+
+            const contractTypesChanged =
+                Array.isArray(previousTypes) || Array.isArray(incomingTypes)
+                    ? JSON.stringify(previousTypes ?? []) !== JSON.stringify(incomingTypes ?? [])
+                    : previousTypes !== incomingTypes;
+
+            return (
+                contractTypesChanged ||
+                [
+                    'amount',
+                    'barrierOffset',
+                    'basis',
+                    'duration',
+                    'duration_unit',
+                    'prediction',
+                    'secondBarrierOffset',
+                    'underlying_symbol',
+                ].some(value => this.trade_option[value] !== trade_option[value])
+            );
         }
     };

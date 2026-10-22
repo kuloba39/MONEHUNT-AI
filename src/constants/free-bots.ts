@@ -1,6 +1,6 @@
 import freeEvenxml from './free-even.xml';
 import matchesSignalxml from './Matches_Signal_Bot.xml';
-import over2Signalxml from './Over2_Signal_Bot.xml';
+import over2SignalV2xml from './Over2_Signal_Bot_V2.xml';
 import over6RecoveryOver3xml from './Over6_Recovery_Over3.xml';
 
 export const FREE_BOTS = [
@@ -29,13 +29,13 @@ export const FREE_BOTS = [
         free: true,
     },
     {
-        id: 'over2-signal',
-        name: 'OVER 2 SIGNAL BOT',
+        id: 'over2-signal-v2',
+        name: 'OVER 2 SIGNAL BOT V2',
         description: 'Over 2 signal strategy with least-digit confirmation.',
         icon: 'O2',
         color: '#00C853',
         tag: 'SIGNAL',
-        xml: over2Signalxml,
+        xml: over2SignalV2xml,
         timestamp: Date.now(),
         save_type: 'local',
         free: true,

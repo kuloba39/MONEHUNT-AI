@@ -191,9 +191,15 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.trade_definition = block 
     const initialization = window.Blockly.JavaScript.javascriptGenerator.statementToCode(block, 'INITIALIZATION');
     const trade_options_statement = window.Blockly.JavaScript.javascriptGenerator.statementToCode(block, 'SUBMARKET');
 
+    const strategy_id =
+        block.workspace?.current_strategy_id ||
+        window.Blockly.xmlValues?.strategy_id ||
+        '';
+
     const code = `  
     BinaryBotPrivateInit = function BinaryBotPrivateInit() {
         Bot.init('${account}', {
+          strategyId          : ${JSON.stringify(strategy_id)},
           symbol              : '${symbol}',
           contractTypes       : ${JSON.stringify(contract_type_list)},
           candleInterval      : '${candle_interval || 'FALSE'}',
