@@ -51,7 +51,7 @@ export const isProduction = () => {
 // Returns the exact redirect URI used by both Deriv OAuth steps.
 export const getDerivRedirectUri = (): string => {
     if (isProduction()) {
-        return 'https://www.monehunt.site/callback';
+        return 'https://monehunt.site/callback';
     }
 
     // Preserve origin-based redirects for local development and previews.
