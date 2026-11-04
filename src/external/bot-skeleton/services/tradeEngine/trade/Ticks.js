@@ -9,20 +9,33 @@ import { getDirection, getLastDigit } from '../utils/helpers';
 import { expectPositiveInteger } from '../utils/sanitize';
 import * as constants from './state/constants';
 
-let tickListenerKey;
 
 export default Engine =>
     class Ticks extends Engine {
         async watchTicks(symbol) {
             if (symbol && this.symbol !== symbol) {
+                const generation = (this.tickListenerGeneration || 0) + 1;
+                this.tickListenerGeneration = generation;
+
+                const previousListener = this.tickListener;
                 this.symbol = symbol;
                 const { ticksService } = this.$scope;
 
-                this.tick_ready_promise = (async () => {
-                    await ticksService.stopMonitor({
-                        symbol,
-                        key: tickListenerKey,
-                    });
+                const readyPromise = (async () => {
+                    if (previousListener?.key) {
+                        await ticksService.stopMonitor({
+                            symbol: previousListener.symbol,
+                            key: previousListener.key,
+                        });
+
+                        if (this.tickListener === previousListener) {
+                            this.tickListener = null;
+                        }
+                    }
+
+                    if (generation !== this.tickListenerGeneration) {
+                        return;
+                    }
 
                     const callback = ticks => {
                         if (this.is_proposal_subscription_required) {
@@ -47,9 +60,17 @@ export default Engine =>
                         callback,
                     });
 
-                    tickListenerKey = key;
+                    if (generation !== this.tickListenerGeneration) {
+                        await ticksService.stopMonitor({ symbol, key });
+                        return;
+                    }
+
+                    this.tickListener = { symbol, key };
                 })();
 
+                this.tick_ready_promise = readyPromise;
+                await readyPromise;
+            } else if (symbol && this.tick_ready_promise) {
                 await this.tick_ready_promise;
             }
         }
@@ -192,7 +213,7 @@ export default Engine =>
                         }
                     }
                 });
-                api_base.pushSubscription(subscription);
+                api_base.pushSubscription(subscription, this);
             });
         }
 
@@ -239,14 +260,28 @@ export default Engine =>
                 try {
                     const ticks = [];
                     const symbol = this.symbol;
+                    let listenerKey;
+                    let monitorCompleted = false;
+                    let listenerStopped = false;
 
-                    const resolveAndExit = () => {
+                    const stopListener = () => {
+                        if (listenerStopped || !listenerKey) {
+                            return;
+                        }
+                        listenerStopped = true;
                         this.$scope.ticksService.stopMonitor({
                             symbol,
-                            key: '',
-                        });
+                            key: listenerKey,
+                        }).catch(reject);
+                    };
+
+                    const resolveAndExit = () => {
+                        if (monitorCompleted) {
+                            return;
+                        }
+                        monitorCompleted = true;
+                        stopListener();
                         resolve(ticks);
-                        ticks.length = 0;
                     };
 
                     const watchTicks = tick_list => {
@@ -259,8 +294,19 @@ export default Engine =>
 
                     const delayExecution = tick_list => watchTicks(tick_list);
 
-                    if (Number(tick_value) <= 0) resolveAndExit();
-                    this.$scope.ticksService.monitor({ symbol, callback: delayExecution });
+                    if (Number(tick_value) <= 0) {
+                        resolve([]);
+                        return;
+                    }
+
+                    this.$scope.ticksService.monitor({ symbol, callback: delayExecution })
+                        .then(key => {
+                            listenerKey = key;
+                            if (monitorCompleted) {
+                                stopListener();
+                            }
+                        })
+                        .catch(reject);
                 } catch (error) {
                     reject(new Error(`Failed to start tick monitoring: ${error.message}`));
                 }

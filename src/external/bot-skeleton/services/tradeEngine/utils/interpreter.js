@@ -39,9 +39,26 @@ const timeMachineEnabled = bot => botInitialized(bot) && bot.tradeEngine.options
 // TODO chek beforState & duringState & startState
 const Interpreter = () => {
     let $scope = createScope();
+    let executionGeneration = 0;
+    let executionAbortController = new AbortController();
+    $scope.executionSignal = executionAbortController.signal;
     let bot = Interface($scope);
     let interpreter = {};
     let onFinish;
+
+    function invalidateExecution() {
+        executionGeneration += 1;
+        executionAbortController.abort();
+        return executionGeneration;
+    }
+
+    function beginExecution() {
+        executionAbortController.abort();
+        executionGeneration += 1;
+        executionAbortController = new AbortController();
+        $scope.executionSignal = executionAbortController.signal;
+        return executionGeneration;
+    }
 
     function setGlobalVariable(name, value) {
         if (!interpreter || !interpreter.global) {
@@ -62,7 +79,10 @@ const Interpreter = () => {
     );
 
     function init() {
+        invalidateExecution();
         $scope = createScope();
+        executionAbortController = new AbortController();
+        $scope.executionSignal = executionAbortController.signal;
         bot = Interface($scope);
         interpreter = {};
         onFinish = () => {};
@@ -74,13 +94,30 @@ const Interpreter = () => {
         loop();
     }
 
-    function loop() {
-        if ($scope.stopped || !interpreter.run()) {
-            onFinish(interpreter.pseudoToNative(interpreter.value));
+    function loop(runInterpreter = interpreter, runScope = $scope, generation = executionGeneration) {
+        if (
+            generation !== executionGeneration ||
+            runScope !== $scope ||
+            runInterpreter !== interpreter ||
+            runScope.stopped
+        ) {
+            return;
+        }
+
+        if (!runInterpreter.run()) {
+            onFinish(runInterpreter.pseudoToNative(runInterpreter.value));
         }
     }
 
     function createAsync(js_interpreter, func) {
+        const runScope = $scope;
+        const generation = executionGeneration;
+        const isCurrentExecution = () =>
+            generation === executionGeneration &&
+            runScope === $scope &&
+            js_interpreter === interpreter &&
+            !runScope.stopped;
+
         const asyncFunc = (...args) => {
             const callback = args.pop();
 
@@ -94,12 +131,15 @@ const Interpreter = () => {
 
             func(...function_args.map(arg => js_interpreter.pseudoToNative(arg)))
                 .then(rv => {
+                    if (!isCurrentExecution()) return;
                     callback(js_interpreter.nativeToPseudo(rv));
-                    loop();
+                    loop(js_interpreter, runScope, generation);
                 })
                 .catch(e => {
                     // e.error for errors get from API, e for code errors
-                    $scope.observer.emit('Error', e.error || e);
+                    if (isCurrentExecution()) {
+                        runScope.observer.emit('Error', e.error || e);
+                    }
                 });
         };
 
@@ -226,13 +266,14 @@ const Interpreter = () => {
     async function terminateSession() {
         return new Promise((resolve, reject) => {
             try {
+                invalidateExecution();
                 $scope.stopped = true;
                 $scope.is_error_triggered = false;
                 globalObserver.emit('bot.stop');
                 const { ticksService } = $scope;
                 // Unsubscribe previous ticks_history subscription
                 // Unsubscribe the subscriptions from Proposal, Balance and OpenContract
-                api_base.clearSubscriptions();
+                api_base.clearSubscriptions(bot.tradeEngine);
 
                 ticksService.unsubscribeFromTicksService().then(() => {
                     resolve();
@@ -256,48 +297,82 @@ const Interpreter = () => {
         });
     }
 
-    function run(code) {
+    function run(code, options = {}) {
         return new Promise((resolve, reject) => {
-            const onError = e => {
-                if ($scope.stopped) {
-                    return;
-                }
-                // DBot handles 'InvalidToken' internally
-                if (e.code === 'InvalidToken') {
-                    globalObserver.emit('client.invalid_token');
-                    return;
-                }
-                if (shouldStopOnError(bot, e?.code)) {
-                    globalObserver.emit('ui.log.error', e.message);
-                    globalObserver.emit('bot.click_stop');
-                    return;
+            const startRun = (stateSnapshot, prepareRun) => {
+                const generation = beginExecution();
+                const runScope = $scope;
+                let runInterpreter;
+
+                const isCurrentExecution = () =>
+                    generation === executionGeneration &&
+                    runScope === $scope &&
+                    runInterpreter === interpreter &&
+                    !runScope.stopped;
+
+                const onError = e => {
+                    if (!isCurrentExecution()) return;
+
+                    // DBot handles 'InvalidToken' internally
+                    if (e.code === 'InvalidToken') {
+                        invalidateExecution();
+                        globalObserver.emit('client.invalid_token');
+                        return;
+                    }
+                    if (shouldStopOnError(bot, e?.code)) {
+                        invalidateExecution();
+                        globalObserver.emit('ui.log.error', e.message);
+                        globalObserver.emit('bot.click_stop');
+                        return;
+                    }
+
+                    runScope.is_error_triggered = true;
+                    if (!shouldRestartOnError(bot, e.code) || !botStarted(bot)) {
+                        invalidateExecution();
+                        reject(e);
+                        return;
+                    }
+
+                    globalObserver.emit('Error', e);
+                    const { initArgs, tradeOptions } = bot.tradeEngine;
+                    const restartSnapshot = runScope.startState;
+                    const termination = terminateSession();
+                    const terminationGeneration = executionGeneration;
+
+                    termination
+                        .then(() => {
+                            if (executionGeneration !== terminationGeneration) return;
+
+                            init();
+                            startRun(restartSnapshot, () => {
+                                bot.tradeEngine.init(...initArgs);
+                                bot.tradeEngine.start(tradeOptions, {
+                                    preserveMonehuntMartingale: true,
+                                });
+                            });
+                        })
+                        .catch(reject);
+                };
+
+                runScope.observer.register('Error', onError);
+                runInterpreter = new JSInterpreter(code, initFunc);
+                interpreter = runInterpreter;
+                onFinish = resolve;
+                prepareRun?.();
+
+                if (
+                    stateSnapshot &&
+                    runInterpreter.restoreStateSnapshot instanceof Function
+                ) {
+                    runInterpreter.restoreStateSnapshot(stateSnapshot);
+                    runInterpreter.paused_ = false;
                 }
 
-                $scope.is_error_triggered = true;
-                if (!shouldRestartOnError(bot, e.code) || !botStarted(bot)) {
-                    reject(e);
-                    return;
-                }
-
-                globalObserver.emit('Error', e);
-                const { initArgs, tradeOptions } = bot.tradeEngine;
-                terminateSession();
-                init();
-                $scope.observer.register('Error', onError);
-                bot.tradeEngine.init(...initArgs);
-                bot.tradeEngine.start(tradeOptions, { preserveMonehuntMartingale: true });
-                const canRestoreState = $scope.startState && interpreter?.restoreStateSnapshot instanceof Function;
-                if (canRestoreState) {
-                    revert($scope.startState);
-                }
+                loop(runInterpreter, runScope, generation);
+                options.onStarted?.();
             };
 
-            $scope.observer.register('Error', onError);
-
-            interpreter = new JSInterpreter(code, initFunc);
-            onFinish = resolve;
-
-            loop();
+            startRun();
         });
     }
 

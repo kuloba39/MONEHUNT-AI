@@ -20,7 +20,7 @@ export default Engine =>
                     if (this.accountInfo) info({ accountID: this.accountInfo.loginid, balance: balance_string });
                 }
             });
-            api_base.pushSubscription(subscription);
+            api_base.pushSubscription(subscription, this);
         }
 
         // eslint-disable-next-line class-methods-use-this

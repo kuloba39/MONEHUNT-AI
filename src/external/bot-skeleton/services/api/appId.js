@@ -8,6 +8,8 @@ import APIMiddleware from './api-middleware';
 let derivApiInstance = null;
 let derivApiPromise = null;
 let currentWebSocketURL = null;
+const apiGenerations = new WeakMap();
+let nextApiGeneration = 1;
 
 /**
  * Clears the singleton instance (useful for logout or forced reconnection)
@@ -102,6 +104,7 @@ export const generateDerivApiInstance = async (forceNew = false) => {
                 connection: deriv_socket,
                 middleware: new APIMiddleware({}),
             });
+            apiGenerations.set(deriv_api, nextApiGeneration++);
 
             // Store the instance immediately (don't wait for connection)
             derivApiInstance = deriv_api;
@@ -140,6 +143,11 @@ export const generateDerivApiInstance = async (forceNew = false) => {
 
     return derivApiPromise;
 };
+
+export const getDerivApiGeneration = api =>
+    api && typeof api === 'object'
+        ? apiGenerations.get(api) ?? null
+        : null;
 
 export const getLoginId = () => {
     const login_id = localStorage.getItem('active_loginid');

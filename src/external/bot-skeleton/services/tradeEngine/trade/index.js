@@ -21,12 +21,23 @@ import Sell from './Sell';
 import Ticks from './Ticks';
 import Total from './Total';
 
-const watchBefore = (store, getPrevTick, setPrevTick) => {
+const OVER2_SIGNAL_STRATEGY_ID = 'over2-signal-v2';
+
+const watchBefore = (
+    store,
+    getPrevTick,
+    setPrevTick,
+    { requireNewTick = false, signal } = {}
+) => {
     const state = store.getState();
+    const stopScopes = requireNewTick
+        ? [constants.DURING_PURCHASE, constants.STOP]
+        : [constants.DURING_PURCHASE];
 
     // Fast path: when the bot is already ready to purchase,
     // do not wait for another market tick.
     if (
+        !requireNewTick &&
         state.scope === constants.BEFORE_PURCHASE &&
         state.proposalsReady
     ) {
@@ -35,17 +46,20 @@ const watchBefore = (store, getPrevTick, setPrevTick) => {
 
     return watchScope({
         store,
-        stopScope: constants.DURING_PURCHASE,
+        stopScopes,
         passScope: constants.BEFORE_PURCHASE,
         passFlag: 'proposalsReady',
         getPrevTick,
         setPrevTick,
+        baselineEpoch: requireNewTick ? state.newTick : undefined,
+        requireNewTick,
+        signal,
     });
 };
 const watchDuring = (store, getPrevTick, setPrevTick) =>
     watchScope({
         store,
-        stopScope: constants.STOP,
+        stopScopes: [constants.STOP],
         passScope: constants.DURING_PURCHASE,
         passFlag: 'openContract',
         getPrevTick,
@@ -54,43 +68,99 @@ const watchDuring = (store, getPrevTick, setPrevTick) =>
 
 const watchScope = ({
     store,
-    stopScope,
+    stopScopes,
     passScope,
     passFlag,
     getPrevTick,
     setPrevTick,
+    baselineEpoch,
+    requireNewTick = false,
+    signal,
 }) => {
-    // in case watch is called after stop is fired
-    if (store.getState().scope === stopScope) {
+    const isStopScope = scope => stopScopes.includes(scope);
+
+    if (isStopScope(store.getState().scope) || signal?.aborted) {
         return Promise.resolve(false);
     }
 
-    return new Promise(resolve => {
-        const unsubscribe = store.subscribe(() => {
-            const newState = store.getState();
+    return new Promise((resolve, reject) => {
+        let unsubscribe;
+        let cleanupRequested = false;
+        let settled = false;
 
-            // State transitions such as PROPOSALS_READY,
-            // OPEN_CONTRACT, SELL and READY_FOR_NEXT_PURCHASE
-            // are not guaranteed to arrive with a NEW_TICK.
-            // Evaluate the state transition first so the bot cannot
-            // hang waiting for an unrelated market tick.
-            if (newState.scope === passScope && newState[passFlag]) {
-                unsubscribe();
-                resolve(true);
+        const cleanup = () => {
+            if (unsubscribe) {
+                const unsubscribeStore = unsubscribe;
+                unsubscribe = undefined;
+                unsubscribeStore();
+            } else {
+                cleanupRequested = true;
+            }
+            signal?.removeEventListener('abort', onAbort);
+        };
+
+        const settle = (settlePromise, value) => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            settlePromise(value);
+        };
+
+        const onAbort = () => settle(resolve, false);
+
+        const checkState = () => {
+            if (settled) return;
+
+            try {
+                const newState = store.getState();
+
+                if (isStopScope(newState.scope)) {
+                    settle(resolve, false);
+                    return;
+                }
+
+                const hasNewRequiredTick =
+                    !requireNewTick || newState.newTick !== baselineEpoch;
+
+                if (
+                    newState.scope === passScope &&
+                    newState[passFlag] &&
+                    hasNewRequiredTick
+                ) {
+                    if (requireNewTick) setPrevTick(newState.newTick);
+                    settle(resolve, true);
+                    return;
+                }
+
+                // Preserve the existing duplicate-tick bookkeeping for other waiters.
+                if (newState.newTick !== getPrevTick()) {
+                    setPrevTick(newState.newTick);
+                }
+            } catch (error) {
+                settle(reject, error);
+            }
+        };
+
+        if (signal) {
+            signal.addEventListener('abort', onAbort, { once: true });
+            if (signal.aborted) {
+                onAbort();
                 return;
             }
+        }
 
-            if (newState.scope === stopScope) {
-                unsubscribe();
-                resolve(false);
-                return;
+        try {
+            unsubscribe = store.subscribe(checkState);
+            if (cleanupRequested) {
+                cleanupRequested = false;
+                cleanup();
             }
 
-            // Ignore duplicate tick notifications only after the
-            // relevant state transitions have been evaluated.
-            if (newState.newTick === getPrevTick()) return;
-            setPrevTick(newState.newTick);
-        });
+            // Redux retains the latest epoch; this closes the subscribe/setup race.
+            if (requireNewTick) checkState();
+        } catch (error) {
+            settle(reject, error);
+        }
     });
 };
 
@@ -415,7 +485,7 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
                 }
                 resolve();
             });
-            api_base.pushSubscription(subscription);
+            api_base.pushSubscription(subscription, this);
         });
     }
 
@@ -436,6 +506,11 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
                 this.store,
                 getPrevTick,
                 setPrevTick,
+                {
+                    requireNewTick:
+                        this.options?.strategyId === OVER2_SIGNAL_STRATEGY_ID,
+                    signal: this.$scope?.executionSignal,
+                }
             );
         }
 

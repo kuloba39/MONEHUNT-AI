@@ -70,7 +70,7 @@ export default Engine =>
                     }
                 }
             });
-            api_base.pushSubscription(subscription);
+            api_base.pushSubscription(subscription, this);
         }
         applyMonehuntMartingale(contract) {
             const state = this.monehuntMartingale;

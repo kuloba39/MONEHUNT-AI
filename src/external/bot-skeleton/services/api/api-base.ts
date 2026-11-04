@@ -19,7 +19,11 @@ import {
     setIsAuthorizing,
 } from './observables/connection-status-stream';
 import ApiHelpers from './api-helpers';
-import { generateDerivApiInstance, V2GetActiveAccountId } from './appId';
+import {
+    clearDerivApiInstance,
+    generateDerivApiInstance,
+    V2GetActiveAccountId,
+} from './appId';
 import chart_api from './chart-api';
 
 type CurrentSubscription = {
@@ -56,6 +60,7 @@ class APIBase {
     account_info = {};
     is_running = false;
     subscriptions: CurrentSubscription[] = [];
+    private readonly subscriptionOwners = new WeakMap<object, unknown>();
     time_interval: ReturnType<typeof setInterval> | null = null;
     has_active_symbols = false;
     is_stopping = false;
@@ -68,6 +73,8 @@ class APIBase {
 
     // Prevent overlapping normal API initialization calls.
     private init_promise: Promise<void> | null = null;
+    private reconnect_promise: Promise<void> | null = null;
+    private invalidation_generation = 0;
 
     // Keep stable listener references so removeEventListener() actually works.
     private readonly socket_open_handler = () => this.onsocketopen();
@@ -79,10 +86,11 @@ class APIBase {
     private readonly MAX_RECONNECTION_ATTEMPTS = 5; // Maximum number of reconnection attempts before session reset
 
     unsubscribeAllSubscriptions = () => {
+        const apiInstance = this.api;
         this.current_auth_subscriptions?.forEach(subscription_promise => {
             subscription_promise.then(({ subscription }) => {
                 if (subscription?.id) {
-                    this.api?.send({
+                    apiInstance?.send({
                         forget: subscription.id,
                     });
                 }
@@ -159,6 +167,10 @@ class APIBase {
     }
 
     async init(force_create_connection = false) {
+        if (!force_create_connection && this.reconnect_promise) {
+            return this.reconnect_promise;
+        }
+
         // Normal initialization is single-flight.
         // Forced initialization intentionally bypasses this lock because
         // callers such as OAuth/account regeneration explicitly request
@@ -170,74 +182,120 @@ class APIBase {
 
         const initialize = async () => {
             this.toggleRunButton(true);
+            const initializationGeneration = this.invalidation_generation;
 
             if (this.api) {
                 this.unsubscribeAllSubscriptions();
             }
 
-            // Reset reconnection attempts counter on successful connection initialization
-            if (!force_create_connection) {
-                this.reconnection_attempts = 0;
-            }
-
-            if (!this.api || this.api?.connection.readyState !== 1 || force_create_connection) {
-                if (this.api?.connection) {
-                    ApiHelpers.disposeInstance();
-                    setConnectionStatus(CONNECTION_STATUS.CLOSED);
-
-                    // Remove the actual registered callbacks before disconnecting.
-                    this.api.connection.removeEventListener('open', this.socket_open_handler);
-                    this.api.connection.removeEventListener('close', this.socket_close_handler);
-
-                    this.api.disconnect();
+            try {
+                if (force_create_connection) {
+                    chart_api.beginApiTransition();
                 }
 
-                this.api = await generateDerivApiInstance();
+                // Reset reconnection attempts counter on successful connection initialization
+                if (!force_create_connection) {
+                    this.reconnection_attempts = 0;
+                }
 
-                this.api?.connection.addEventListener('open', this.socket_open_handler);
-                this.api?.connection.addEventListener('close', this.socket_close_handler);
+                if (!this.api || this.api?.connection.readyState !== 1 || force_create_connection) {
+                    if (this.api?.connection) {
+                        ApiHelpers.disposeInstance();
+                        setConnectionStatus(CONNECTION_STATUS.CLOSED);
 
-                // Store the current account ID used for this WebSocket connection
-                // This will be used to check if we need to regenerate the connection when the tab becomes active
-                const currentClientStore = globalObserver.getState('client.store');
-                if (currentClientStore) {
-                    const active_login_id = getAccountId();
-                    if (active_login_id) {
-                        currentClientStore.setWebSocketLoginId(active_login_id);
+                        // Remove the actual registered callbacks before disconnecting.
+                        this.api.connection.removeEventListener('open', this.socket_open_handler);
+                        this.api.connection.removeEventListener('close', this.socket_close_handler);
+
+                        this.api.disconnect();
                     }
+
+                    // Clear the wrapper reference before creation so a failed
+                    // replacement cannot leave a closed API looking healthy.
+                    this.api = null;
+                    const nextApi = await generateDerivApiInstance(
+                        force_create_connection
+                    );
+
+                    if (initializationGeneration !== this.invalidation_generation) {
+                        nextApi.disconnect();
+                        throw new Error('API initialization invalidated');
+                    }
+
+                    this.api = nextApi;
+                    chart_api.completeApiTransition(nextApi);
+
+                    this.api?.connection.addEventListener('open', this.socket_open_handler);
+                    this.api?.connection.addEventListener('close', this.socket_close_handler);
+
+                    // Store the current account ID used for this WebSocket connection
+                    // This will be used to check if we need to regenerate the connection when the tab becomes active.
+                    const currentClientStore = globalObserver.getState('client.store');
+                    if (currentClientStore) {
+                        const active_login_id = getAccountId();
+                        if (active_login_id) {
+                            currentClientStore.setWebSocketLoginId(active_login_id);
+                        }
+                    }
+
                 }
-            }
 
-            const hasAccountID = V2GetActiveAccountId();
+                const hasAccountID = V2GetActiveAccountId();
 
-            if (!this.has_active_symbols && !hasAccountID) {
-                this.active_symbols_promise = this.getActiveSymbols().then(() => undefined);
-            }
+                if (!this.has_active_symbols && !hasAccountID) {
+                    this.active_symbols_promise = this.getActiveSymbols().then(() => undefined);
+                }
 
-            this.initEventListeners();
+                this.initEventListeners();
 
-            if (this.time_interval) clearInterval(this.time_interval);
-            this.time_interval = null;
+                if (this.time_interval) clearInterval(this.time_interval);
+                this.time_interval = null;
 
-            console.log('[API INIT PROBE] before chart_api.init');
-            console.log('[API INIT PROBE] chart_api.api before =', !!chart_api.api);
+                console.log('[API INIT PROBE] before chart_api.init');
+                console.log('[API INIT PROBE] chart_api.api before =', !!chart_api.api);
 
-            await chart_api.init(force_create_connection);
+                chart_api.completeApiTransition(this.api);
+                chart_api.getTime();
 
-            console.log('[API INIT PROBE] after chart_api.init');
-            console.log('[API INIT PROBE] chart_api.api after =', !!chart_api.api);
-            console.log('[API INIT PROBE] chart socket readyState =', chart_api.api?.connection?.readyState ?? null);
-            console.log('[API INIT PROBE] main socket readyState =', this.api?.connection?.readyState ?? null);
+                console.log('[API INIT PROBE] after chart_api.init');
+                console.log('[API INIT PROBE] chart_api.api after =', !!chart_api.api);
+                console.log('[API INIT PROBE] chart socket readyState =', chart_api.api?.connection?.readyState ?? null);
+                console.log('[API INIT PROBE] main socket readyState =', this.api?.connection?.readyState ?? null);
 
-            // Synchronize the shared connection status when the socket was
-            // already OPEN before APIBase attached its "open" listener.
-            if (this.api?.connection?.readyState === 1) {
-                setConnectionStatus(CONNECTION_STATUS.OPENED);
+                // Synchronize the shared connection status when the socket was
+                // already OPEN before APIBase attached its "open" listener.
+                if (this.api?.connection?.readyState === 1) {
+                    setConnectionStatus(CONNECTION_STATUS.OPENED);
+                }
+            } catch (error) {
+                if (force_create_connection) {
+                    // generateDerivApiInstance(true) closes the previous
+                    // singleton before it can reject, so restoring it would
+                    // publish a potentially closed API as healthy. Leave both
+                    // wrappers explicitly unavailable and make the next
+                    // reconnect a fresh, serialized attempt.
+                    this.api = null;
+                    chart_api.completeApiTransition(null);
+                }
+                throw error;
             }
         };
 
         if (force_create_connection) {
-            return initialize();
+            if (this.reconnect_promise) {
+                return this.reconnect_promise;
+            }
+
+            const reconnectPromise = initialize();
+            this.reconnect_promise = reconnectPromise;
+            try {
+                await reconnectPromise;
+            } finally {
+                if (this.reconnect_promise === reconnectPromise) {
+                    this.reconnect_promise = null;
+                }
+            }
+            return;
         }
 
         const promise = initialize();
@@ -252,6 +310,34 @@ class APIBase {
             }
         }
     }
+
+    async invalidateApi() {
+        this.invalidation_generation += 1;
+
+        const reconnectPromise = this.reconnect_promise;
+        if (reconnectPromise) {
+            try {
+                await reconnectPromise;
+            } catch {
+                // The invalidation below still establishes the terminal state.
+            }
+        }
+
+        this.unsubscribeAllSubscriptions();
+        ApiHelpers.disposeInstance();
+        this.api?.connection?.removeEventListener('open', this.socket_open_handler);
+        this.api?.connection?.removeEventListener('close', this.socket_close_handler);
+        try {
+            this.api?.disconnect();
+        } catch (error) {
+            console.error('[API] Failed to disconnect during invalidation:', error);
+        }
+        this.api = null;
+        chart_api.completeApiTransition(null);
+        clearDerivApiInstance();
+        setConnectionStatus(CONNECTION_STATUS.CLOSED);
+    }
+
     getConnectionStatus() {
         if (this.api?.connection) {
             const ready_state = this.api.connection.readyState;
@@ -508,21 +594,40 @@ class APIBase {
         this.is_running = toggle;
     }
 
-    pushSubscription(subscription: CurrentSubscription) {
+    pushSubscription(subscription: CurrentSubscription, owner?: unknown) {
         this.subscriptions.push(subscription);
+        if (owner !== undefined && subscription && typeof subscription === 'object') {
+            this.subscriptionOwners.set(subscription, owner);
+        }
     }
 
-    clearSubscriptions() {
-        this.subscriptions.forEach(s => s.unsubscribe());
-        this.subscriptions = [];
+    clearSubscriptions(owner?: unknown) {
+        const subscriptionsToClear =
+            owner === undefined
+                ? this.subscriptions
+                : this.subscriptions.filter(subscription => this.subscriptionOwners.get(subscription) === owner);
 
-        // Resetting timeout resolvers
-        const global_timeouts = globalObserver.getState('global_timeouts') ?? [];
+        subscriptionsToClear.forEach(subscription => subscription.unsubscribe());
 
-        global_timeouts.forEach((_: unknown, i: number) => {
-            clearTimeout(i);
-        });
+        if (owner === undefined) {
+            this.subscriptions = [];
+        } else {
+            const clearedSubscriptions = new Set(subscriptionsToClear);
+            this.subscriptions = this.subscriptions.filter(subscription => !clearedSubscriptions.has(subscription));
+        }
+
+        if (owner === undefined) {
+            // Resetting timeout resolvers
+            const global_timeouts = globalObserver.getState('global_timeouts') ?? [];
+
+            global_timeouts.forEach((_: unknown, i: number) => {
+                clearTimeout(i);
+            });
+        }
     }
 }
 
 export const api_base = new APIBase();
+chart_api.setApiBaseInitializer(
+    force_create_connection => api_base.init(force_create_connection)
+);
